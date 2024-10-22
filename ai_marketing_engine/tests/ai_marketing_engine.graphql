@@ -1,0 +1,900 @@
+fragment QuestionInfo on QuestionType {
+    companyId
+    questionUuid
+    questionGroup
+    question
+    priority
+    attribute
+    optionValues
+    condition
+    updatedBy
+    updatedAt
+    createdAt
+}
+
+fragment QuestionListInfo on QuestionListType {
+    questionList{
+        ...QuestionInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment QuestionCriteriaInfo on QuestionCriteriaType {
+    companyId
+    questionGroup
+    region
+    questionCriteria
+    updatedBy
+    updatedAt
+    createdAt
+}
+
+fragment QuestionCriteriaListInfo on QuestionCriteriaListType {
+    questionCriteriaList{
+        ...QuestionCriteriaInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment PlaceInfo on PlaceType {
+    region
+    placeUuid
+    latitude
+    longitude
+    businessName
+    address
+    phoneNumber
+    website
+    types
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment PlaceListInfo on PlaceListType {
+    placeList{
+        ...PlaceInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment CustomerProfileInfo on CustomerProfileType {
+    place
+    customerUuid
+    email
+    firstName
+    lastName
+    data
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment CustomerProfileListInfo on CustomerProfileListType {
+    customerProfileList{
+        ...CustomerProfileInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment CustomerProfileAdditionalDataInfo on CustomerProfileAdditionalDataType {
+    companyId
+    customerProfile
+    email
+    corporationProfile
+    additionalData
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment CustomerProfileAdditionalDataListInfo on CustomerProfileAdditionalDataListType {
+    customerProfileAdditionalDataList{
+        ...CustomerProfileAdditionalDataInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment CorporationProfileInfo on CorporationProfileType {
+    corporationType
+    corporationUuid
+    externalId
+    businessName
+    categories
+    address
+    data
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment CorporationProfileListInfo on CorporationProfileListType {
+    corporationProfileList{
+        ...CorporationProfileInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment CorporationPlaceInfo on CorporationPlaceType {
+    corporationProfile
+    place
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment CorporationPlaceListInfo on CorporationPlaceListType {
+    corporationPlaceList{
+        ...CorporationPlaceInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment CorporationProfileAdditionalDataInfo on CorporationProfileAdditionalDataType {
+    companyId
+    corporationProfile
+    externalId
+    additionalData
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment CorporationProfileAdditionalDataListInfo on CorporationProfileAdditionalDataListType {
+    corporationProfileAdditionalDataList{
+        ...CorporationProfileAdditionalDataInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment CustomerChatbotHistoryInfo on CustomerChatbotHistoryType {
+    companyId
+    timestamp
+    customerUuid
+    placeUuid
+    region
+    assistantId
+    threadId
+    assistantType
+}
+
+fragment CustomerChatbotHistoryListInfo on CustomerChatbotHistoryListType {
+    customerChatbotHistoryList{
+        ...CustomerChatbotHistoryInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+fragment UtmTagDataCollectionInfo on UtmTagDataCollectionType {
+    companyId
+    collectionUuid
+    tagName
+    place
+    customerProfile
+    keyword
+    utmCampaign
+    utmContent
+    utmMedium
+    utmSource
+    utmTerm
+    createdAt
+}
+
+fragment UtmTagDataCollectionListInfo on UtmTagDataCollectionListType {
+    utmTagDataCollectionList{
+        ...UtmTagDataCollectionInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
+query ping {
+    ping
+}
+
+query getQuestion(
+    $companyId: String!,
+    $questionUuid: String!
+) {
+    question(
+        companyId: $companyId,
+        questionUuid: $questionUuid
+    ) {
+        ...QuestionInfo
+    }
+}
+
+query getQuestionList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $companyId: String,
+    $questionGroups: [String],
+    $question: String,
+    $attribute: String
+) {
+    questionList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        companyId: $companyId,
+        questionGroups: $questionGroups,
+        question: $question,
+        attribute: $attribute
+    ) {
+        ...QuestionListInfo
+    }
+}
+
+mutation insertUpdateQuestion(
+    $companyId: String!,
+    $questionUuid: String,
+    $questionGroup: String,
+    $question: String,
+    $priority: Int,
+    $attribute: String,
+    $optionValues: [String],
+    $condition: [JSON],
+    $updatedBy: String!
+) {
+    insertUpdateQuestion(
+        companyId: $companyId,
+        questionUuid: $questionUuid,
+        questionGroup: $questionGroup,
+        question: $question,
+        priority: $priority,
+        attribute: $attribute,
+        optionValues: $optionValues,
+        condition: $condition,
+        updatedBy: $updatedBy
+    ) {
+        question{
+            ...QuestionInfo
+        }
+    }
+}
+
+mutation deleteQuestion(
+    $companyId: String!,
+    $questionUuid: String!
+) {
+    deleteQuestion(
+        companyId: $companyId,
+        questionUuid: $questionUuid
+    ) {
+        ok
+    }
+}
+
+query getQuestionCriteria(
+    $companyId: String!,
+    $questionGroup: String!
+) {
+    questionCriteria(
+        companyId: $companyId,
+        questionGroup: $questionGroup
+    ) {
+        ...QuestionCriteriaInfo
+    }
+}
+
+query getQuestionCriteriaList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $companyId: String,
+    $region: String,
+    $questionCriteria: JSON
+) {
+    questionCriteriaList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        companyId: $companyId,
+        region: $region,
+        questionCriteria: $questionCriteria
+    ) {
+        ...QuestionCriteriaListInfo
+    }
+}
+
+mutation insertUpdateQuestionCriteria(
+    $companyId: String!,
+    $questionGroup: String!
+    $region: String!,
+    $questionCriteria: JSON,
+    $updatedBy: String!
+) {
+    insertUpdateQuestionCriteria(
+        companyId: $companyId,
+        questionGroup: $questionGroup,
+        region: $region,
+        questionCriteria: $questionCriteria,
+        updatedBy: $updatedBy
+    ) {
+        questionCriteria{
+            ...QuestionCriteriaInfo
+        }
+    }
+}
+
+mutation deleteQuestionCriteria(
+    $companyId: String!,
+    $questionGroup: String!
+) {
+    deleteQuestionCriteria(
+        companyId: $companyId,
+        questionGroup: $questionGroup
+    ) {
+        ok
+    }
+}
+
+query getPlace(
+    $region: String!,
+    $placeUuid: String!
+) {
+    place(
+        region: $region,
+        placeUuid: $placeUuid
+    ) {
+        ...PlaceInfo
+    }
+}
+
+query getPlaceList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $region: String,
+    $latitude: String,
+    $longitude: String,
+    $businessName: String,
+    $address: String,
+    $website: String
+) {
+    placeList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        region: $region,
+        latitude: $latitude,
+        longitude: $longitude,
+        businessName: $businessName,
+        address: $address,
+        website: $website
+    ) {
+        ...PlaceListInfo
+    }
+}
+
+mutation insertUpdatePlace(
+    $region: String!,
+    $placeUuid: String,
+    $latitude: String,
+    $longitude: String,
+    $businessName: String,
+    $address: String,
+    $website: String,
+    $types: [String],
+    $updatedBy: String!
+) {
+    insertUpdatePlace(
+        region: $region,
+        placeUuid: $placeUuid,
+        latitude: $latitude,
+        longitude: $longitude,
+        businessName: $businessName,
+        address: $address,
+        website: $website,
+        types: $types,
+        updatedBy: $updatedBy
+    ) {
+        place{
+            ...PlaceInfo
+        }
+    }
+}
+
+mutation deletePlace(
+    $region: String!,
+    $placeUuid: String!
+) {
+    deletePlace(
+        region: $region,
+        placeUuid: $placeUuid
+    ) {
+        ok
+    }
+}
+
+query getCustomerProfile(
+    $placeUuid: String!,
+    $customerUuid: String!
+) {
+    customerProfile(
+        placeUuid: $placeUuid,
+        customerUuid: $customerUuid
+    ) {
+        ...CustomerProfileInfo
+    }
+}
+
+query getCustomerProfileList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $placeUuid: String,
+    $email: String,
+    $regions: [String],
+    $firstName: String,
+    $lastName: String
+) {
+    customerProfileList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        placeUuid: $placeUuid,
+        email: $email,
+        regions: $regions,
+        firstName: $firstName,
+        lastName: $lastName
+    ) {
+        ...CustomerProfileListInfo
+    }
+}
+
+mutation insertUpdateCustomerProfile(
+    $placeUuid: String!,
+    $customerUuid: String,
+    $email: String,
+    $region: String,
+    $firstName: String,
+    $lastName: String,
+    $data: JSON,
+    $updatedBy: String!
+) {
+    insertUpdateCustomerProfile(
+        placeUuid: $placeUuid,
+        customerUuid: $customerUuid,
+        email: $email,
+        region: $region,
+        firstName: $firstName,
+        lastName: $lastName,
+        data: $data,
+        updatedBy: $updatedBy
+    ) {
+        customerProfile{
+            ...CustomerProfileInfo
+        }
+    }
+}
+
+mutation deleteCustomerProfile(
+    $placeUuid: String!,
+    $customerUuid: String!
+) {
+    deleteCustomerProfile(
+        placeUuid: $placeUuid,
+        customerUuid: $customerUuid
+    ) {
+        ok
+    }
+}
+
+query getCustomerProfileAdditionalData(
+    $companyId: String!,
+    $customerUuid: String!
+) {
+    customerProfileAdditionalData(
+        companyId: $companyId,
+        customerUuid: $customerUuid
+    ) {
+        ...CustomerProfileAdditionalDataInfo
+    }
+}
+
+query getCustomerProfileAdditionalDataList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $companyId: String,
+    $email: String,
+    $corporationTypes: [String]
+) {
+    customerProfileAdditionalDataList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        companyId: $companyId,
+        email: $email,
+        corporationTypes: $corporationTypes
+    ) {
+        ...CustomerProfileAdditionalDataListInfo
+    }
+}
+
+mutation insertUpdateCustomerProfileAdditionalData(
+    $companyId: String!,
+    $customerUuid: String!,
+    $email: String,
+    $placeUuid: String,
+    $corporationType: String,
+    $corporationUuid: String,
+    $additionalData: JSON,
+    $updatedBy: String!
+) {
+    insertUpdateCustomerProfileAdditionalData(
+        companyId: $companyId,
+        customerUuid: $customerUuid,
+        email: $email,
+        placeUuid: $placeUuid,
+        corporationType: $corporationType,
+        corporationUuid: $corporationUuid,
+        additionalData: $additionalData,
+        updatedBy: $updatedBy
+    ) {
+        customerProfileAdditionalData{
+            ...CustomerProfileAdditionalDataInfo
+        }
+    }
+}
+
+mutation deleteCustomerProfileAdditionalData(
+    $companyId: String!,
+    $customerUuid: String!
+) {
+    deleteCustomerProfileAdditionalData(
+        companyId: $companyId,
+        customerUuid: $customerUuid
+    ) {
+        ok
+    }
+}
+
+query getCorporationProfile(
+    $corporationType: String!,
+    $corporationUuid: String!
+) {
+    corporationProfile(
+        corporationType: $corporationType,
+        corporationUuid: $corporationUuid
+    ) {
+        ...CorporationProfileInfo
+    }
+}
+
+query getCorporationProfileList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $corporationType: String,
+    $externalId: String,
+    $businessName: String,
+    $category: String
+) {
+    corporationProfileList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        corporationType: $corporationType,
+        externalId: $externalId,
+        businessName: $businessName,
+        category: $category
+    ) {
+        ...CorporationProfileListInfo
+    }
+}
+
+mutation insertUpdateCorporationProfile(
+    $corporationType: String!,
+    $corporationUuid: String,
+    $externalId: String,
+    $businessName: String,
+    $categories: [String],
+    $address: JSON,
+    $data: JSON,
+    $updatedBy: String!
+) {
+    insertUpdateCorporationProfile(
+        corporationType: $corporationType,
+        corporationUuid: $corporationUuid,
+        externalId: $externalId,
+        businessName: $businessName,
+        categories: $categories,
+        address: $address,
+        data: $data,
+        updatedBy: $updatedBy
+    ) {
+        corporationProfile{
+            ...CorporationProfileInfo
+        }
+    }
+}
+
+mutation deleteCorporationProfile(
+    $corporationType: String!,
+    $corporationUuid: String!
+) {
+    deleteCorporationProfile(
+        corporationType: $corporationType,
+        corporationUuid: $corporationUuid
+    ) {
+        ok
+    }
+}
+
+query getCorporationPlace(
+    $region: String!,
+    $corporationUuid: String!
+) {
+    corporationPlace(
+        region: $region,
+        corporationUuid: $corporationUuid
+    ) {
+        ...CorporationPlaceInfo
+    }
+}
+
+query getCorporationPlaceList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $region: String,
+    $placeUuid: String,
+    $corporationTypes: [String]
+) {
+    corporationPlaceList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        region: $region,
+        placeUuid: $placeUuid, 
+        corporationTypes: $corporationTypes
+    ) {
+        ...CorporationPlaceListInfo
+    }
+}
+
+mutation insertUpdateCorporationPlace(
+    $region: String!,
+    $corporationUuid: String!,
+    $placeUuid: String!,
+    $corporationType: String!,
+    $updatedBy: String!
+) {
+    insertUpdateCorporationPlace(
+        region: $region,
+        corporationUuid: $corporationUuid,
+        placeUuid: $placeUuid,
+        corporationType: $corporationType,
+        updatedBy: $updatedBy
+    ) {
+        corporationPlace{
+            ...CorporationPlaceInfo
+        }
+    }
+}
+
+mutation deleteCorporationPlace(
+    $region: String!,
+    $corporationUuid: String!
+) {
+    deleteCorporationPlace(
+        region: $region,
+        corporationUuid: $corporationUuid
+    ) {
+        ok
+    }
+}
+
+query getCorporationProfileAdditionalData(
+    $companyId: String!,
+    $corporationUuid: String!
+) {
+    corporationProfileAdditionalData(
+        companyId: $companyId,
+        corporationUuid: $corporationUuid
+    ) {
+        ...CorporationProfileAdditionalDataInfo
+    }
+}
+
+query getCorporationProfileAdditionalDataList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $companyId: String,
+    $externalId: String,
+    $corporationTypes: [String]
+) {
+    corporationProfileAdditionalDataList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        companyId: $companyId,
+        externalId: $externalId,
+        corporationTypes: $corporationTypes
+    ) {
+        ...CorporationProfileAdditionalDataListInfo
+    }
+}
+
+mutation insertUpdateCorporationProfileAdditionalData(
+    $companyId: String!,
+    $corporationUuid: String!,
+    $externalId: String,
+    $corporationType: String,
+    $additionalData: JSON,
+    $updatedBy: String!
+) {
+    insertUpdateCorporationProfileAdditionalData(
+        companyId: $companyId,
+        corporationUuid: $corporationUuid,
+        externalId: $externalId,
+        corporationType: $corporationType,
+        additionalData: $additionalData,
+        updatedBy: $updatedBy
+    ) {
+        corporationProfileAdditionalData{
+            ...CorporationProfileAdditionalDataInfo
+        }
+    }
+}
+
+mutation deleteCorporationProfileAdditionalData(
+    $companyId: String!,
+    $corporationUuid: String!
+) {
+    deleteCorporationProfileAdditionalData(
+        companyId: $companyId,
+        corporationUuid: $corporationUuid
+    ) {
+        ok
+    }
+}
+
+query getCustomerChatbotHistory(
+    $companyId: String!,
+    $timestamp: Int!
+) {
+    customerChatbotHistory(
+        companyId: $companyId,
+        timestamp: $timestamp
+    ) {
+        ...CustomerChatbotHistoryInfo
+    }
+}
+
+query getCustomerChatbotHistoryList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $companyId: String,
+    $customerUuid: String,
+    $placeUuids: [String],
+    $regions: [String],
+    $assistantTypes: [String]
+) {
+    customerChatbotHistoryList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        companyId: $companyId,
+        customerUuid: $customerUuid,
+        placeUuids: $placeUuids,
+        regions: $regions,
+        assistantTypes: $assistantTypes
+    ) {
+        ...CustomerChatbotHistoryListInfo
+    }
+}
+
+mutation insertCustomerChatbotHistory(
+    $companyId: String!,
+    $timestamp: Int!,
+    $customerUuid: String!,
+    $placeUuid: String!,
+    $region: String!,
+    $assistantId: String!,
+    $threadId: String!,
+    $assistantType: String!
+) {
+    insertCustomerChatbotHistory(
+        companyId: $companyId,
+        timestamp: $timestamp,
+        customerUuid: $customerUuid,
+        placeUuid: $placeUuid,
+        region: $region,
+        assistantId: $assistantId,
+        threadId: $threadId,
+        assistantType: $assistantType
+    ) {
+        customerChatbotHistory{
+            ...CustomerChatbotHistoryInfo
+        }
+    }
+}
+
+mutation deleteCustomerChatbotHistory(
+    $companyId: String!,
+    $timestamp: Int!
+) {
+    deleteCustomerChatbotHistory(
+        companyId: $companyId,
+        timestamp: $timestamp
+    ) {
+        ok
+    }
+}
+
+query getUtmTagDataCollection(
+    $companyId: String!,
+    $collectionUuid: String!
+) {
+    utmTagDataCollection(
+        companyId: $companyId,
+        collectionUuid: $collectionUuid
+    ) {
+        ...UtmTagDataCollectionInfo
+    }
+}
+
+query getUtmTagDataCollectionList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $companyId: String
+) {
+    utmTagDataCollectionList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        companyId: $companyId
+    ) {
+        ...UtmTagDataCollectionListInfo
+    }
+}
+
+mutation insertUtmTagDataCollection(
+    $companyId: String!,
+    $tagName: String!,
+    $placeUuid: String!,
+    $customerUuid: String!,
+    $region: String!,
+    $keyword: String!,
+    $utmCampaign: String!,
+    $utmContent: String!,
+    $utmMedium: String!,
+    $utmSource: String!,
+    $utmTerm: String!
+) {
+    insertUtmTagDataCollection(
+        companyId: $companyId,
+        tagName: $tagName,
+        placeUuid: $placeUuid,
+        customerUuid: $customerUuid,
+        region: $region,
+        keyword: $keyword,
+        utmCampaign: $utmCampaign,
+        utmContent: $utmContent,
+        utmMedium: $utmMedium,
+        utmSource: $utmSource,
+        utmTerm: $utmTerm
+    ) {
+        utmTagDataCollection{
+            ...UtmTagDataCollectionInfo
+        }
+    }
+}
+
+mutation deleteUtmTagDataCollection(
+    $companyId: String!,
+    $collectionUuid: String!
+) {
+    deleteUtmTagDataCollection(
+        companyId: $companyId,
+        collectionUuid: $collectionUuid
+    ) {
+        ok
+    }
+}
