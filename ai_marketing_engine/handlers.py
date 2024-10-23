@@ -648,16 +648,7 @@ def insert_update_customer_profile_handler(
         CustomerProfileModel(
             place_uuid,
             customer_uuid,
-            **{
-                "email": kwargs["email"],
-                "region": kwargs["region"],
-                "first_name": kwargs["first_name"],
-                "last_name": kwargs["last_name"],
-                "data": kwargs["data"],
-                "updated_by": kwargs["updated_by"],
-                "created_at": pendulum.now("UTC"),
-                "updated_at": pendulum.now("UTC"),
-            },
+            **cols,
         ).save()
         return
 
