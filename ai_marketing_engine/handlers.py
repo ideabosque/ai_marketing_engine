@@ -78,7 +78,16 @@ def get_question_count(company_id: str, question_uuid: str) -> int:
 
 
 def get_question_type(info: ResolveInfo, question: QuestionModel) -> QuestionType:
+    try:
+        question_criteria = _get_question_criteria(
+            question.company_id, question.question_group
+        )
+    except Exception as e:
+        log = traceback.format_exc()
+        info.context.get("logger").exception(log)
+        raise e
     question = question.__dict__["attribute_values"]
+    question["priority"] = question_criteria["weight"] * 10 + question["priority"]
     return QuestionType(**Utility.json_loads(Utility.json_dumps(question)))
 
 
@@ -208,6 +217,19 @@ def get_question_criteria_count(company_id: str, question_group: str) -> int:
     )
 
 
+def _get_question_criteria(
+    company_id: str, question_group: str
+) -> QuestionCriteriaModel:
+    question_criteria = get_question_criteria(company_id, question_group)
+    return {
+        "company_id": question_criteria.company_id,
+        "question_group": question_criteria.question_group,
+        "region": question_criteria.region,
+        "question_criteria": question_criteria.question_criteria,
+        "weight": question_criteria.weight,
+    }
+
+
 def get_question_criteria_type(
     info: ResolveInfo, question_criteria: QuestionCriteriaModel
 ) -> QuestionCriteriaType:
@@ -318,6 +340,8 @@ def insert_update_question_criteria_handler(
     }
     if kwargs.get("question_criteria") is not None:
         cols["question_criteria"] = kwargs["question_criteria"]
+    if kwargs.get("weight") is not None:
+        cols["weight"] = kwargs["weight"]
     if kwargs.get("entity") is None:
         QuestionCriteriaModel(company_id, question_group, **cols).save()
         return
@@ -333,6 +357,8 @@ def insert_update_question_criteria_handler(
         actions.append(
             QuestionCriteriaModel.question_criteria.set(kwargs.get("question_criteria"))
         )
+    if kwargs.get("weight") is not None:
+        actions.append(QuestionCriteriaModel.weight.set(kwargs.get("weight")))
     question_criteria.update(actions=actions)
     return
 

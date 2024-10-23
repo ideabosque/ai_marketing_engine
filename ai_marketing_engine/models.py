@@ -56,6 +56,7 @@ class QuestionCriteriaModel(BaseModel):
     question_group = UnicodeAttribute(range_key=True)
     region = UnicodeAttribute()
     question_criteria = MapAttribute(default={})
+    weight = NumberAttribute(default=0)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
