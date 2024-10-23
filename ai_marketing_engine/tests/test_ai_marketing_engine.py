@@ -58,12 +58,30 @@ class AIMarketingEngineTest(unittest.TestCase):
             "variables": {
                 "companyId": "XXXXXXXX",
                 # "questionUuid": "10575006544938275311",
-                "questionGroup": "XXXXXXXX",
-                "question": "XXXXXXXX",
-                "priority": 1,
-                "attribute": "XXXXXXXX",
-                "optionValues": ["XXX", "YYY", "ZZZ"],
-                "condition": [{"XXXX": 123}],
+                "questionGroup": "12345678",
+                "question": "What is the material you interested?",
+                "priority": 5,
+                "attribute": "material",
+                # "optionValues": [
+                #     "white",
+                #     "black",
+                #     "gray",
+                #     "red",
+                #     "blue",
+                #     "green",
+                #     "yellow",
+                #     "orange",
+                #     "purple",
+                #     "pink",
+                #     "brown",
+                #     "beige",
+                #     "gold",
+                #     "silver",
+                #     "other",
+                # ],
+                # "condition": [
+                #     {"attribute": "product_name", "value": ["clothes"]},
+                # ],
                 "updatedBy": "XYZ",
             },
             "operation_name": "insertUpdateQuestion",
@@ -97,12 +115,13 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_question_list(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
+                "questionGroups": ["12345678"],
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -117,15 +136,16 @@ class AIMarketingEngineTest(unittest.TestCase):
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
-                "questionGroup": "XXXXXXXX",
-                "region": "XXXXXXXX",
+                "questionGroup": "12345678",
+                "region": "US",
                 "questionCriteria": {
-                    "place_type": "abc",
+                    "place_type": "establishment",
                     "corporation_type": "XXXXXXXX",
-                    "corporation_category": "XXXXXXXX",
-                    "utm_tag_name": "XXXXXXXX",
-                    "corporation_uuids": ["4188232447431807471"],
+                    # "corporation_category": "XXXXXXXX",
+                    # "utm_tag_name": "XXXXXXXX",
+                    # "corporation_uuids": ["4188232447431807471"],
                 },
+                "weight": 0,
                 "updatedBy": "XYZ",
             },
             "operation_name": "insertUpdateQuestionCriteria",
@@ -591,7 +611,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         payload = {
             "query": document,

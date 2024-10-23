@@ -101,6 +101,7 @@ class InsertUpdateQuestionCriteria(Mutation):
         question_group = String(required=True)
         region = String(required=True)
         question_criteria = JSON(required=False)
+        weight = Int(required=False)
         updated_by = String(required=True)
 
     @staticmethod

@@ -26,6 +26,7 @@ fragment QuestionCriteriaInfo on QuestionCriteriaType {
     questionGroup
     region
     questionCriteria
+    weight
     updatedBy
     updatedAt
     createdAt
@@ -318,6 +319,7 @@ mutation insertUpdateQuestionCriteria(
     $questionGroup: String!
     $region: String!,
     $questionCriteria: JSON,
+    $weight: Int,
     $updatedBy: String!
 ) {
     insertUpdateQuestionCriteria(
@@ -325,6 +327,7 @@ mutation insertUpdateQuestionCriteria(
         questionGroup: $questionGroup,
         region: $region,
         questionCriteria: $questionCriteria,
+        weight: $weight,
         updatedBy: $updatedBy
     ) {
         questionCriteria{
@@ -388,6 +391,7 @@ mutation insertUpdatePlace(
     $longitude: String,
     $businessName: String,
     $address: String,
+    $phoneNumber: String,
     $website: String,
     $types: [String],
     $updatedBy: String!
@@ -399,6 +403,7 @@ mutation insertUpdatePlace(
         longitude: $longitude,
         businessName: $businessName,
         address: $address,
+        phoneNumber: $phoneNumber,
         website: $website,
         types: $types,
         updatedBy: $updatedBy

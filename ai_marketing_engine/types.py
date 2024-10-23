@@ -38,6 +38,7 @@ class QuestionCriteriaType(ObjectType):
     question_group = String()
     region = String()
     question_criteria = JSON()
+    weight = Int()
     updated_by = String()
     updated_at = DateTime()
     created_at = DateTime()
