@@ -631,6 +631,19 @@ def insert_update_customer_profile_handler(
 ) -> None:
     place_uuid = kwargs.get("place_uuid")
     customer_uuid = kwargs.get("customer_uuid")
+    cols = {
+        "email": kwargs["email"],
+        "region": kwargs["region"],
+        "updated_by": kwargs["updated_by"],
+        "created_at": pendulum.now("UTC"),
+        "updated_at": pendulum.now("UTC"),
+    }
+    if kwargs.get("first_name") is not None:
+        cols["first_name"] = kwargs["first_name"]
+    if kwargs.get("last_name") is not None:
+        cols["last_name"] = kwargs["last_name"]
+    if kwargs.get("data") is not None:
+        cols["data"] = kwargs["data"]
     if kwargs.get("entity") is None:
         CustomerProfileModel(
             place_uuid,
