@@ -71,12 +71,12 @@ class CustomerProfileType(ObjectType):
     updated_at = DateTime()
 
 
-class CustomerProfileAdditionalDataType(ObjectType):
+class CompanyCustomerProfilesType(ObjectType):
     company_id = String()
     customer_profile = JSON()
     email = String()
     corporation_profile = JSON()
-    additional_data = JSON()
+    data = JSON()
     updated_by = String()
     created_at = DateTime()
     updated_at = DateTime()
@@ -103,11 +103,11 @@ class CorporationPlaceType(ObjectType):
     updated_at = DateTime()
 
 
-class CorporationProfileAdditionalDataType(ObjectType):
+class CompanyCorporationProfilesType(ObjectType):
     company_id = String()
     corporation_profile = JSON()
     external_id = String()
-    additional_data = JSON()
+    data = JSON()
     updated_by = String()
     created_at = DateTime()
     updated_at = DateTime()
@@ -155,8 +155,8 @@ class CustomerProfileListType(ListObjectType):
     customer_profile_list = List(CustomerProfileType)
 
 
-class CustomerProfileAdditionalDataListType(ListObjectType):
-    customer_profile_additional_data_list = List(CustomerProfileAdditionalDataType)
+class CompanyCustomerProfilesListType(ListObjectType):
+    company_customer_profiles_list = List(CompanyCustomerProfilesType)
 
 
 class CorporationProfileListType(ListObjectType):
@@ -167,10 +167,8 @@ class CorporationPlaceListType(ListObjectType):
     corporation_place_list = List(CorporationPlaceType)
 
 
-class CorporationProfileAdditionalDataListType(ListObjectType):
-    corporation_profile_additional_data_list = List(
-        CorporationProfileAdditionalDataType
-    )
+class CompanyCorporationProfilesListType(ListObjectType):
+    company_corporation_profiles_list = List(CompanyCorporationProfilesType)
 
 
 class CustomerChatbotHistoryListType(ListObjectType):

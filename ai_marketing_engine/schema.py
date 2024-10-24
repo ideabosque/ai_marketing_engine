@@ -20,39 +20,39 @@ from graphene import (
 from silvaengine_utility import JSON
 
 from .mutations import (
+    DeleteCompanyCorporationProfiles,
+    DeleteCompanyCustomerProfiles,
     DeleteCorporationPlace,
     DeleteCorporationProfile,
-    DeleteCorporationProfileAdditionalData,
     DeleteCustomerChatbotHistory,
     DeleteCustomerProfile,
-    DeleteCustomerProfileAdditionalData,
     DeletePlace,
     DeleteQuestion,
     DeleteQuestionCriteria,
     DeleteUtmTagDataCollection,
     InsertCustomerChatbotHistory,
+    InsertUpdateCompanyCorporationProfiles,
+    InsertUpdateCompanyCustomerProfiles,
     InsertUpdateCorporationPlace,
     InsertUpdateCorporationProfile,
-    InsertUpdateCorporationProfileAdditionalData,
     InsertUpdateCustomerProfile,
-    InsertUpdateCustomerProfileAdditionalData,
     InsertUpdatePlace,
     InsertUpdateQuestion,
     InsertUpdateQuestionCriteria,
     InsertUtmTagDataCollection,
 )
 from .queries import (
+    resolve_company_corporation_profiles,
+    resolve_company_corporation_profiles_list,
+    resolve_company_customer_profiles,
+    resolve_company_customer_profiles_list,
     resolve_corporation_place,
     resolve_corporation_place_list,
     resolve_corporation_profile,
-    resolve_corporation_profile_additional_data,
-    resolve_corporation_profile_additional_data_list,
     resolve_corporation_profile_list,
     resolve_customer_chatbot_history,
     resolve_customer_chatbot_history_list,
     resolve_customer_profile,
-    resolve_customer_profile_additional_data,
-    resolve_customer_profile_additional_data_list,
     resolve_customer_profile_list,
     resolve_place,
     resolve_place_list,
@@ -64,16 +64,16 @@ from .queries import (
     resolve_utm_tag_data_collection_list,
 )
 from .types import (
+    CompanyCorporationProfilesListType,
+    CompanyCorporationProfilesType,
+    CompanyCustomerProfilesListType,
+    CompanyCustomerProfilesType,
     CorporationPlaceListType,
     CorporationPlaceType,
-    CorporationProfileAdditionalDataListType,
-    CorporationProfileAdditionalDataType,
     CorporationProfileListType,
     CorporationProfileType,
     CustomerChatbotHistoryListType,
     CustomerChatbotHistoryType,
-    CustomerProfileAdditionalDataListType,
-    CustomerProfileAdditionalDataType,
     CustomerProfileListType,
     CustomerProfileType,
     PlaceListType,
@@ -91,14 +91,14 @@ def type_class():
     return [
         CorporationPlaceListType,
         CorporationPlaceType,
-        CorporationProfileAdditionalDataListType,
-        CorporationProfileAdditionalDataType,
+        CompanyCorporationProfilesListType,
+        CompanyCorporationProfilesType,
         CorporationProfileListType,
         CorporationProfileType,
         CustomerChatbotHistoryListType,
         CustomerChatbotHistoryType,
-        CustomerProfileAdditionalDataListType,
-        CustomerProfileAdditionalDataType,
+        CompanyCustomerProfilesListType,
+        CompanyCustomerProfilesType,
         CustomerProfileListType,
         CustomerProfileType,
         PlaceListType,
@@ -182,15 +182,15 @@ class Query(ObjectType):
         last_name=String(),
     )
 
-    customer_profile_additional_data = Field(
-        CustomerProfileAdditionalDataType,
+    company_customer_profiles = Field(
+        CompanyCustomerProfilesType,
         required=True,
         company_id=String(required=True),
         customer_uuid=String(required=True),
     )
 
-    customer_profile_additional_data_list = Field(
-        CustomerProfileAdditionalDataListType,
+    company_customer_profiles_list = Field(
+        CompanyCustomerProfilesListType,
         page_number=Int(),
         limit=Int(),
         company_id=String(),
@@ -231,15 +231,15 @@ class Query(ObjectType):
         corporation_types=List(String),
     )
 
-    corporation_profile_additional_data = Field(
-        CorporationProfileAdditionalDataType,
+    company_corporation_profiles = Field(
+        CompanyCorporationProfilesType,
         required=True,
         company_id=String(required=True),
         corporation_uuid=String(required=True),
     )
 
-    corporation_profile_additional_data_list = Field(
-        CorporationProfileAdditionalDataListType,
+    company_corporation_profiles_list = Field(
+        CompanyCorporationProfilesListType,
         page_number=Int(),
         limit=Int(),
         company_id=String(),
@@ -325,15 +325,15 @@ class Query(ObjectType):
     ) -> CustomerProfileListType:
         return resolve_customer_profile_list(info, **kwargs)
 
-    def resolve_customer_profile_additional_data(
+    def resolve_company_customer_profiles(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CustomerProfileAdditionalDataType:
-        return resolve_customer_profile_additional_data(info, **kwargs)
+    ) -> CompanyCustomerProfilesType:
+        return resolve_company_customer_profiles(info, **kwargs)
 
-    def resolve_customer_profile_additional_data_list(
+    def resolve_company_customer_profiles_list(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CustomerProfileAdditionalDataListType:
-        return resolve_customer_profile_additional_data_list(info, **kwargs)
+    ) -> CompanyCustomerProfilesListType:
+        return resolve_company_customer_profiles_list(info, **kwargs)
 
     def resolve_corporation_profile(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
@@ -355,15 +355,15 @@ class Query(ObjectType):
     ) -> CorporationPlaceListType:
         return resolve_corporation_place_list(info, **kwargs)
 
-    def resolve_corporation_profile_additional_data(
+    def resolve_company_corporation_profiles(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CorporationProfileAdditionalDataType:
-        return resolve_corporation_profile_additional_data(info, **kwargs)
+    ) -> CompanyCorporationProfilesType:
+        return resolve_company_corporation_profiles(info, **kwargs)
 
-    def resolve_corporation_profile_additional_data_list(
+    def resolve_company_corporation_profiles_list(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CorporationProfileAdditionalDataListType:
-        return resolve_corporation_profile_additional_data_list(info, **kwargs)
+    ) -> CompanyCorporationProfilesListType:
+        return resolve_company_corporation_profiles_list(info, **kwargs)
 
     def resolve_customer_chatbot_history(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
@@ -395,22 +395,18 @@ class Mutations(ObjectType):
     delete_place = DeletePlace.Field()
     insert_update_customer_profile = InsertUpdateCustomerProfile.Field()
     delete_customer_profile = DeleteCustomerProfile.Field()
-    insert_update_customer_profile_additional_data = (
-        InsertUpdateCustomerProfileAdditionalData.Field()
+    insert_update_company_customer_profiles = (
+        InsertUpdateCompanyCustomerProfiles.Field()
     )
-    delete_customer_profile_additional_data = (
-        DeleteCustomerProfileAdditionalData.Field()
-    )
+    delete_company_customer_profiles = DeleteCompanyCustomerProfiles.Field()
     insert_update_corporation_profile = InsertUpdateCorporationProfile.Field()
     delete_corporation_profile = DeleteCorporationProfile.Field()
     insert_update_corporation_place = InsertUpdateCorporationPlace.Field()
     delete_corporation_place = DeleteCorporationPlace.Field()
-    insert_update_corporation_profile_additional_data = (
-        InsertUpdateCorporationProfileAdditionalData.Field()
+    insert_update_company_corporation_profiles = (
+        InsertUpdateCompanyCorporationProfiles.Field()
     )
-    delete_corporation_profile_additional_data = (
-        DeleteCorporationProfileAdditionalData.Field()
-    )
+    delete_company_corporation_profiles = DeleteCompanyCorporationProfiles.Field()
     insert_customer_chatbot_history = InsertCustomerChatbotHistory.Field()
     delete_customer_chatbot_history = DeleteCustomerChatbotHistory.Field()
     insert_utm_tag_data_collection = InsertUtmTagDataCollection.Field()

@@ -8,7 +8,6 @@ import logging
 from typing import Any, Dict, List
 
 from graphene import Schema
-
 from silvaengine_dynamodb_base import SilvaEngineDynamoDBBase
 
 from .handlers import handlers_init
@@ -59,11 +58,11 @@ def deploy() -> List:
                             "label": "View Customer Profile List",
                         },
                         {
-                            "action": "customerProfileAdditionalData",
+                            "action": "CompanyCustomerProfiles",
                             "label": "View Customer Profile Additional Data",
                         },
                         {
-                            "action": "customerProfileAdditionalDataList",
+                            "action": "CompanyCustomerProfilesList",
                             "label": "View Customer Profile Additional Data List",
                         },
                         {
@@ -83,11 +82,11 @@ def deploy() -> List:
                             "label": "View Corporation Place List",
                         },
                         {
-                            "action": "corporationProfileAdditionalData",
+                            "action": "CompanyCorporationProfiles",
                             "label": "View Corporation Profile Additional Data",
                         },
                         {
-                            "action": "corporationProfileAdditionalDataList",
+                            "action": "CompanyCorporationProfilesList",
                             "label": "View Corporation Profile Additional Data List",
                         },
                         {
@@ -141,11 +140,11 @@ def deploy() -> List:
                             "label": "Delete Customer Profile",
                         },
                         {
-                            "action": "insertUpdateCustomerProfileAdditionalData",
+                            "action": "insertUpdateCompanyCustomerProfiles",
                             "label": "Create Update Customer Profile Additional Data",
                         },
                         {
-                            "action": "deleteCustomerProfileAdditionalData",
+                            "action": "deleteCompanyCustomerProfiles",
                             "label": "Delete Customer Profile Additional Data",
                         },
                         {
@@ -165,11 +164,11 @@ def deploy() -> List:
                             "label": "Delete Corporation Place",
                         },
                         {
-                            "action": "insertUpdateCorporationProfileAdditionalData",
+                            "action": "insertUpdateCompanyCorporationProfiles",
                             "label": "Create Update Corporation Profile Additional Data",
                         },
                         {
-                            "action": "deleteCorporationProfileAdditionalData",
+                            "action": "deleteCompanyCorporationProfiles",
                             "label": "Delete Corporation Profile Additional Data",
                         },
                         {
