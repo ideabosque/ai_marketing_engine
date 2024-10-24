@@ -58,11 +58,11 @@ def deploy() -> List:
                             "label": "View Customer Profile List",
                         },
                         {
-                            "action": "CompanyCustomerProfiles",
+                            "action": "CompanyCustomerProfile",
                             "label": "View Customer Profile Additional Data",
                         },
                         {
-                            "action": "CompanyCustomerProfilesList",
+                            "action": "CompanyCustomerProfileList",
                             "label": "View Customer Profile Additional Data List",
                         },
                         {
@@ -82,11 +82,11 @@ def deploy() -> List:
                             "label": "View Corporation Place List",
                         },
                         {
-                            "action": "CompanyCorporationProfiles",
+                            "action": "CompanyCorporationProfile",
                             "label": "View Corporation Profile Additional Data",
                         },
                         {
-                            "action": "CompanyCorporationProfilesList",
+                            "action": "CompanyCorporationProfileList",
                             "label": "View Corporation Profile Additional Data List",
                         },
                         {
@@ -140,11 +140,11 @@ def deploy() -> List:
                             "label": "Delete Customer Profile",
                         },
                         {
-                            "action": "insertUpdateCompanyCustomerProfiles",
+                            "action": "insertUpdateCompanyCustomerProfile",
                             "label": "Create Update Customer Profile Additional Data",
                         },
                         {
-                            "action": "deleteCompanyCustomerProfiles",
+                            "action": "deleteCompanyCustomerProfile",
                             "label": "Delete Customer Profile Additional Data",
                         },
                         {
@@ -164,11 +164,11 @@ def deploy() -> List:
                             "label": "Delete Corporation Place",
                         },
                         {
-                            "action": "insertUpdateCompanyCorporationProfiles",
+                            "action": "insertUpdateCompanyCorporationProfile",
                             "label": "Create Update Corporation Profile Additional Data",
                         },
                         {
-                            "action": "deleteCompanyCorporationProfiles",
+                            "action": "deleteCompanyCorporationProfile",
                             "label": "Delete Corporation Profile Additional Data",
                         },
                         {

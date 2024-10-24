@@ -20,7 +20,7 @@ from silvaengine_utility import Utility
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .models import (
-    CompanyCorporationProfilesModel,
+    CompanyCorporationProfileModel,
     CompanyCustomerProfileModel,
     CorporationPlaceModel,
     CorporationProfileModel,
@@ -32,10 +32,10 @@ from .models import (
     UtmTagDataCollectionModel,
 )
 from .types import (
-    CompanyCorporationProfilesListType,
-    CompanyCorporationProfilesType,
-    CompanyCustomerProfilesListType,
-    CompanyCustomerProfilesType,
+    CompanyCorporationProfileListType,
+    CompanyCorporationProfileType,
+    CompanyCustomerProfileListType,
+    CompanyCustomerProfileType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
@@ -690,59 +690,59 @@ def delete_customer_profile_handler(
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_company_customer_profiles(
+def get_company_customer_profile(
     company_id: str, customer_uuid: str
 ) -> CompanyCustomerProfileModel:
     return CompanyCustomerProfileModel.get(company_id, customer_uuid)
 
 
-def get_company_customer_profiles_count(company_id: str, customer_uuid: str) -> int:
+def get_company_customer_profile_count(company_id: str, customer_uuid: str) -> int:
     return CompanyCustomerProfileModel.count(
         company_id, CompanyCustomerProfileModel.customer_uuid == customer_uuid
     )
 
 
-def get_company_customer_profiles_type(
+def get_company_customer_profile_type(
     info: ResolveInfo,
-    company_customer_profiles: CompanyCustomerProfileModel,
-) -> CompanyCustomerProfilesType:
+    company_customer_profile: CompanyCustomerProfileModel,
+) -> CompanyCustomerProfileType:
     try:
         customer_profile = _get_customer_profile(
-            company_customer_profiles.place_uuid,
-            company_customer_profiles.customer_uuid,
+            company_customer_profile.place_uuid,
+            company_customer_profile.customer_uuid,
         )
         corporation_profile = None
         if (
-            company_customer_profiles.corporation_type is not None
-            and company_customer_profiles.corporation_uuid is not None
+            company_customer_profile.corporation_type is not None
+            and company_customer_profile.corporation_uuid is not None
         ):
             corporation_profile = _get_corporation_profile(
-                company_customer_profiles.corporation_type,
-                company_customer_profiles.corporation_uuid,
+                company_customer_profile.corporation_type,
+                company_customer_profile.corporation_uuid,
             )
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    company_customer_profiles = company_customer_profiles.__dict__["attribute_values"]
-    company_customer_profiles["customer_profile"] = customer_profile
-    company_customer_profiles.pop("place_uuid")
-    company_customer_profiles.pop("customer_uuid")
+    company_customer_profile = company_customer_profile.__dict__["attribute_values"]
+    company_customer_profile["customer_profile"] = customer_profile
+    company_customer_profile.pop("place_uuid")
+    company_customer_profile.pop("customer_uuid")
     if corporation_profile is not None:
-        company_customer_profiles["corporation_profile"] = corporation_profile
-        company_customer_profiles.pop("corporation_type")
-        company_customer_profiles.pop("corporation_uuid")
-    return CompanyCustomerProfilesType(
-        **Utility.json_loads(Utility.json_dumps(company_customer_profiles))
+        company_customer_profile["corporation_profile"] = corporation_profile
+        company_customer_profile.pop("corporation_type")
+        company_customer_profile.pop("corporation_uuid")
+    return CompanyCustomerProfileType(
+        **Utility.json_loads(Utility.json_dumps(company_customer_profile))
     )
 
 
-def resolve_company_customer_profiles_handler(
+def resolve_company_customer_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CompanyCustomerProfilesType:
-    return get_company_customer_profiles_type(
+) -> CompanyCustomerProfileType:
+    return get_company_customer_profile_type(
         info,
-        get_company_customer_profiles(
+        get_company_customer_profile(
             kwargs.get("company_id"), kwargs.get("customer_uuid")
         ),
     )
@@ -751,10 +751,10 @@ def resolve_company_customer_profiles_handler(
 @monitor_decorator
 @resolve_list_decorator(
     attributes_to_get=["company_id", "customer_uuid", "email"],
-    list_type_class=CompanyCustomerProfilesListType,
-    type_funct=get_company_customer_profiles_type,
+    list_type_class=CompanyCustomerProfileListType,
+    type_funct=get_company_customer_profile_type,
 )
-def resolve_company_customer_profiles_list_handler(
+def resolve_company_customer_profile_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     company_id = kwargs.get("company_id")
@@ -789,13 +789,13 @@ def resolve_company_customer_profiles_list_handler(
         "range_key": "customer_uuid",
     },
     range_key_required=True,
-    model_funct=get_company_customer_profiles,
-    count_funct=get_company_customer_profiles_count,
-    type_funct=get_company_customer_profiles_type,
+    model_funct=get_company_customer_profile,
+    count_funct=get_company_customer_profile_count,
+    type_funct=get_company_customer_profile_type,
     # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
     # activity_history_funct=None,
 )
-def insert_update_company_customer_profiles_handler(
+def insert_update_company_customer_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
     company_id = kwargs.get("company_id")
@@ -821,7 +821,7 @@ def insert_update_company_customer_profiles_handler(
         ).save()
         return
 
-    company_customer_profiles = kwargs.get("entity")
+    company_customer_profile = kwargs.get("entity")
     actions = [
         CompanyCustomerProfileModel.updated_by.set(kwargs.get("updated_by")),
         CompanyCustomerProfileModel.updated_at.set(pendulum.now("UTC")),
@@ -845,7 +845,7 @@ def insert_update_company_customer_profiles_handler(
         actions.append(CompanyCustomerProfileModel.corporation_uuid.remove())
     if kwargs.get("data") is not None:
         actions.append(CompanyCustomerProfileModel.data.set(kwargs.get("data")))
-    company_customer_profiles.update(actions=actions)
+    company_customer_profile.update(actions=actions)
     return
 
 
@@ -854,9 +854,9 @@ def insert_update_company_customer_profiles_handler(
         "hash_key": "company_id",
         "range_key": "customer_uuid",
     },
-    model_funct=get_company_customer_profiles,
+    model_funct=get_company_customer_profile,
 )
-def delete_company_customer_profiles_handler(
+def delete_company_customer_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> bool:
     kwargs.get("entity").delete()
@@ -1171,51 +1171,51 @@ def delete_corporation_place_handler(
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_company_corporation_profiles(
+def get_company_corporation_profile(
     company_id: str, corporation_uuid: str
-) -> CompanyCorporationProfilesModel:
-    return CompanyCorporationProfilesModel.get(company_id, corporation_uuid)
+) -> CompanyCorporationProfileModel:
+    return CompanyCorporationProfileModel.get(company_id, corporation_uuid)
 
 
-def get_company_corporation_profiles_count(
+def get_company_corporation_profile_count(
     company_id: str, corporation_uuid: str
 ) -> int:
-    return CompanyCorporationProfilesModel.count(
+    return CompanyCorporationProfileModel.count(
         company_id,
-        CompanyCorporationProfilesModel.corporation_uuid == corporation_uuid,
+        CompanyCorporationProfileModel.corporation_uuid == corporation_uuid,
     )
 
 
-def get_company_corporation_profiles_type(
+def get_company_corporation_profile_type(
     info: ResolveInfo,
-    company_corporation_profiles: CompanyCorporationProfilesModel,
-) -> CompanyCorporationProfilesType:
+    company_corporation_profile: CompanyCorporationProfileModel,
+) -> CompanyCorporationProfileType:
     try:
         corporation_profile = _get_corporation_profile(
-            company_corporation_profiles.corporation_type,
-            company_corporation_profiles.corporation_uuid,
+            company_corporation_profile.corporation_type,
+            company_corporation_profile.corporation_uuid,
         )
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    company_corporation_profiles = company_corporation_profiles.__dict__[
+    company_corporation_profile = company_corporation_profile.__dict__[
         "attribute_values"
     ]
-    company_corporation_profiles["corporation_profile"] = corporation_profile
-    company_corporation_profiles.pop("corporation_type")
-    company_corporation_profiles.pop("corporation_uuid")
-    return CompanyCorporationProfilesType(
-        **Utility.json_loads(Utility.json_dumps(company_corporation_profiles))
+    company_corporation_profile["corporation_profile"] = corporation_profile
+    company_corporation_profile.pop("corporation_type")
+    company_corporation_profile.pop("corporation_uuid")
+    return CompanyCorporationProfileType(
+        **Utility.json_loads(Utility.json_dumps(company_corporation_profile))
     )
 
 
-def resolve_company_corporation_profiles_handler(
+def resolve_company_corporation_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CompanyCorporationProfilesType:
-    return get_company_corporation_profiles_type(
+) -> CompanyCorporationProfileType:
+    return get_company_corporation_profile_type(
         info,
-        get_company_corporation_profiles(
+        get_company_corporation_profile(
             kwargs.get("company_id"), kwargs.get("corporation_uuid")
         ),
     )
@@ -1224,10 +1224,10 @@ def resolve_company_corporation_profiles_handler(
 @monitor_decorator
 @resolve_list_decorator(
     attributes_to_get=["company_id", "corporation_uuid", "external_id"],
-    list_type_class=CompanyCorporationProfilesListType,
-    type_funct=get_company_corporation_profiles_type,
+    list_type_class=CompanyCorporationProfileListType,
+    type_funct=get_company_corporation_profile_type,
 )
-def resolve_company_corporation_profiles_list_handler(
+def resolve_company_corporation_profile_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     company_id = kwargs.get("company_id")
@@ -1235,19 +1235,19 @@ def resolve_company_corporation_profiles_list_handler(
     corporation_types = kwargs.get("corporation_types")
 
     args = []
-    inquiry_funct = CompanyCorporationProfilesModel.scan
-    count_funct = CompanyCorporationProfilesModel.count
+    inquiry_funct = CompanyCorporationProfileModel.scan
+    count_funct = CompanyCorporationProfileModel.count
     if company_id:
         args = [company_id, None]
-        inquiry_funct = CompanyCorporationProfilesModel.query
+        inquiry_funct = CompanyCorporationProfileModel.query
         if external_id:
-            inquiry_funct = CompanyCorporationProfilesModel.external_id_index.query
-            args[1] = CompanyCorporationProfilesModel.external_id == external_id
-            count_funct = CompanyCorporationProfilesModel.external_id_index.count
+            inquiry_funct = CompanyCorporationProfileModel.external_id_index.query
+            args[1] = CompanyCorporationProfileModel.external_id == external_id
+            count_funct = CompanyCorporationProfileModel.external_id_index.count
 
     the_filters = None  # We can add filters for the query.
     if corporation_types:
-        the_filters &= CompanyCorporationProfilesModel.corporation_type.is_in(
+        the_filters &= CompanyCorporationProfileModel.corporation_type.is_in(
             *corporation_types
         )
     if the_filters is not None:
@@ -1262,13 +1262,13 @@ def resolve_company_corporation_profiles_list_handler(
         "range_key": "corporation_uuid",
     },
     range_key_required=True,
-    model_funct=get_company_corporation_profiles,
-    count_funct=get_company_corporation_profiles_count,
-    type_funct=get_company_corporation_profiles_type,
+    model_funct=get_company_corporation_profile,
+    count_funct=get_company_corporation_profile_count,
+    type_funct=get_company_corporation_profile_type,
     # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
     # activity_history_funct=None,
 )
-def insert_update_company_corporation_profiles_handler(
+def insert_update_company_corporation_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
     company_id = kwargs.get("company_id")
@@ -1283,21 +1283,21 @@ def insert_update_company_corporation_profiles_handler(
     if kwargs.get("data"):
         cols["data"] = kwargs.get("data")
     if kwargs.get("entity") is None:
-        CompanyCorporationProfilesModel(
+        CompanyCorporationProfileModel(
             company_id,
             corporation_uuid,
             **cols,
         ).save()
         return
 
-    company_corporation_profiles = kwargs.get("entity")
+    company_corporation_profile = kwargs.get("entity")
     actions = [
-        CompanyCorporationProfilesModel.updated_by.set(kwargs.get("updated_by")),
-        CompanyCorporationProfilesModel.updated_at.set(pendulum.now("UTC")),
+        CompanyCorporationProfileModel.updated_by.set(kwargs.get("updated_by")),
+        CompanyCorporationProfileModel.updated_at.set(pendulum.now("UTC")),
     ]
     if kwargs.get("data"):
-        actions.append(CompanyCorporationProfilesModel.data.set(kwargs.get("data")))
-    company_corporation_profiles.update(actions=actions)
+        actions.append(CompanyCorporationProfileModel.data.set(kwargs.get("data")))
+    company_corporation_profile.update(actions=actions)
     return
 
 
@@ -1306,9 +1306,9 @@ def insert_update_company_corporation_profiles_handler(
         "hash_key": "company_id",
         "range_key": "corporation_uuid",
     },
-    model_funct=get_company_corporation_profiles,
+    model_funct=get_company_corporation_profile,
 )
-def delete_company_corporation_profiles_handler(
+def delete_company_corporation_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> bool:
     kwargs.get("entity").delete()
