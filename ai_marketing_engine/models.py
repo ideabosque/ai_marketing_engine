@@ -215,7 +215,7 @@ class CompanyExternalIdIndex(LocalSecondaryIndex):
     external_id = UnicodeAttribute(range_key=True)
 
 
-class CompanyCorporationProfilesModel(BaseModel):
+class CompanyCorporationProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-company_corporation_profiles"
 

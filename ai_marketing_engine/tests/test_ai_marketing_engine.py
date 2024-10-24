@@ -335,7 +335,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "data": {},
                 "updatedBy": "XYZ",
             },
-            "operation_name": "insertUpdateCompanyCustomerProfiles",
+            "operation_name": "insertUpdateCompanyCustomerProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -348,7 +348,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "companyId": "XXXXXXXX",
                 "customerUuid": "12355966540142023151",
             },
-            "operation_name": "deleteCompanyCustomerProfiles",
+            "operation_name": "deleteCompanyCustomerProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -359,9 +359,9 @@ class AIMarketingEngineTest(unittest.TestCase):
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
-                "customerUuid": "12355966540142023151",
+                "customerUuid": "15540923710806430191",
             },
-            "operation_name": "getCompanyCustomerProfiles",
+            "operation_name": "getCompanyCustomerProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -375,7 +375,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "pageNumber": 1,
                 "limit": 10,
             },
-            "operation_name": "getCompanyCustomerProfilesList",
+            "operation_name": "getCompanyCustomerProfileList",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -507,7 +507,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "data": {},
                 "updatedBy": "XYZ",
             },
-            "operation_name": "insertUpdateCompanyCorporationProfiles",
+            "operation_name": "insertUpdateCompanyCorporationProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -520,7 +520,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "companyId": "XXXXXXXX",
                 "corporationUuid": "4188232447431807471",
             },
-            "operation_name": "deleteCompanyCorporationProfiles",
+            "operation_name": "deleteCompanyCorporationProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -533,7 +533,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "companyId": "XXXXXXXX",
                 "corporationUuid": "4188232447431807471",
             },
-            "operation_name": "getCompanyCorporationProfiles",
+            "operation_name": "getCompanyCorporationProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -547,7 +547,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "pageNumber": 1,
                 "limit": 10,
             },
-            "operation_name": "getCompanyCorporationProfilesList",
+            "operation_name": "getCompanyCorporationProfileList",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)

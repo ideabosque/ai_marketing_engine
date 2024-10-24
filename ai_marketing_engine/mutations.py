@@ -11,8 +11,8 @@ from graphene import Boolean, DateTime, Field, Float, Int, List, Mutation, Strin
 from silvaengine_utility import JSON
 
 from .handlers import (
-    delete_company_corporation_profiles_handler,
-    delete_company_customer_profiles_handler,
+    delete_company_corporation_profile_handler,
+    delete_company_customer_profile_handler,
     delete_corporation_place_handler,
     delete_corporation_profile_handler,
     delete_customer_chatbot_history_handler,
@@ -22,8 +22,8 @@ from .handlers import (
     delete_question_handler,
     delete_utm_tag_data_collection_handler,
     insert_customer_chatbot_history_handler,
-    insert_update_company_corporation_profiles_handler,
-    insert_update_company_customer_profiles_handler,
+    insert_update_company_corporation_profile_handler,
+    insert_update_company_customer_profile_handler,
     insert_update_corporation_place_handler,
     insert_update_corporation_profile_handler,
     insert_update_customer_profile_handler,
@@ -33,8 +33,8 @@ from .handlers import (
     insert_utm_tag_data_collection_handler,
 )
 from .types import (
-    CompanyCorporationProfilesType,
-    CompanyCustomerProfilesType,
+    CompanyCorporationProfileType,
+    CompanyCustomerProfileType,
     CorporationPlaceType,
     CorporationProfileType,
     CustomerChatbotHistoryType,
@@ -233,8 +233,8 @@ class DeleteCustomerProfile(Mutation):
         return DeleteCustomerProfile(ok=ok)
 
 
-class InsertUpdateCompanyCustomerProfiles(Mutation):
-    company_customer_profiles = Field(CompanyCustomerProfilesType)
+class InsertUpdateCompanyCustomerProfile(Mutation):
+    company_customer_profile = Field(CompanyCustomerProfileType)
 
     class Arguments:
         company_id = String(required=True)
@@ -249,9 +249,9 @@ class InsertUpdateCompanyCustomerProfiles(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "InsertUpdateCompanyCustomerProfiles":
+    ) -> "InsertUpdateCompanyCustomerProfile":
         try:
-            company_customer_profiles = insert_update_company_customer_profiles_handler(
+            company_customer_profile = insert_update_company_customer_profile_handler(
                 info, **kwargs
             )
         except Exception as e:
@@ -259,12 +259,12 @@ class InsertUpdateCompanyCustomerProfiles(Mutation):
             info.context.get("logger").error(log)
             raise e
 
-        return InsertUpdateCompanyCustomerProfiles(
-            company_customer_profiles=company_customer_profiles
+        return InsertUpdateCompanyCustomerProfile(
+            company_customer_profile=company_customer_profile
         )
 
 
-class DeleteCompanyCustomerProfiles(Mutation):
+class DeleteCompanyCustomerProfile(Mutation):
     ok = Boolean()
 
     class Arguments:
@@ -274,15 +274,15 @@ class DeleteCompanyCustomerProfiles(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "DeleteCompanyCustomerProfiles":
+    ) -> "DeleteCompanyCustomerProfile":
         try:
-            ok = delete_company_customer_profiles_handler(info, **kwargs)
+            ok = delete_company_customer_profile_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return DeleteCompanyCustomerProfiles(ok=ok)
+        return DeleteCompanyCustomerProfile(ok=ok)
 
 
 class InsertUpdateCorporationProfile(Mutation):
@@ -380,8 +380,8 @@ class DeleteCorporationPlace(Mutation):
         return DeleteCorporationPlace(ok=ok)
 
 
-class InsertUpdateCompanyCorporationProfiles(Mutation):
-    company_corporation_profiles = Field(CompanyCorporationProfilesType)
+class InsertUpdateCompanyCorporationProfile(Mutation):
+    company_corporation_profile = Field(CompanyCorporationProfileType)
 
     class Arguments:
         company_id = String(required=True)
@@ -394,22 +394,22 @@ class InsertUpdateCompanyCorporationProfiles(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "InsertUpdateCompanyCorporationProfiles":
+    ) -> "InsertUpdateCompanyCorporationProfile":
         try:
-            company_corporation_profiles = (
-                insert_update_company_corporation_profiles_handler(info, **kwargs)
+            company_corporation_profile = (
+                insert_update_company_corporation_profile_handler(info, **kwargs)
             )
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return InsertUpdateCompanyCorporationProfiles(
-            company_corporation_profiles=company_corporation_profiles
+        return InsertUpdateCompanyCorporationProfile(
+            company_corporation_profile=company_corporation_profile
         )
 
 
-class DeleteCompanyCorporationProfiles(Mutation):
+class DeleteCompanyCorporationProfile(Mutation):
     ok = Boolean()
 
     class Arguments:
@@ -419,15 +419,15 @@ class DeleteCompanyCorporationProfiles(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "DeleteCompanyCorporationProfiles":
+    ) -> "DeleteCompanyCorporationProfile":
         try:
-            ok = delete_company_corporation_profiles_handler(info, **kwargs)
+            ok = delete_company_corporation_profile_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return DeleteCompanyCorporationProfiles(ok=ok)
+        return DeleteCompanyCorporationProfile(ok=ok)
 
 
 class InsertCustomerChatbotHistory(Mutation):
