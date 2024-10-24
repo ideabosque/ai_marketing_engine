@@ -9,16 +9,16 @@ from typing import Any, Dict
 from graphene import ResolveInfo
 
 from .handlers import (
+    resolve_company_corporation_profiles_handler,
+    resolve_company_corporation_profiles_list_handler,
+    resolve_company_customer_profiles_handler,
+    resolve_company_customer_profiles_list_handler,
     resolve_corporation_place_handler,
     resolve_corporation_place_list_handler,
-    resolve_corporation_profile_additional_data_handler,
-    resolve_corporation_profile_additional_data_list_handler,
     resolve_corporation_profile_handler,
     resolve_corporation_profile_list_handler,
     resolve_customer_chatbot_history_handler,
     resolve_customer_chatbot_history_list_handler,
-    resolve_customer_profile_additional_data_handler,
-    resolve_customer_profile_additional_data_list_handler,
     resolve_customer_profile_handler,
     resolve_customer_profile_list_handler,
     resolve_place_handler,
@@ -64,16 +64,12 @@ def resolve_customer_profile_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
     return resolve_customer_profile_list_handler(info, **kwargs)
 
 
-def resolve_customer_profile_additional_data(
-    info: ResolveInfo, **kwargs: Dict[Any, Any]
-):
-    return resolve_customer_profile_additional_data_handler(info, **kwargs)
+def resolve_company_customer_profiles(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_company_customer_profiles_handler(info, **kwargs)
 
 
-def resolve_customer_profile_additional_data_list(
-    info: ResolveInfo, **kwargs: Dict[Any, Any]
-):
-    return resolve_customer_profile_additional_data_list_handler(info, **kwargs)
+def resolve_company_customer_profiles_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_company_customer_profiles_list_handler(info, **kwargs)
 
 
 def resolve_corporation_profile(info: ResolveInfo, **kwargs: Dict[Any, Any]):
@@ -84,16 +80,14 @@ def resolve_corporation_profile_list(info: ResolveInfo, **kwargs: Dict[Any, Any]
     return resolve_corporation_profile_list_handler(info, **kwargs)
 
 
-def resolve_corporation_profile_additional_data(
-    info: ResolveInfo, **kwargs: Dict[Any, Any]
-):
-    return resolve_corporation_profile_additional_data_handler(info, **kwargs)
+def resolve_company_corporation_profiles(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_company_corporation_profiles_handler(info, **kwargs)
 
 
-def resolve_corporation_profile_additional_data_list(
+def resolve_company_corporation_profiles_list(
     info: ResolveInfo, **kwargs: Dict[Any, Any]
 ):
-    return resolve_corporation_profile_additional_data_list_handler(info, **kwargs)
+    return resolve_company_corporation_profiles_list_handler(info, **kwargs)
 
 
 def resolve_corporation_place(info: ResolveInfo, **kwargs: Dict[Any, Any]):

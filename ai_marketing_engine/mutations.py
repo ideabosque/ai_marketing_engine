@@ -11,21 +11,21 @@ from graphene import Boolean, DateTime, Field, Float, Int, List, Mutation, Strin
 from silvaengine_utility import JSON
 
 from .handlers import (
+    delete_company_corporation_profiles_handler,
+    delete_company_customer_profiles_handler,
     delete_corporation_place_handler,
-    delete_corporation_profile_additional_data_handler,
     delete_corporation_profile_handler,
     delete_customer_chatbot_history_handler,
-    delete_customer_profile_additional_data_handler,
     delete_customer_profile_handler,
     delete_place_handler,
     delete_question_criteria_handler,
     delete_question_handler,
     delete_utm_tag_data_collection_handler,
     insert_customer_chatbot_history_handler,
+    insert_update_company_corporation_profiles_handler,
+    insert_update_company_customer_profiles_handler,
     insert_update_corporation_place_handler,
-    insert_update_corporation_profile_additional_data_handler,
     insert_update_corporation_profile_handler,
-    insert_update_customer_profile_additional_data_handler,
     insert_update_customer_profile_handler,
     insert_update_place_handler,
     insert_update_question_criteria_handler,
@@ -33,11 +33,11 @@ from .handlers import (
     insert_utm_tag_data_collection_handler,
 )
 from .types import (
+    CompanyCorporationProfilesType,
+    CompanyCustomerProfilesType,
     CorporationPlaceType,
-    CorporationProfileAdditionalDataType,
     CorporationProfileType,
     CustomerChatbotHistoryType,
-    CustomerProfileAdditionalDataType,
     CustomerProfileType,
     PlaceType,
     QuestionCriteriaType,
@@ -233,8 +233,8 @@ class DeleteCustomerProfile(Mutation):
         return DeleteCustomerProfile(ok=ok)
 
 
-class InsertUpdateCustomerProfileAdditionalData(Mutation):
-    customer_profile_additional_data = Field(CustomerProfileAdditionalDataType)
+class InsertUpdateCompanyCustomerProfiles(Mutation):
+    company_customer_profiles = Field(CompanyCustomerProfilesType)
 
     class Arguments:
         company_id = String(required=True)
@@ -243,28 +243,28 @@ class InsertUpdateCustomerProfileAdditionalData(Mutation):
         place_uuid = String(required=False)
         corporation_type = String(required=False)
         corporation_uuid = String(required=False)
-        additional_data = JSON(required=False)
+        data = JSON(required=False)
         updated_by = String(required=True)
 
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "InsertUpdateCustomerProfileAdditionalData":
+    ) -> "InsertUpdateCompanyCustomerProfiles":
         try:
-            customer_profile_additional_data = (
-                insert_update_customer_profile_additional_data_handler(info, **kwargs)
+            company_customer_profiles = insert_update_company_customer_profiles_handler(
+                info, **kwargs
             )
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return InsertUpdateCustomerProfileAdditionalData(
-            customer_profile_additional_data=customer_profile_additional_data
+        return InsertUpdateCompanyCustomerProfiles(
+            company_customer_profiles=company_customer_profiles
         )
 
 
-class DeleteCustomerProfileAdditionalData(Mutation):
+class DeleteCompanyCustomerProfiles(Mutation):
     ok = Boolean()
 
     class Arguments:
@@ -274,15 +274,15 @@ class DeleteCustomerProfileAdditionalData(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "DeleteCustomerProfileAdditionalData":
+    ) -> "DeleteCompanyCustomerProfiles":
         try:
-            ok = delete_customer_profile_additional_data_handler(info, **kwargs)
+            ok = delete_company_customer_profiles_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return DeleteCustomerProfileAdditionalData(ok=ok)
+        return DeleteCompanyCustomerProfiles(ok=ok)
 
 
 class InsertUpdateCorporationProfile(Mutation):
@@ -380,38 +380,36 @@ class DeleteCorporationPlace(Mutation):
         return DeleteCorporationPlace(ok=ok)
 
 
-class InsertUpdateCorporationProfileAdditionalData(Mutation):
-    corporation_profile_additional_data = Field(CorporationProfileAdditionalDataType)
+class InsertUpdateCompanyCorporationProfiles(Mutation):
+    company_corporation_profiles = Field(CompanyCorporationProfilesType)
 
     class Arguments:
         company_id = String(required=True)
         corporation_uuid = String(required=True)
         external_id = String(required=False)
         corporation_type = String(required=False)
-        additional_data = JSON(required=False)
+        data = JSON(required=False)
         updated_by = String(required=True)
 
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "InsertUpdateCorporationProfileAdditionalData":
+    ) -> "InsertUpdateCompanyCorporationProfiles":
         try:
-            corporation_profile_additional_data = (
-                insert_update_corporation_profile_additional_data_handler(
-                    info, **kwargs
-                )
+            company_corporation_profiles = (
+                insert_update_company_corporation_profiles_handler(info, **kwargs)
             )
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return InsertUpdateCorporationProfileAdditionalData(
-            corporation_profile_additional_data=corporation_profile_additional_data
+        return InsertUpdateCompanyCorporationProfiles(
+            company_corporation_profiles=company_corporation_profiles
         )
 
 
-class DeleteCorporationProfileAdditionalData(Mutation):
+class DeleteCompanyCorporationProfiles(Mutation):
     ok = Boolean()
 
     class Arguments:
@@ -421,15 +419,15 @@ class DeleteCorporationProfileAdditionalData(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "DeleteCorporationProfileAdditionalData":
+    ) -> "DeleteCompanyCorporationProfiles":
         try:
-            ok = delete_corporation_profile_additional_data_handler(info, **kwargs)
+            ok = delete_company_corporation_profiles_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return DeleteCorporationProfileAdditionalData(ok=ok)
+        return DeleteCompanyCorporationProfiles(ok=ok)
 
 
 class InsertCustomerChatbotHistory(Mutation):

@@ -86,20 +86,20 @@ fragment CustomerProfileListInfo on CustomerProfileListType {
     total
 }
 
-fragment CustomerProfileAdditionalDataInfo on CustomerProfileAdditionalDataType {
+fragment CompanyCustomerProfilesInfo on CompanyCustomerProfilesType {
     companyId
     customerProfile
     email
     corporationProfile
-    additionalData
+    data
     updatedBy
     createdAt
     updatedAt
 }
 
-fragment CustomerProfileAdditionalDataListInfo on CustomerProfileAdditionalDataListType {
-    customerProfileAdditionalDataList{
-        ...CustomerProfileAdditionalDataInfo
+fragment CompanyCustomerProfilesListInfo on CompanyCustomerProfilesListType {
+    companyCustomerProfilesList{
+        ...CompanyCustomerProfilesInfo
     }
     pageSize
     pageNumber
@@ -145,19 +145,19 @@ fragment CorporationPlaceListInfo on CorporationPlaceListType {
     total
 }
 
-fragment CorporationProfileAdditionalDataInfo on CorporationProfileAdditionalDataType {
+fragment CompanyCorporationProfilesInfo on CompanyCorporationProfilesType {
     companyId
     corporationProfile
     externalId
-    additionalData
+    data
     updatedBy
     createdAt
     updatedAt
 }
 
-fragment CorporationProfileAdditionalDataListInfo on CorporationProfileAdditionalDataListType {
-    corporationProfileAdditionalDataList{
-        ...CorporationProfileAdditionalDataInfo
+fragment CompanyCorporationProfilesListInfo on CompanyCorporationProfilesListType {
+    companyCorporationProfilesList{
+        ...CompanyCorporationProfilesInfo
     }
     pageSize
     pageNumber
@@ -498,67 +498,67 @@ mutation deleteCustomerProfile(
     }
 }
 
-query getCustomerProfileAdditionalData(
+query getCompanyCustomerProfiles(
     $companyId: String!,
     $customerUuid: String!
 ) {
-    customerProfileAdditionalData(
+    companyCustomerProfiles(
         companyId: $companyId,
         customerUuid: $customerUuid
     ) {
-        ...CustomerProfileAdditionalDataInfo
+        ...CompanyCustomerProfilesInfo
     }
 }
 
-query getCustomerProfileAdditionalDataList(
+query getCompanyCustomerProfilesList(
     $pageNumber: Int, 
     $limit: Int,
     $companyId: String,
     $email: String,
     $corporationTypes: [String]
 ) {
-    customerProfileAdditionalDataList(
+    companyCustomerProfilesList(
         pageNumber: $pageNumber,
         limit: $limit,
         companyId: $companyId,
         email: $email,
         corporationTypes: $corporationTypes
     ) {
-        ...CustomerProfileAdditionalDataListInfo
+        ...CompanyCustomerProfilesListInfo
     }
 }
 
-mutation insertUpdateCustomerProfileAdditionalData(
+mutation insertUpdateCompanyCustomerProfiles(
     $companyId: String!,
     $customerUuid: String!,
     $email: String,
     $placeUuid: String,
     $corporationType: String,
     $corporationUuid: String,
-    $additionalData: JSON,
+    $data: JSON,
     $updatedBy: String!
 ) {
-    insertUpdateCustomerProfileAdditionalData(
+    insertUpdateCompanyCustomerProfiles(
         companyId: $companyId,
         customerUuid: $customerUuid,
         email: $email,
         placeUuid: $placeUuid,
         corporationType: $corporationType,
         corporationUuid: $corporationUuid,
-        additionalData: $additionalData,
+        data: $data,
         updatedBy: $updatedBy
     ) {
-        customerProfileAdditionalData{
-            ...CustomerProfileAdditionalDataInfo
+        companyCustomerProfiles{
+            ...CompanyCustomerProfilesInfo
         }
     }
 }
 
-mutation deleteCustomerProfileAdditionalData(
+mutation deleteCompanyCustomerProfiles(
     $companyId: String!,
     $customerUuid: String!
 ) {
-    deleteCustomerProfileAdditionalData(
+    deleteCompanyCustomerProfiles(
         companyId: $companyId,
         customerUuid: $customerUuid
     ) {
@@ -698,63 +698,63 @@ mutation deleteCorporationPlace(
     }
 }
 
-query getCorporationProfileAdditionalData(
+query getCompanyCorporationProfiles(
     $companyId: String!,
     $corporationUuid: String!
 ) {
-    corporationProfileAdditionalData(
+    companyCorporationProfiles(
         companyId: $companyId,
         corporationUuid: $corporationUuid
     ) {
-        ...CorporationProfileAdditionalDataInfo
+        ...CompanyCorporationProfilesInfo
     }
 }
 
-query getCorporationProfileAdditionalDataList(
+query getCompanyCorporationProfilesList(
     $pageNumber: Int, 
     $limit: Int,
     $companyId: String,
     $externalId: String,
     $corporationTypes: [String]
 ) {
-    corporationProfileAdditionalDataList(
+    companyCorporationProfilesList(
         pageNumber: $pageNumber,
         limit: $limit,
         companyId: $companyId,
         externalId: $externalId,
         corporationTypes: $corporationTypes
     ) {
-        ...CorporationProfileAdditionalDataListInfo
+        ...CompanyCorporationProfilesListInfo
     }
 }
 
-mutation insertUpdateCorporationProfileAdditionalData(
+mutation insertUpdateCompanyCorporationProfiles(
     $companyId: String!,
     $corporationUuid: String!,
     $externalId: String,
     $corporationType: String,
-    $additionalData: JSON,
+    $data: JSON,
     $updatedBy: String!
 ) {
-    insertUpdateCorporationProfileAdditionalData(
+    insertUpdateCompanyCorporationProfiles(
         companyId: $companyId,
         corporationUuid: $corporationUuid,
         externalId: $externalId,
         corporationType: $corporationType,
-        additionalData: $additionalData,
+        data: $data,
         updatedBy: $updatedBy
     ) {
-        corporationProfileAdditionalData{
-            ...CorporationProfileAdditionalDataInfo
+        companyCorporationProfiles{
+            ...CompanyCorporationProfilesInfo
         }
     }
 }
 
-mutation deleteCorporationProfileAdditionalData(
+mutation deleteCompanyCorporationProfiles(
     $companyId: String!,
     $corporationUuid: String!
 ) {
-    deleteCorporationProfileAdditionalData(
+    deleteCompanyCorporationProfiles(
         companyId: $companyId,
         corporationUuid: $corporationUuid
     ) {

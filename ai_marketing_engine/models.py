@@ -111,7 +111,7 @@ class CustomerProfileModel(BaseModel):
     email_index = EmailIndex()
 
 
-class AdditionalDataEmailIndex(LocalSecondaryIndex):
+class CompanyEmailIndex(LocalSecondaryIndex):
     class Meta:
         # index_name is optional, but can be provided to override the default name
         index_name = "email-index"
@@ -125,21 +125,21 @@ class AdditionalDataEmailIndex(LocalSecondaryIndex):
     email = UnicodeAttribute(range_key=True)
 
 
-class CustomerProfileAditionalDataModel(BaseModel):
+class CompanyCustomerProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-customer_profile_additional_data"
+        table_name = "ame-company_customer_profiles"
 
     company_id = UnicodeAttribute(hash_key=True)
     customer_uuid = UnicodeAttribute(range_key=True)
     email = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
-    corporation_type = UnicodeAttribute()
-    corporation_uuid = UnicodeAttribute()
-    additional_data = MapAttribute()
+    corporation_type = UnicodeAttribute(null=True)
+    corporation_uuid = UnicodeAttribute(null=True)
+    data = MapAttribute(null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
-    email_index = AdditionalDataEmailIndex()
+    email_index = CompanyEmailIndex()
 
 
 class ExternalIdIndex(LocalSecondaryIndex):
@@ -164,9 +164,9 @@ class CorporationProfileModel(BaseModel):
     corporation_uuid = UnicodeAttribute(range_key=True)
     external_id = UnicodeAttribute()
     business_name = UnicodeAttribute()
-    categories = ListAttribute(of=UnicodeAttribute)
+    categories = ListAttribute(of=UnicodeAttribute, null=True)
     address = MapAttribute()
-    data = MapAttribute()
+    data = MapAttribute(null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
@@ -201,7 +201,7 @@ class CorporationPlaceModel(BaseModel):
     place_uuid_index = PlaceUuidIndex()
 
 
-class AdditionalDataExternalIdIndex(LocalSecondaryIndex):
+class CompanyExternalIdIndex(LocalSecondaryIndex):
     class Meta:
         # index_name is optional, but can be provided to override the default name
         index_name = "external_id-index"
@@ -215,19 +215,19 @@ class AdditionalDataExternalIdIndex(LocalSecondaryIndex):
     external_id = UnicodeAttribute(range_key=True)
 
 
-class CorporationProfileAdditionalDataModel(BaseModel):
+class CompanyCorporationProfilesModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-corporation_profile_additional_data"
+        table_name = "ame-company_corporation_profiles"
 
     company_id = UnicodeAttribute(hash_key=True)
     corporation_uuid = UnicodeAttribute(range_key=True)
     external_id = UnicodeAttribute()
     corporation_type = UnicodeAttribute()
-    additional_data = MapAttribute()
+    data = MapAttribute(null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
-    external_id_index = AdditionalDataExternalIdIndex()
+    external_id_index = CompanyExternalIdIndex()
 
 
 class CustomerUuidIndex(LocalSecondaryIndex):
