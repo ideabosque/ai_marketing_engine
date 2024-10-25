@@ -332,17 +332,17 @@ def insert_update_question_criteria_handler(
 ) -> None:
     company_id = kwargs.get("company_id")
     question_group = kwargs.get("question_group")
-    cols = {
-        "region": kwargs["region"],
-        "updated_by": kwargs["updated_by"],
-        "created_at": pendulum.now("UTC"),
-        "updated_at": pendulum.now("UTC"),
-    }
-    if kwargs.get("question_criteria") is not None:
-        cols["question_criteria"] = kwargs["question_criteria"]
-    if kwargs.get("weight") is not None:
-        cols["weight"] = kwargs["weight"]
     if kwargs.get("entity") is None:
+        cols = {
+            "region": kwargs["region"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        if kwargs.get("question_criteria") is not None:
+            cols["question_criteria"] = kwargs["question_criteria"]
+        if kwargs.get("weight") is not None:
+            cols["weight"] = kwargs["weight"]
         QuestionCriteriaModel(company_id, question_group, **cols).save()
         return
 
@@ -468,20 +468,20 @@ def resolve_place_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> A
 def insert_update_place_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     region = kwargs.get("region")
     place_uuid = kwargs.get("place_uuid")
-    cols = {
-        "latitude": kwargs["latitude"],
-        "longitude": kwargs["longitude"],
-        "business_name": kwargs["business_name"],
-        "address": kwargs["address"],
-        "updated_by": kwargs["updated_by"],
-        "created_at": pendulum.now("UTC"),
-        "updated_at": pendulum.now("UTC"),
-    }
-    if kwargs.get("phone_number") is not None:
-        cols["phone_number"] = kwargs["phone_number"]
-    if kwargs.get("types") is not None:
-        cols["types"] = kwargs["types"]
     if kwargs.get("entity") is None:
+        cols = {
+            "latitude": kwargs["latitude"],
+            "longitude": kwargs["longitude"],
+            "business_name": kwargs["business_name"],
+            "address": kwargs["address"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        if kwargs.get("phone_number") is not None:
+            cols["phone_number"] = kwargs["phone_number"]
+        if kwargs.get("types") is not None:
+            cols["types"] = kwargs["types"]
         PlaceModel(
             region,
             place_uuid,
@@ -631,20 +631,20 @@ def insert_update_customer_profile_handler(
 ) -> None:
     place_uuid = kwargs.get("place_uuid")
     customer_uuid = kwargs.get("customer_uuid")
-    cols = {
-        "email": kwargs["email"],
-        "region": kwargs["region"],
-        "updated_by": kwargs["updated_by"],
-        "created_at": pendulum.now("UTC"),
-        "updated_at": pendulum.now("UTC"),
-    }
-    if kwargs.get("first_name") is not None:
-        cols["first_name"] = kwargs["first_name"]
-    if kwargs.get("last_name") is not None:
-        cols["last_name"] = kwargs["last_name"]
-    if kwargs.get("data") is not None:
-        cols["data"] = kwargs["data"]
     if kwargs.get("entity") is None:
+        cols = {
+            "email": kwargs["email"],
+            "region": kwargs["region"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        if kwargs.get("first_name") is not None:
+            cols["first_name"] = kwargs["first_name"]
+        if kwargs.get("last_name") is not None:
+            cols["last_name"] = kwargs["last_name"]
+        if kwargs.get("data") is not None:
+            cols["data"] = kwargs["data"]
         CustomerProfileModel(
             place_uuid,
             customer_uuid,
@@ -800,20 +800,20 @@ def insert_update_company_customer_profile_handler(
 ) -> None:
     company_id = kwargs.get("company_id")
     customer_uuid = kwargs.get("customer_uuid")
-    cols = {
-        "email": kwargs["email"],
-        "place_uuid": kwargs["place_uuid"],
-        "updated_by": kwargs["updated_by"],
-        "created_at": pendulum.now("UTC"),
-        "updated_at": pendulum.now("UTC"),
-    }
-    if kwargs.get("corporation_type") is not None:
-        cols["corporation_type"] = kwargs["corporation_type"]
-    if kwargs.get("corporation_uuid") is not None:
-        cols["corporation_uuid"] = kwargs["corporation_uuid"]
-    if kwargs.get("data") is not None:
-        cols["data"] = kwargs["data"]
     if kwargs.get("entity") is None:
+        cols = {
+            "email": kwargs["email"],
+            "place_uuid": kwargs["place_uuid"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        if kwargs.get("corporation_type") is not None:
+            cols["corporation_type"] = kwargs["corporation_type"]
+        if kwargs.get("corporation_uuid") is not None:
+            cols["corporation_uuid"] = kwargs["corporation_uuid"]
+        if kwargs.get("data") is not None:
+            cols["data"] = kwargs["data"]
         CompanyCustomerProfileModel(
             company_id,
             customer_uuid,
@@ -967,19 +967,19 @@ def insert_update_corporation_profile_handler(
 ) -> None:
     corporation_type = kwargs.get("corporation_type")
     corporation_uuid = kwargs.get("corporation_uuid")
-    cols = {
-        "external_id": kwargs["external_id"],
-        "business_name": kwargs["business_name"],
-        "address": kwargs["address"],
-        "updated_by": kwargs["updated_by"],
-        "created_at": pendulum.now("UTC"),
-        "updated_at": pendulum.now("UTC"),
-    }
-    if kwargs.get("categories") is not None:
-        cols["categories"] = kwargs["categories"]
-    if kwargs.get("data") is not None:
-        cols["data"] = kwargs["data"]
     if kwargs.get("entity") is None:
+        cols = {
+            "external_id": kwargs["external_id"],
+            "business_name": kwargs["business_name"],
+            "address": kwargs["address"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        if kwargs.get("categories") is not None:
+            cols["categories"] = kwargs["categories"]
+        if kwargs.get("data") is not None:
+            cols["data"] = kwargs["data"]
         CorporationProfileModel(
             corporation_type,
             corporation_uuid,
@@ -1273,16 +1273,16 @@ def insert_update_company_corporation_profile_handler(
 ) -> None:
     company_id = kwargs.get("company_id")
     corporation_uuid = kwargs.get("corporation_uuid")
-    cols = {
-        "external_id": kwargs["external_id"],
-        "corporation_type": kwargs["corporation_type"],
-        "updated_by": kwargs["updated_by"],
-        "created_at": pendulum.now("UTC"),
-        "updated_at": pendulum.now("UTC"),
-    }
-    if kwargs.get("data"):
-        cols["data"] = kwargs.get("data")
     if kwargs.get("entity") is None:
+        cols = {
+            "external_id": kwargs["external_id"],
+            "corporation_type": kwargs["corporation_type"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        if kwargs.get("data"):
+            cols["data"] = kwargs.get("data")
         CompanyCorporationProfileModel(
             company_id,
             corporation_uuid,
