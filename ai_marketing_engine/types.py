@@ -59,9 +59,9 @@ class PlaceType(ObjectType):
     created_at = DateTime()
 
 
-class CustomerProfileType(ObjectType):
+class ContactProfileType(ObjectType):
     place = JSON()
-    customer_uuid = String()
+    contact_uuid = String()
     email = String()
     first_name = String()
     last_name = String()
@@ -71,9 +71,9 @@ class CustomerProfileType(ObjectType):
     updated_at = DateTime()
 
 
-class CompanyCustomerProfileType(ObjectType):
+class CompanyContactProfileType(ObjectType):
     company_id = String()
-    customer_profile = JSON()
+    contact_profile = JSON()
     email = String()
     corporation_profile = JSON()
     data = JSON()
@@ -113,10 +113,10 @@ class CompanyCorporationProfileType(ObjectType):
     updated_at = DateTime()
 
 
-class CustomerChatbotHistoryType(ObjectType):
+class ContactChatbotHistoryType(ObjectType):
     company_id = String()
     timestamp = Int()
-    customer_uuid = String()
+    contact_uuid = String()
     place_uuid = String()
     region = String()
     assistant_id = String()
@@ -129,7 +129,7 @@ class UtmTagDataCollectionType(ObjectType):
     collection_uuid = String()
     tag_name = String()
     place = JSON()
-    customer_profile = JSON()
+    contact_profile = JSON()
     keyword = String()
     utm_campaign = String()
     utm_content = String()
@@ -151,12 +151,12 @@ class PlaceListType(ListObjectType):
     place_list = List(PlaceType)
 
 
-class CustomerProfileListType(ListObjectType):
-    customer_profile_list = List(CustomerProfileType)
+class ContactProfileListType(ListObjectType):
+    contact_profile_list = List(ContactProfileType)
 
 
-class CompanyCustomerProfileListType(ListObjectType):
-    company_customer_profile_list = List(CompanyCustomerProfileType)
+class CompanyContactProfileListType(ListObjectType):
+    company_contact_profile_list = List(CompanyContactProfileType)
 
 
 class CorporationProfileListType(ListObjectType):
@@ -171,8 +171,8 @@ class CompanyCorporationProfileListType(ListObjectType):
     company_corporation_profile_list = List(CompanyCorporationProfileType)
 
 
-class CustomerChatbotHistoryListType(ListObjectType):
-    customer_chatbot_history_list = List(CustomerChatbotHistoryType)
+class ContactChatbotHistoryListType(ListObjectType):
+    contact_chatbot_history_list = List(ContactChatbotHistoryType)
 
 
 class UtmTagDataCollectionListType(ListObjectType):

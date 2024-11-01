@@ -50,20 +50,20 @@ def deploy() -> List:
                             "label": "View Question Place List",
                         },
                         {
-                            "action": "customerProfile",
-                            "label": "View Customer Profile",
+                            "action": "contactProfile",
+                            "label": "View Contact Profile",
                         },
                         {
-                            "action": "customerProfileList",
-                            "label": "View Customer Profile List",
+                            "action": "contactProfileList",
+                            "label": "View Contact Profile List",
                         },
                         {
-                            "action": "CompanyCustomerProfile",
-                            "label": "View Customer Profile Additional Data",
+                            "action": "CompanyContactProfile",
+                            "label": "View Contact Profile Additional Data",
                         },
                         {
-                            "action": "CompanyCustomerProfileList",
-                            "label": "View Customer Profile Additional Data List",
+                            "action": "CompanyContactProfileList",
+                            "label": "View Contact Profile Additional Data List",
                         },
                         {
                             "action": "corporationProfile",
@@ -90,11 +90,11 @@ def deploy() -> List:
                             "label": "View Corporation Profile Additional Data List",
                         },
                         {
-                            "action": "customerChatbotHistory",
-                            "label": "View Customer Chatbot History",
+                            "action": "contactChatbotHistory",
+                            "label": "View Contact Chatbot History",
                         },
                         {
-                            "action": "customerChatbotHistoryList",
+                            "action": "contactChatbotHistoryList",
                             "label": "View Corporation Chatbot History List",
                         },
                         {
@@ -132,20 +132,20 @@ def deploy() -> List:
                             "label": "Delete Place",
                         },
                         {
-                            "action": "insertUpdateCustomerProfile",
-                            "label": "Create Update Customer Profile",
+                            "action": "insertUpdateContactProfile",
+                            "label": "Create Update Contact Profile",
                         },
                         {
-                            "action": "deleteCustomerProfile",
-                            "label": "Delete Customer Profile",
+                            "action": "deleteContactProfile",
+                            "label": "Delete Contact Profile",
                         },
                         {
-                            "action": "insertUpdateCompanyCustomerProfile",
-                            "label": "Create Update Customer Profile Additional Data",
+                            "action": "insertUpdateCompanyContactProfile",
+                            "label": "Create Update Contact Profile Additional Data",
                         },
                         {
-                            "action": "deleteCompanyCustomerProfile",
-                            "label": "Delete Customer Profile Additional Data",
+                            "action": "deleteCompanyContactProfile",
+                            "label": "Delete Contact Profile Additional Data",
                         },
                         {
                             "action": "insertUpdateCorporationProfile",
@@ -172,12 +172,12 @@ def deploy() -> List:
                             "label": "Delete Corporation Profile Additional Data",
                         },
                         {
-                            "action": "insertCustomerChatbotHistory",
-                            "label": "Create Customer Chatbot History",
+                            "action": "insertContactChatbotHistory",
+                            "label": "Create Contact Chatbot History",
                         },
                         {
-                            "action": "deleteCustomerChatbotHistory",
-                            "label": "Delete Customer Chatbot History",
+                            "action": "deleteContactChatbotHistory",
+                            "label": "Delete Contact Chatbot History",
                         },
                         {
                             "action": "insertUtmTagDataCollection",

@@ -65,9 +65,9 @@ fragment PlaceListInfo on PlaceListType {
     total
 }
 
-fragment CustomerProfileInfo on CustomerProfileType {
+fragment ContactProfileInfo on ContactProfileType {
     place
-    customerUuid
+    contactUuid
     email
     firstName
     lastName
@@ -77,18 +77,18 @@ fragment CustomerProfileInfo on CustomerProfileType {
     updatedAt
 }
 
-fragment CustomerProfileListInfo on CustomerProfileListType {
-    customerProfileList{
-        ...CustomerProfileInfo
+fragment ContactProfileListInfo on ContactProfileListType {
+    contactProfileList{
+        ...ContactProfileInfo
     }
     pageSize
     pageNumber
     total
 }
 
-fragment CompanyCustomerProfileInfo on CompanyCustomerProfileType {
+fragment CompanyContactProfileInfo on CompanyContactProfileType {
     companyId
-    customerProfile
+    contactProfile
     email
     corporationProfile
     data
@@ -97,9 +97,9 @@ fragment CompanyCustomerProfileInfo on CompanyCustomerProfileType {
     updatedAt
 }
 
-fragment CompanyCustomerProfileListInfo on CompanyCustomerProfileListType {
-    companyCustomerProfileList{
-        ...CompanyCustomerProfileInfo
+fragment CompanyContactProfileListInfo on CompanyContactProfileListType {
+    companyContactProfileList{
+        ...CompanyContactProfileInfo
     }
     pageSize
     pageNumber
@@ -164,10 +164,10 @@ fragment CompanyCorporationProfileListInfo on CompanyCorporationProfileListType 
     total
 }
 
-fragment CustomerChatbotHistoryInfo on CustomerChatbotHistoryType {
+fragment ContactChatbotHistoryInfo on ContactChatbotHistoryType {
     companyId
     timestamp
-    customerUuid
+    contactUuid
     placeUuid
     region
     assistantId
@@ -175,9 +175,9 @@ fragment CustomerChatbotHistoryInfo on CustomerChatbotHistoryType {
     assistantType
 }
 
-fragment CustomerChatbotHistoryListInfo on CustomerChatbotHistoryListType {
-    customerChatbotHistoryList{
-        ...CustomerChatbotHistoryInfo
+fragment ContactChatbotHistoryListInfo on ContactChatbotHistoryListType {
+    contactChatbotHistoryList{
+        ...ContactChatbotHistoryInfo
     }
     pageSize
     pageNumber
@@ -189,7 +189,7 @@ fragment UtmTagDataCollectionInfo on UtmTagDataCollectionType {
     collectionUuid
     tagName
     place
-    customerProfile
+    contactProfile
     keyword
     utmCampaign
     utmContent
@@ -426,19 +426,19 @@ mutation deletePlace(
     }
 }
 
-query getCustomerProfile(
+query getContactProfile(
     $placeUuid: String!,
-    $customerUuid: String!
+    $contactUuid: String!
 ) {
-    customerProfile(
+    contactProfile(
         placeUuid: $placeUuid,
-        customerUuid: $customerUuid
+        contactUuid: $contactUuid
     ) {
-        ...CustomerProfileInfo
+        ...ContactProfileInfo
     }
 }
 
-query getCustomerProfileList(
+query getContactProfileList(
     $pageNumber: Int, 
     $limit: Int,
     $placeUuid: String,
@@ -447,7 +447,7 @@ query getCustomerProfileList(
     $firstName: String,
     $lastName: String
 ) {
-    customerProfileList(
+    contactProfileList(
         pageNumber: $pageNumber,
         limit: $limit,
         placeUuid: $placeUuid,
@@ -456,13 +456,13 @@ query getCustomerProfileList(
         firstName: $firstName,
         lastName: $lastName
     ) {
-        ...CustomerProfileListInfo
+        ...ContactProfileListInfo
     }
 }
 
-mutation insertUpdateCustomerProfile(
+mutation insertUpdateContactProfile(
     $placeUuid: String!,
-    $customerUuid: String,
+    $contactUuid: String,
     $email: String,
     $region: String,
     $firstName: String,
@@ -470,9 +470,9 @@ mutation insertUpdateCustomerProfile(
     $data: JSON,
     $updatedBy: String!
 ) {
-    insertUpdateCustomerProfile(
+    insertUpdateContactProfile(
         placeUuid: $placeUuid,
-        customerUuid: $customerUuid,
+        contactUuid: $contactUuid,
         email: $email,
         region: $region,
         firstName: $firstName,
@@ -480,57 +480,57 @@ mutation insertUpdateCustomerProfile(
         data: $data,
         updatedBy: $updatedBy
     ) {
-        customerProfile{
-            ...CustomerProfileInfo
+        contactProfile{
+            ...ContactProfileInfo
         }
     }
 }
 
-mutation deleteCustomerProfile(
+mutation deleteContactProfile(
     $placeUuid: String!,
-    $customerUuid: String!
+    $contactUuid: String!
 ) {
-    deleteCustomerProfile(
+    deleteContactProfile(
         placeUuid: $placeUuid,
-        customerUuid: $customerUuid
+        contactUuid: $contactUuid
     ) {
         ok
     }
 }
 
-query getCompanyCustomerProfile(
+query getCompanyContactProfile(
     $companyId: String!,
-    $customerUuid: String!
+    $contactUuid: String!
 ) {
-    companyCustomerProfile(
+    companyContactProfile(
         companyId: $companyId,
-        customerUuid: $customerUuid
+        contactUuid: $contactUuid
     ) {
-        ...CompanyCustomerProfileInfo
+        ...CompanyContactProfileInfo
     }
 }
 
-query getCompanyCustomerProfileList(
+query getCompanyContactProfileList(
     $pageNumber: Int, 
     $limit: Int,
     $companyId: String,
     $email: String,
     $corporationTypes: [String]
 ) {
-    companyCustomerProfileList(
+    companyContactProfileList(
         pageNumber: $pageNumber,
         limit: $limit,
         companyId: $companyId,
         email: $email,
         corporationTypes: $corporationTypes
     ) {
-        ...CompanyCustomerProfileListInfo
+        ...CompanyContactProfileListInfo
     }
 }
 
-mutation insertUpdateCompanyCustomerProfile(
+mutation insertUpdateCompanyContactProfile(
     $companyId: String!,
-    $customerUuid: String!,
+    $contactUuid: String!,
     $email: String,
     $placeUuid: String,
     $corporationType: String,
@@ -538,9 +538,9 @@ mutation insertUpdateCompanyCustomerProfile(
     $data: JSON,
     $updatedBy: String!
 ) {
-    insertUpdateCompanyCustomerProfile(
+    insertUpdateCompanyContactProfile(
         companyId: $companyId,
-        customerUuid: $customerUuid,
+        contactUuid: $contactUuid,
         email: $email,
         placeUuid: $placeUuid,
         corporationType: $corporationType,
@@ -548,19 +548,19 @@ mutation insertUpdateCompanyCustomerProfile(
         data: $data,
         updatedBy: $updatedBy
     ) {
-        companyCustomerProfile{
-            ...CompanyCustomerProfileInfo
+        companyContactProfile{
+            ...CompanyContactProfileInfo
         }
     }
 }
 
-mutation deleteCompanyCustomerProfile(
+mutation deleteCompanyContactProfile(
     $companyId: String!,
-    $customerUuid: String!
+    $contactUuid: String!
 ) {
-    deleteCompanyCustomerProfile(
+    deleteCompanyContactProfile(
         companyId: $companyId,
-        customerUuid: $customerUuid
+        contactUuid: $contactUuid
     ) {
         ok
     }
@@ -762,71 +762,71 @@ mutation deleteCompanyCorporationProfile(
     }
 }
 
-query getCustomerChatbotHistory(
+query getContactChatbotHistory(
     $companyId: String!,
     $timestamp: Int!
 ) {
-    customerChatbotHistory(
+    contactChatbotHistory(
         companyId: $companyId,
         timestamp: $timestamp
     ) {
-        ...CustomerChatbotHistoryInfo
+        ...ContactChatbotHistoryInfo
     }
 }
 
-query getCustomerChatbotHistoryList(
+query getContactChatbotHistoryList(
     $pageNumber: Int, 
     $limit: Int,
     $companyId: String,
-    $customerUuid: String,
+    $contactUuid: String,
     $placeUuids: [String],
     $regions: [String],
     $assistantTypes: [String]
 ) {
-    customerChatbotHistoryList(
+    contactChatbotHistoryList(
         pageNumber: $pageNumber,
         limit: $limit,
         companyId: $companyId,
-        customerUuid: $customerUuid,
+        contactUuid: $contactUuid,
         placeUuids: $placeUuids,
         regions: $regions,
         assistantTypes: $assistantTypes
     ) {
-        ...CustomerChatbotHistoryListInfo
+        ...ContactChatbotHistoryListInfo
     }
 }
 
-mutation insertCustomerChatbotHistory(
+mutation insertContactChatbotHistory(
     $companyId: String!,
     $timestamp: Int!,
-    $customerUuid: String!,
+    $contactUuid: String!,
     $placeUuid: String!,
     $region: String!,
     $assistantId: String!,
     $threadId: String!,
     $assistantType: String!
 ) {
-    insertCustomerChatbotHistory(
+    insertContactChatbotHistory(
         companyId: $companyId,
         timestamp: $timestamp,
-        customerUuid: $customerUuid,
+        contactUuid: $contactUuid,
         placeUuid: $placeUuid,
         region: $region,
         assistantId: $assistantId,
         threadId: $threadId,
         assistantType: $assistantType
     ) {
-        customerChatbotHistory{
-            ...CustomerChatbotHistoryInfo
+        contactChatbotHistory{
+            ...ContactChatbotHistoryInfo
         }
     }
 }
 
-mutation deleteCustomerChatbotHistory(
+mutation deleteContactChatbotHistory(
     $companyId: String!,
     $timestamp: Int!
 ) {
-    deleteCustomerChatbotHistory(
+    deleteContactChatbotHistory(
         companyId: $companyId,
         timestamp: $timestamp
     ) {
@@ -864,7 +864,7 @@ mutation insertUtmTagDataCollection(
     $companyId: String!,
     $tagName: String!,
     $placeUuid: String!,
-    $customerUuid: String!,
+    $contactUuid: String!,
     $region: String!,
     $keyword: String!,
     $utmCampaign: String!,
@@ -877,7 +877,7 @@ mutation insertUtmTagDataCollection(
         companyId: $companyId,
         tagName: $tagName,
         placeUuid: $placeUuid,
-        customerUuid: $customerUuid,
+        contactUuid: $contactUuid,
         region: $region,
         keyword: $keyword,
         utmCampaign: $utmCampaign,

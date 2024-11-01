@@ -94,12 +94,12 @@ class EmailIndex(LocalSecondaryIndex):
     email = UnicodeAttribute(range_key=True)
 
 
-class CustomerProfileModel(BaseModel):
+class ContactProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-customer_profiles"
+        table_name = "ame-contact_profiles"
 
     place_uuid = UnicodeAttribute(hash_key=True)
-    customer_uuid = UnicodeAttribute(range_key=True)
+    contact_uuid = UnicodeAttribute(range_key=True)
     email = UnicodeAttribute()
     region = UnicodeAttribute()
     first_name = UnicodeAttribute(null=True)
@@ -125,12 +125,12 @@ class CompanyEmailIndex(LocalSecondaryIndex):
     email = UnicodeAttribute(range_key=True)
 
 
-class CompanyCustomerProfileModel(BaseModel):
+class CompanyContactProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-company_customer_profiles"
+        table_name = "ame-company_contact_profiles"
 
     company_id = UnicodeAttribute(hash_key=True)
-    customer_uuid = UnicodeAttribute(range_key=True)
+    contact_uuid = UnicodeAttribute(range_key=True)
     email = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
     corporation_type = UnicodeAttribute(null=True)
@@ -230,10 +230,10 @@ class CompanyCorporationProfileModel(BaseModel):
     external_id_index = CompanyExternalIdIndex()
 
 
-class CustomerUuidIndex(LocalSecondaryIndex):
+class ContactUuidIndex(LocalSecondaryIndex):
     class Meta:
         # index_name is optional, but can be provided to override the default name
-        index_name = "customer_uuid-index"
+        index_name = "contact_uuid-index"
         billing_mode = "PAY_PER_REQUEST"
         projection = AllProjection()
 
@@ -241,22 +241,22 @@ class CustomerUuidIndex(LocalSecondaryIndex):
     # Note that this attribute must also exist
     # in the model
     company_id = UnicodeAttribute(hash_key=True)
-    customer_uuid = UnicodeAttribute(range_key=True)
+    contact_uuid = UnicodeAttribute(range_key=True)
 
 
-class CustomerChatbotHistoryModel(BaseModel):
+class ContactChatbotHistoryModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-customer_chatbot_history"
+        table_name = "ame-contact_chatbot_history"
 
     company_id = UnicodeAttribute(hash_key=True)
     timestamp = NumberAttribute(range_key=True)
-    customer_uuid = UnicodeAttribute()
+    contact_uuid = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
     region = UnicodeAttribute()
     assistant_id = UnicodeAttribute()
     thread_id = UnicodeAttribute()
     assistant_type = UnicodeAttribute()
-    customer_uuid_index = CustomerUuidIndex()
+    contact_uuid_index = ContactUuidIndex()
 
 
 class TageNameIndex(LocalSecondaryIndex):
@@ -281,7 +281,7 @@ class UtmTagDataCollectionModel(BaseModel):
     collection_uuid = UnicodeAttribute(range_key=True)
     tag_name = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
-    customer_uuid = UnicodeAttribute()
+    contact_uuid = UnicodeAttribute()
     region = UnicodeAttribute()
     keyword = UnicodeAttribute()
     utm_campaign = UnicodeAttribute()

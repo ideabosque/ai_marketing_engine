@@ -9,18 +9,18 @@ from typing import Any, Dict
 from graphene import ResolveInfo
 
 from .handlers import (
+    resolve_company_contact_profile_handler,
+    resolve_company_contact_profile_list_handler,
     resolve_company_corporation_profile_handler,
     resolve_company_corporation_profile_list_handler,
-    resolve_company_customer_profile_handler,
-    resolve_company_customer_profile_list_handler,
+    resolve_contact_chatbot_history_handler,
+    resolve_contact_chatbot_history_list_handler,
+    resolve_contact_profile_handler,
+    resolve_contact_profile_list_handler,
     resolve_corporation_place_handler,
     resolve_corporation_place_list_handler,
     resolve_corporation_profile_handler,
     resolve_corporation_profile_list_handler,
-    resolve_customer_chatbot_history_handler,
-    resolve_customer_chatbot_history_list_handler,
-    resolve_customer_profile_handler,
-    resolve_customer_profile_list_handler,
     resolve_place_handler,
     resolve_place_list_handler,
     resolve_question_criteria_handler,
@@ -56,20 +56,20 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
     return resolve_place_list_handler(info, **kwargs)
 
 
-def resolve_customer_profile(info: ResolveInfo, **kwargs: Dict[Any, Any]):
-    return resolve_customer_profile_handler(info, **kwargs)
+def resolve_contact_profile(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_contact_profile_handler(info, **kwargs)
 
 
-def resolve_customer_profile_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
-    return resolve_customer_profile_list_handler(info, **kwargs)
+def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_contact_profile_list_handler(info, **kwargs)
 
 
-def resolve_company_customer_profile(info: ResolveInfo, **kwargs: Dict[Any, Any]):
-    return resolve_company_customer_profile_handler(info, **kwargs)
+def resolve_company_contact_profile(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_company_contact_profile_handler(info, **kwargs)
 
 
-def resolve_company_customer_profile_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
-    return resolve_company_customer_profile_list_handler(info, **kwargs)
+def resolve_company_contact_profile_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_company_contact_profile_list_handler(info, **kwargs)
 
 
 def resolve_corporation_profile(info: ResolveInfo, **kwargs: Dict[Any, Any]):
@@ -98,12 +98,12 @@ def resolve_corporation_place_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
     return resolve_corporation_place_list_handler(info, **kwargs)
 
 
-def resolve_customer_chatbot_history(info: ResolveInfo, **kwargs: Dict[Any, Any]):
-    return resolve_customer_chatbot_history_handler(info, **kwargs)
+def resolve_contact_chatbot_history(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_contact_chatbot_history_handler(info, **kwargs)
 
 
-def resolve_customer_chatbot_history_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
-    return resolve_customer_chatbot_history_list_handler(info, **kwargs)
+def resolve_contact_chatbot_history_list(info: ResolveInfo, **kwargs: Dict[Any, Any]):
+    return resolve_contact_chatbot_history_list_handler(info, **kwargs)
 
 
 def resolve_utm_tag_data_collection(info: ResolveInfo, **kwargs: Dict[Any, Any]):

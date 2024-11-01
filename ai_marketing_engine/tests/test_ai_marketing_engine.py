@@ -263,12 +263,12 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_customer_profile(self):
+    def test_graphql_insert_update_contact_profile(self):
         payload = {
             "query": document,
             "variables": {
                 "placeUuid": "6605612459024716271",
-                # "customerUuid": "15540923710806430191",
+                "contactUuid": "7942627832711090671",
                 "email": "XXXXXXXX",
                 "region": "XXXXXXXX",
                 # "firstName": "XXXXXXXX",
@@ -276,39 +276,39 @@ class AIMarketingEngineTest(unittest.TestCase):
                 # "data": {},
                 "updatedBy": "XYZ",
             },
-            "operation_name": "insertUpdateCustomerProfile",
+            "operation_name": "insertUpdateContactProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_customer_profile(self):
+    def test_graphql_delete_contact_profile(self):
         payload = {
             "query": document,
             "variables": {
                 "placeUuid": "16514110523281904111",
-                "customerUuid": "14431819951939916271",
+                "contactUuid": "7942627832711090671",
             },
-            "operation_name": "deleteCustomerProfile",
+            "operation_name": "deleteContactProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_customer_profile(self):
+    def test_graphql_contact_profile(self):
         payload = {
             "query": document,
             "variables": {
                 "placeUuid": "16514110523281904111",
-                "customerUuid": "12355966540142023151",
+                "contactUuid": "12355966540142023151",
             },
-            "operation_name": "getCustomerProfile",
+            "operation_name": "getContactProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_customer_profile_list(self):
+    def test_graphql_contact_profile_list(self):
         payload = {
             "query": document,
             "variables": {
@@ -316,18 +316,18 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "pageNumber": 1,
                 "limit": 10,
             },
-            "operation_name": "getCustomerProfileList",
+            "operation_name": "getContactProfileList",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_company_customer_profile(self):
+    def test_graphql_insert_update_company_contact_profile(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
-                "customerUuid": "15540923710806430191",
+                "contactUuid": "7942627832711090671",
                 "placeUuid": "6605612459024716271",
                 "email": "XXXXXXXX",
                 "corporationType": "XXXXXXXX",
@@ -335,39 +335,39 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "data": {},
                 "updatedBy": "XYZ",
             },
-            "operation_name": "insertUpdateCompanyCustomerProfile",
+            "operation_name": "insertUpdateCompanyContactProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_company_customer_profile(self):
+    def test_graphql_delete_company_contact_profile(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
-                "customerUuid": "12355966540142023151",
+                "contactUuid": "12355966540142023151",
             },
-            "operation_name": "deleteCompanyCustomerProfile",
+            "operation_name": "deleteCompanyContactProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_company_customer_profile(self):
+    def test_graphql_company_contact_profile(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
-                "customerUuid": "15540923710806430191",
+                "contactUuid": "7942627832711090671",
             },
-            "operation_name": "getCompanyCustomerProfile",
+            "operation_name": "getCompanyContactProfile",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_company_customer_profile_list(self):
+    def test_graphql_company_contact_profile_list(self):
         payload = {
             "query": document,
             "variables": {
@@ -375,7 +375,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "pageNumber": 1,
                 "limit": 10,
             },
-            "operation_name": "getCompanyCustomerProfileList",
+            "operation_name": "getCompanyContactProfileList",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
@@ -495,7 +495,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_company_corporation_profile(self):
         payload = {
             "query": document,
@@ -553,52 +553,52 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_customer_chatbot_history(self):
+    def test_graphql_insert_contact_chatbot_history(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
                 "timestamp": 1724514266,
-                "customerUuid": "XXXXXXXX",
+                "contactUuid": "7942627832711090671",
                 "placeUuid": "XXXXXXXX",
                 "region": "XXXXXXXX",
                 "assistantId": "XXXXXXXX",
                 "threadId": "XXXXXXXX",
                 "assistantType": "XXXXXXXX",
             },
-            "operation_name": "insertCustomerChatbotHistory",
+            "operation_name": "insertContactChatbotHistory",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_customer_chatbot_history(self):
+    def test_graphql_delete_contact_chatbot_history(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
                 "timestamp": 1724514266,
             },
-            "operation_name": "deleteCustomerChatbotHistory",
+            "operation_name": "deleteContactChatbotHistory",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_customer_chatbot_history(self):
+    def test_graphql_contact_chatbot_history(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
                 "timestamp": 1724514266,
             },
-            "operation_name": "getCustomerChatbotHistory",
+            "operation_name": "getContactChatbotHistory",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_customer_chatbot_history_list(self):
+    def test_graphql_contact_chatbot_history_list(self):
         payload = {
             "query": document,
             "variables": {
@@ -606,19 +606,19 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "pageNumber": 1,
                 "limit": 10,
             },
-            "operation_name": "getCustomerChatbotHistoryList",
+            "operation_name": "getContactChatbotHistoryList",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         payload = {
             "query": document,
             "variables": {
                 "companyId": "XXXXXXXX",
                 "tagName": "XXXXXXXX",
-                "customerUuid": "15540923710806430191",
+                "contactUuid": "7942627832711090671",
                 "placeUuid": "6605612459024716271",
                 "region": "XXXXXXXX",
                 "keyword": "XXXXXXXX",
