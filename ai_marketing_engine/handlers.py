@@ -541,6 +541,14 @@ def _get_contact_profile(place_uuid: str, contact_uuid: str) -> ContactProfileMo
         "email": contact_profile.email,
         "first_name": contact_profile.first_name,
         "last_name": contact_profile.last_name,
+        "corporation_profile": (
+            _get_corporation_profile(
+                contact_profile.corporation_type, contact_profile.corporation_uuid
+            )
+            if contact_profile.corporation_type is not None
+            and contact_profile.corporation_uuid is not None
+            else None
+        ),
         "data": contact_profile.data,
     }
 
@@ -556,6 +564,15 @@ def get_contact_profile_type(
 ) -> ContactProfileType:
     try:
         place = _get_place(contact_profile.region, contact_profile.place_uuid)
+        corporation_profile = None
+        if (
+            contact_profile.corporation_type is not None
+            and contact_profile.corporation_uuid is not None
+        ):
+            corporation_profile = _get_corporation_profile(
+                contact_profile.corporation_type,
+                contact_profile.corporation_uuid,
+            )
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -564,6 +581,10 @@ def get_contact_profile_type(
     contact_profile["place"] = place
     contact_profile.pop("region")
     contact_profile.pop("place_uuid")
+    if corporation_profile is not None:
+        contact_profile["corporation_profile"] = corporation_profile
+        contact_profile.pop("corporation_type")
+        contact_profile.pop("corporation_uuid")
     return ContactProfileType(**Utility.json_loads(Utility.json_dumps(contact_profile)))
 
 
@@ -641,6 +662,10 @@ def insert_update_contact_profile_handler(
             cols["first_name"] = kwargs["first_name"]
         if kwargs.get("last_name") is not None:
             cols["last_name"] = kwargs["last_name"]
+        if kwargs.get("corporation_type") is not None:
+            cols["corporation_type"] = kwargs["corporation_type"]
+        if kwargs.get("corporation_uuid") is not None:
+            cols["corporation_uuid"] = kwargs["corporation_uuid"]
         if kwargs.get("data") is not None:
             cols["data"] = kwargs["data"]
         ContactProfileModel(
@@ -663,6 +688,19 @@ def insert_update_contact_profile_handler(
         actions.append(ContactProfileModel.first_name.set(kwargs.get("first_name")))
     if kwargs.get("last_name") is not None:
         actions.append(ContactProfileModel.last_name.set(kwargs.get("last_name")))
+    if (
+        kwargs.get("corporation_type") is not None
+        and kwargs.get("corporation_uuid") is not None
+    ):
+        actions.append(
+            ContactProfileModel.corporation_type.set(kwargs.get("corporation_type"))
+        )
+        actions.append(
+            ContactProfileModel.corporation_uuid.set(kwargs.get("corporation_uuid"))
+        )
+    else:
+        actions.append(ContactProfileModel.corporation_type.remove())
+        actions.append(ContactProfileModel.corporation_uuid.remove())
     if kwargs.get("data") is not None:
         actions.append(ContactProfileModel.data.set(kwargs.get("data")))
     contact_profile.update(actions=actions)
@@ -707,15 +745,6 @@ def get_company_contact_profile_type(
             company_contact_profile.place_uuid,
             company_contact_profile.contact_uuid,
         )
-        corporation_profile = None
-        if (
-            company_contact_profile.corporation_type is not None
-            and company_contact_profile.corporation_uuid is not None
-        ):
-            corporation_profile = _get_corporation_profile(
-                company_contact_profile.corporation_type,
-                company_contact_profile.corporation_uuid,
-            )
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -724,10 +753,6 @@ def get_company_contact_profile_type(
     company_contact_profile["contact_profile"] = contact_profile
     company_contact_profile.pop("place_uuid")
     company_contact_profile.pop("contact_uuid")
-    if corporation_profile is not None:
-        company_contact_profile["corporation_profile"] = corporation_profile
-        company_contact_profile.pop("corporation_type")
-        company_contact_profile.pop("corporation_uuid")
     return CompanyContactProfileType(
         **Utility.json_loads(Utility.json_dumps(company_contact_profile))
     )
@@ -804,10 +829,6 @@ def insert_update_company_contact_profile_handler(
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        if kwargs.get("corporation_type") is not None:
-            cols["corporation_type"] = kwargs["corporation_type"]
-        if kwargs.get("corporation_uuid") is not None:
-            cols["corporation_uuid"] = kwargs["corporation_uuid"]
         if kwargs.get("data") is not None:
             cols["data"] = kwargs["data"]
         CompanyContactProfileModel(
@@ -822,23 +843,6 @@ def insert_update_company_contact_profile_handler(
         CompanyContactProfileModel.updated_by.set(kwargs.get("updated_by")),
         CompanyContactProfileModel.updated_at.set(pendulum.now("UTC")),
     ]
-    if (
-        kwargs.get("corporation_type") is not None
-        and kwargs.get("corporation_uuid") is not None
-    ):
-        actions.append(
-            CompanyContactProfileModel.corporation_type.set(
-                kwargs.get("corporation_type")
-            )
-        )
-        actions.append(
-            CompanyContactProfileModel.corporation_uuid.set(
-                kwargs.get("corporation_uuid")
-            )
-        )
-    else:
-        actions.append(CompanyContactProfileModel.corporation_type.remove())
-        actions.append(CompanyContactProfileModel.corporation_uuid.remove())
     if kwargs.get("data") is not None:
         actions.append(CompanyContactProfileModel.data.set(kwargs.get("data")))
     company_contact_profile.update(actions=actions)

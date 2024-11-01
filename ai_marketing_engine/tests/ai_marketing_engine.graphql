@@ -71,6 +71,7 @@ fragment ContactProfileInfo on ContactProfileType {
     email
     firstName
     lastName
+    corporationProfile
     data
     updatedBy
     createdAt
@@ -90,7 +91,6 @@ fragment CompanyContactProfileInfo on CompanyContactProfileType {
     companyId
     contactProfile
     email
-    corporationProfile
     data
     updatedBy
     createdAt
@@ -467,6 +467,8 @@ mutation insertUpdateContactProfile(
     $region: String,
     $firstName: String,
     $lastName: String,
+    $corporationType: String,
+    $corporationUuid: String,
     $data: JSON,
     $updatedBy: String!
 ) {
@@ -477,6 +479,8 @@ mutation insertUpdateContactProfile(
         region: $region,
         firstName: $firstName,
         lastName: $lastName,
+        corporationType: $corporationType,
+        corporationUuid: $corporationUuid,
         data: $data,
         updatedBy: $updatedBy
     ) {
@@ -533,8 +537,6 @@ mutation insertUpdateCompanyContactProfile(
     $contactUuid: String!,
     $email: String,
     $placeUuid: String,
-    $corporationType: String,
-    $corporationUuid: String,
     $data: JSON,
     $updatedBy: String!
 ) {
@@ -543,8 +545,6 @@ mutation insertUpdateCompanyContactProfile(
         contactUuid: $contactUuid,
         email: $email,
         placeUuid: $placeUuid,
-        corporationType: $corporationType,
-        corporationUuid: $corporationUuid,
         data: $data,
         updatedBy: $updatedBy
     ) {
