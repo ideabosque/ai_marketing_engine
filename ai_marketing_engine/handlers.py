@@ -20,30 +20,30 @@ from silvaengine_utility import Utility
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .models import (
+    CompanyContactProfileModel,
     CompanyCorporationProfileModel,
-    CompanyCustomerProfileModel,
+    ContactChatbotHistoryModel,
+    ContactProfileModel,
     CorporationPlaceModel,
     CorporationProfileModel,
-    CustomerChatbotHistoryModel,
-    CustomerProfileModel,
     PlaceModel,
     QuestionCriteriaModel,
     QuestionModel,
     UtmTagDataCollectionModel,
 )
 from .types import (
+    CompanyContactProfileListType,
+    CompanyContactProfileType,
     CompanyCorporationProfileListType,
     CompanyCorporationProfileType,
-    CompanyCustomerProfileListType,
-    CompanyCustomerProfileType,
+    ContactChatbotHistoryListType,
+    ContactChatbotHistoryType,
+    ContactProfileListType,
+    ContactProfileType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
     CorporationProfileType,
-    CustomerChatbotHistoryListType,
-    CustomerChatbotHistoryType,
-    CustomerProfileListType,
-    CustomerProfileType,
     PlaceListType,
     PlaceType,
     QuestionCriteriaListType,
@@ -529,62 +529,60 @@ def delete_place_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_customer_profile(place_uuid: str, customer_uuid: str) -> CustomerProfileModel:
-    return CustomerProfileModel.get(place_uuid, customer_uuid)
+def get_contact_profile(place_uuid: str, contact_uuid: str) -> ContactProfileModel:
+    return ContactProfileModel.get(place_uuid, contact_uuid)
 
 
-def _get_customer_profile(place_uuid: str, customer_uuid: str) -> CustomerProfileModel:
-    customer_profile = get_customer_profile(place_uuid, customer_uuid)
+def _get_contact_profile(place_uuid: str, contact_uuid: str) -> ContactProfileModel:
+    contact_profile = get_contact_profile(place_uuid, contact_uuid)
     return {
-        "customer_uuid": customer_profile.customer_uuid,
-        "place": _get_place(customer_profile.region, customer_profile.place_uuid),
-        "email": customer_profile.email,
-        "first_name": customer_profile.first_name,
-        "last_name": customer_profile.last_name,
-        "data": customer_profile.data,
+        "contact_uuid": contact_profile.contact_uuid,
+        "place": _get_place(contact_profile.region, contact_profile.place_uuid),
+        "email": contact_profile.email,
+        "first_name": contact_profile.first_name,
+        "last_name": contact_profile.last_name,
+        "data": contact_profile.data,
     }
 
 
-def get_customer_profile_count(place_uuid: str, customer_uuid: str) -> int:
-    return CustomerProfileModel.count(
-        place_uuid, CustomerProfileModel.customer_uuid == customer_uuid
+def get_contact_profile_count(place_uuid: str, contact_uuid: str) -> int:
+    return ContactProfileModel.count(
+        place_uuid, ContactProfileModel.contact_uuid == contact_uuid
     )
 
 
-def get_customer_profile_type(
-    info: ResolveInfo, customer_profile: CustomerProfileModel
-) -> CustomerProfileType:
+def get_contact_profile_type(
+    info: ResolveInfo, contact_profile: ContactProfileModel
+) -> ContactProfileType:
     try:
-        place = _get_place(customer_profile.region, customer_profile.place_uuid)
+        place = _get_place(contact_profile.region, contact_profile.place_uuid)
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    customer_profile = customer_profile.__dict__["attribute_values"]
-    customer_profile["place"] = place
-    customer_profile.pop("region")
-    customer_profile.pop("place_uuid")
-    return CustomerProfileType(
-        **Utility.json_loads(Utility.json_dumps(customer_profile))
-    )
+    contact_profile = contact_profile.__dict__["attribute_values"]
+    contact_profile["place"] = place
+    contact_profile.pop("region")
+    contact_profile.pop("place_uuid")
+    return ContactProfileType(**Utility.json_loads(Utility.json_dumps(contact_profile)))
 
 
-def resolve_customer_profile_handler(
+def resolve_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CustomerProfileType:
-    return get_customer_profile_type(
+) -> ContactProfileType:
+    return get_contact_profile_type(
         info,
-        get_customer_profile(kwargs.get("place_uuid"), kwargs.get("customer_uuid")),
+        get_contact_profile(kwargs.get("place_uuid"), kwargs.get("contact_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["place_uuid", "customer_uuid"],
-    list_type_class=CustomerProfileListType,
-    type_funct=get_customer_profile_type,
+    attributes_to_get=["place_uuid", "contact_uuid"],
+    list_type_class=ContactProfileListType,
+    type_funct=get_contact_profile_type,
 )
-def resolve_customer_profile_list_handler(
+def resolve_contact_profile_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     place_uuid = kwargs.get("place_uuid")
@@ -594,21 +592,21 @@ def resolve_customer_profile_list_handler(
     last_name = kwargs.get("last_name")
 
     args = []
-    inquiry_funct = CustomerProfileModel.scan
-    count_funct = CustomerProfileModel.count
+    inquiry_funct = ContactProfileModel.scan
+    count_funct = ContactProfileModel.count
     if place_uuid:
         args = [place_uuid, None]
-        inquiry_funct = CustomerProfileModel.query
+        inquiry_funct = ContactProfileModel.query
 
     the_filters = None  # We can add filters for the query.
     if email:
-        the_filters &= CustomerProfileModel.email.contains(email)
+        the_filters &= ContactProfileModel.email.contains(email)
     if regions:
-        the_filters &= CustomerProfileModel.region.is_in(*regions)
+        the_filters &= ContactProfileModel.region.is_in(*regions)
     if first_name:
-        the_filters &= CustomerProfileModel.first_name.contains(first_name)
+        the_filters &= ContactProfileModel.first_name.contains(first_name)
     if last_name:
-        the_filters &= CustomerProfileModel.last_name.contains(last_name)
+        the_filters &= ContactProfileModel.last_name.contains(last_name)
     if the_filters is not None:
         args.append(the_filters)
 
@@ -618,19 +616,19 @@ def resolve_customer_profile_list_handler(
 @insert_update_decorator(
     keys={
         "hash_key": "place_uuid",
-        "range_key": "customer_uuid",
+        "range_key": "contact_uuid",
     },
-    model_funct=get_customer_profile,
-    count_funct=get_customer_profile_count,
-    type_funct=get_customer_profile_type,
+    model_funct=get_contact_profile,
+    count_funct=get_contact_profile_count,
+    type_funct=get_contact_profile_type,
     # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
     # activity_history_funct=None,
 )
-def insert_update_customer_profile_handler(
+def insert_update_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
     place_uuid = kwargs.get("place_uuid")
-    customer_uuid = kwargs.get("customer_uuid")
+    contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
         cols = {
             "email": kwargs["email"],
@@ -645,42 +643,40 @@ def insert_update_customer_profile_handler(
             cols["last_name"] = kwargs["last_name"]
         if kwargs.get("data") is not None:
             cols["data"] = kwargs["data"]
-        CustomerProfileModel(
+        ContactProfileModel(
             place_uuid,
-            customer_uuid,
+            contact_uuid,
             **cols,
         ).save()
         return
 
-    customer_profile = kwargs.get("entity")
+    contact_profile = kwargs.get("entity")
     actions = [
-        CustomerProfileModel.updated_by.set(kwargs.get("updated_by")),
-        CustomerProfileModel.updated_at.set(pendulum.now("UTC")),
+        ContactProfileModel.updated_by.set(kwargs.get("updated_by")),
+        ContactProfileModel.updated_at.set(pendulum.now("UTC")),
     ]
     if kwargs.get("email") is not None:
-        actions.append(CustomerProfileModel.email.set(kwargs.get("email")))
+        actions.append(ContactProfileModel.email.set(kwargs.get("email")))
     if kwargs.get("region") is not None:
-        actions.append(CustomerProfileModel.region.set(kwargs.get("region")))
+        actions.append(ContactProfileModel.region.set(kwargs.get("region")))
     if kwargs.get("first_name") is not None:
-        actions.append(CustomerProfileModel.first_name.set(kwargs.get("first_name")))
+        actions.append(ContactProfileModel.first_name.set(kwargs.get("first_name")))
     if kwargs.get("last_name") is not None:
-        actions.append(CustomerProfileModel.last_name.set(kwargs.get("last_name")))
+        actions.append(ContactProfileModel.last_name.set(kwargs.get("last_name")))
     if kwargs.get("data") is not None:
-        actions.append(CustomerProfileModel.data.set(kwargs.get("data")))
-    customer_profile.update(actions=actions)
+        actions.append(ContactProfileModel.data.set(kwargs.get("data")))
+    contact_profile.update(actions=actions)
     return
 
 
 @delete_decorator(
     keys={
         "hash_key": "place_uuid",
-        "range_key": "customer_uuid",
+        "range_key": "contact_uuid",
     },
-    model_funct=get_customer_profile,
+    model_funct=get_contact_profile,
 )
-def delete_customer_profile_handler(
-    info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> bool:
+def delete_contact_profile_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True
 
@@ -690,71 +686,71 @@ def delete_customer_profile_handler(
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_company_customer_profile(
-    company_id: str, customer_uuid: str
-) -> CompanyCustomerProfileModel:
-    return CompanyCustomerProfileModel.get(company_id, customer_uuid)
+def get_company_contact_profile(
+    company_id: str, contact_uuid: str
+) -> CompanyContactProfileModel:
+    return CompanyContactProfileModel.get(company_id, contact_uuid)
 
 
-def get_company_customer_profile_count(company_id: str, customer_uuid: str) -> int:
-    return CompanyCustomerProfileModel.count(
-        company_id, CompanyCustomerProfileModel.customer_uuid == customer_uuid
+def get_company_contact_profile_count(company_id: str, contact_uuid: str) -> int:
+    return CompanyContactProfileModel.count(
+        company_id, CompanyContactProfileModel.contact_uuid == contact_uuid
     )
 
 
-def get_company_customer_profile_type(
+def get_company_contact_profile_type(
     info: ResolveInfo,
-    company_customer_profile: CompanyCustomerProfileModel,
-) -> CompanyCustomerProfileType:
+    company_contact_profile: CompanyContactProfileModel,
+) -> CompanyContactProfileType:
     try:
-        customer_profile = _get_customer_profile(
-            company_customer_profile.place_uuid,
-            company_customer_profile.customer_uuid,
+        contact_profile = _get_contact_profile(
+            company_contact_profile.place_uuid,
+            company_contact_profile.contact_uuid,
         )
         corporation_profile = None
         if (
-            company_customer_profile.corporation_type is not None
-            and company_customer_profile.corporation_uuid is not None
+            company_contact_profile.corporation_type is not None
+            and company_contact_profile.corporation_uuid is not None
         ):
             corporation_profile = _get_corporation_profile(
-                company_customer_profile.corporation_type,
-                company_customer_profile.corporation_uuid,
+                company_contact_profile.corporation_type,
+                company_contact_profile.corporation_uuid,
             )
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    company_customer_profile = company_customer_profile.__dict__["attribute_values"]
-    company_customer_profile["customer_profile"] = customer_profile
-    company_customer_profile.pop("place_uuid")
-    company_customer_profile.pop("customer_uuid")
+    company_contact_profile = company_contact_profile.__dict__["attribute_values"]
+    company_contact_profile["contact_profile"] = contact_profile
+    company_contact_profile.pop("place_uuid")
+    company_contact_profile.pop("contact_uuid")
     if corporation_profile is not None:
-        company_customer_profile["corporation_profile"] = corporation_profile
-        company_customer_profile.pop("corporation_type")
-        company_customer_profile.pop("corporation_uuid")
-    return CompanyCustomerProfileType(
-        **Utility.json_loads(Utility.json_dumps(company_customer_profile))
+        company_contact_profile["corporation_profile"] = corporation_profile
+        company_contact_profile.pop("corporation_type")
+        company_contact_profile.pop("corporation_uuid")
+    return CompanyContactProfileType(
+        **Utility.json_loads(Utility.json_dumps(company_contact_profile))
     )
 
 
-def resolve_company_customer_profile_handler(
+def resolve_company_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CompanyCustomerProfileType:
-    return get_company_customer_profile_type(
+) -> CompanyContactProfileType:
+    return get_company_contact_profile_type(
         info,
-        get_company_customer_profile(
-            kwargs.get("company_id"), kwargs.get("customer_uuid")
+        get_company_contact_profile(
+            kwargs.get("company_id"), kwargs.get("contact_uuid")
         ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "customer_uuid", "email"],
-    list_type_class=CompanyCustomerProfileListType,
-    type_funct=get_company_customer_profile_type,
+    attributes_to_get=["company_id", "contact_uuid", "email"],
+    list_type_class=CompanyContactProfileListType,
+    type_funct=get_company_contact_profile_type,
 )
-def resolve_company_customer_profile_list_handler(
+def resolve_company_contact_profile_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     company_id = kwargs.get("company_id")
@@ -762,19 +758,19 @@ def resolve_company_customer_profile_list_handler(
     corporation_types = kwargs.get("corporation_types")
 
     args = []
-    inquiry_funct = CompanyCustomerProfileModel.scan
-    count_funct = CompanyCustomerProfileModel.count
+    inquiry_funct = CompanyContactProfileModel.scan
+    count_funct = CompanyContactProfileModel.count
     if company_id:
         args = [company_id, None]
-        inquiry_funct = CompanyCustomerProfileModel.query
+        inquiry_funct = CompanyContactProfileModel.query
         if email:
-            inquiry_funct = CompanyCustomerProfileModel.email_index.query
-            args[1] = CompanyCustomerProfileModel.email == email
-            count_funct = CompanyCustomerProfileModel.email_index.count
+            inquiry_funct = CompanyContactProfileModel.email_index.query
+            args[1] = CompanyContactProfileModel.email == email
+            count_funct = CompanyContactProfileModel.email_index.count
 
     the_filters = None  # We can add filters for the query.
     if corporation_types:
-        the_filters &= CompanyCustomerProfileModel.corporation_type.is_in(
+        the_filters &= CompanyContactProfileModel.corporation_type.is_in(
             *corporation_types
         )
     if the_filters is not None:
@@ -786,20 +782,20 @@ def resolve_company_customer_profile_list_handler(
 @insert_update_decorator(
     keys={
         "hash_key": "company_id",
-        "range_key": "customer_uuid",
+        "range_key": "contact_uuid",
     },
     range_key_required=True,
-    model_funct=get_company_customer_profile,
-    count_funct=get_company_customer_profile_count,
-    type_funct=get_company_customer_profile_type,
+    model_funct=get_company_contact_profile,
+    count_funct=get_company_contact_profile_count,
+    type_funct=get_company_contact_profile_type,
     # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
     # activity_history_funct=None,
 )
-def insert_update_company_customer_profile_handler(
+def insert_update_company_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
     company_id = kwargs.get("company_id")
-    customer_uuid = kwargs.get("customer_uuid")
+    contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
         cols = {
             "email": kwargs["email"],
@@ -814,49 +810,49 @@ def insert_update_company_customer_profile_handler(
             cols["corporation_uuid"] = kwargs["corporation_uuid"]
         if kwargs.get("data") is not None:
             cols["data"] = kwargs["data"]
-        CompanyCustomerProfileModel(
+        CompanyContactProfileModel(
             company_id,
-            customer_uuid,
+            contact_uuid,
             **cols,
         ).save()
         return
 
-    company_customer_profile = kwargs.get("entity")
+    company_contact_profile = kwargs.get("entity")
     actions = [
-        CompanyCustomerProfileModel.updated_by.set(kwargs.get("updated_by")),
-        CompanyCustomerProfileModel.updated_at.set(pendulum.now("UTC")),
+        CompanyContactProfileModel.updated_by.set(kwargs.get("updated_by")),
+        CompanyContactProfileModel.updated_at.set(pendulum.now("UTC")),
     ]
     if (
         kwargs.get("corporation_type") is not None
         and kwargs.get("corporation_uuid") is not None
     ):
         actions.append(
-            CompanyCustomerProfileModel.corporation_type.set(
+            CompanyContactProfileModel.corporation_type.set(
                 kwargs.get("corporation_type")
             )
         )
         actions.append(
-            CompanyCustomerProfileModel.corporation_uuid.set(
+            CompanyContactProfileModel.corporation_uuid.set(
                 kwargs.get("corporation_uuid")
             )
         )
     else:
-        actions.append(CompanyCustomerProfileModel.corporation_type.remove())
-        actions.append(CompanyCustomerProfileModel.corporation_uuid.remove())
+        actions.append(CompanyContactProfileModel.corporation_type.remove())
+        actions.append(CompanyContactProfileModel.corporation_uuid.remove())
     if kwargs.get("data") is not None:
-        actions.append(CompanyCustomerProfileModel.data.set(kwargs.get("data")))
-    company_customer_profile.update(actions=actions)
+        actions.append(CompanyContactProfileModel.data.set(kwargs.get("data")))
+    company_contact_profile.update(actions=actions)
     return
 
 
 @delete_decorator(
     keys={
         "hash_key": "company_id",
-        "range_key": "customer_uuid",
+        "range_key": "contact_uuid",
     },
-    model_funct=get_company_customer_profile,
+    model_funct=get_company_contact_profile,
 )
-def delete_company_customer_profile_handler(
+def delete_company_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> bool:
     kwargs.get("entity").delete()
@@ -1320,72 +1316,70 @@ def delete_company_corporation_profile_handler(
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_customer_chatbot_history(
+def get_contact_chatbot_history(
     company_id: str, timestamp: str
-) -> CustomerChatbotHistoryModel:
-    return CustomerChatbotHistoryModel.get(company_id, timestamp)
+) -> ContactChatbotHistoryModel:
+    return ContactChatbotHistoryModel.get(company_id, timestamp)
 
 
-def get_customer_chatbot_history_count(company_id: str, timestamp: str) -> int:
-    return CustomerChatbotHistoryModel.count(
+def get_contact_chatbot_history_count(company_id: str, timestamp: str) -> int:
+    return ContactChatbotHistoryModel.count(
         company_id,
-        CustomerChatbotHistoryModel.timestamp == timestamp,
+        ContactChatbotHistoryModel.timestamp == timestamp,
     )
 
 
-def get_customer_chatbot_history_type(
-    info: ResolveInfo, customer_chatbot_history: CustomerChatbotHistoryModel
-) -> CustomerChatbotHistoryType:
-    customer_chatbot_history = customer_chatbot_history.__dict__["attribute_values"]
-    return CustomerChatbotHistoryType(
-        **Utility.json_loads(Utility.json_dumps(customer_chatbot_history))
+def get_contact_chatbot_history_type(
+    info: ResolveInfo, contact_chatbot_history: ContactChatbotHistoryModel
+) -> ContactChatbotHistoryType:
+    contact_chatbot_history = contact_chatbot_history.__dict__["attribute_values"]
+    return ContactChatbotHistoryType(
+        **Utility.json_loads(Utility.json_dumps(contact_chatbot_history))
     )
 
 
-def resolve_customer_chatbot_history_handler(
+def resolve_contact_chatbot_history_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CustomerChatbotHistoryType:
-    return get_customer_chatbot_history_type(
+) -> ContactChatbotHistoryType:
+    return get_contact_chatbot_history_type(
         info,
-        get_customer_chatbot_history(kwargs.get("company_id"), kwargs.get("timestamp")),
+        get_contact_chatbot_history(kwargs.get("company_id"), kwargs.get("timestamp")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "timestamp", "customer_uuid"],
-    list_type_class=CustomerChatbotHistoryListType,
-    type_funct=get_customer_chatbot_history_type,
+    attributes_to_get=["company_id", "timestamp", "contact_uuid"],
+    list_type_class=ContactChatbotHistoryListType,
+    type_funct=get_contact_chatbot_history_type,
 )
-def resolve_customer_chatbot_history_list_handler(
+def resolve_contact_chatbot_history_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     company_id = kwargs.get("company_id")
-    customer_uuid = kwargs.get("customer_uuid")
+    contact_uuid = kwargs.get("contact_uuid")
     place_uuids = kwargs.get("place_uuids")
     regions = kwargs.get("regions")
     assistant_types = kwargs.get("assistant_types")
 
     args = []
-    inquiry_funct = CustomerChatbotHistoryModel.scan
-    count_funct = CustomerChatbotHistoryModel.count
+    inquiry_funct = ContactChatbotHistoryModel.scan
+    count_funct = ContactChatbotHistoryModel.count
     if company_id:
         args = [company_id, None]
-        inquiry_funct = CustomerChatbotHistoryModel.query
-        if customer_uuid:
-            inquiry_funct = CustomerChatbotHistoryModel.customer_uuid_index.query
-            args[1] = CustomerChatbotHistoryModel.customer_uuid == customer_uuid
-            count_funct = CustomerChatbotHistoryModel.customer_uuid_index.count
+        inquiry_funct = ContactChatbotHistoryModel.query
+        if contact_uuid:
+            inquiry_funct = ContactChatbotHistoryModel.contact_uuid_index.query
+            args[1] = ContactChatbotHistoryModel.contact_uuid == contact_uuid
+            count_funct = ContactChatbotHistoryModel.contact_uuid_index.count
 
     the_filters = None  # We can add filters for the query.
     if place_uuids:
-        the_filters &= CustomerChatbotHistoryModel.place_uuid.is_in(*place_uuids)
+        the_filters &= ContactChatbotHistoryModel.place_uuid.is_in(*place_uuids)
     if regions:
-        the_filters &= CustomerChatbotHistoryModel.region.is_in(*regions)
+        the_filters &= ContactChatbotHistoryModel.region.is_in(*regions)
     if assistant_types:
-        the_filters &= CustomerChatbotHistoryModel.assistant_type.is_in(
-            *assistant_types
-        )
+        the_filters &= ContactChatbotHistoryModel.assistant_type.is_in(*assistant_types)
     if the_filters is not None:
         args.append(the_filters)
 
@@ -1398,23 +1392,23 @@ def resolve_customer_chatbot_history_list_handler(
         "range_key": "timestamp",
     },
     range_key_required=True,
-    model_funct=get_customer_chatbot_history,
-    count_funct=get_customer_chatbot_history_count,
-    type_funct=get_customer_chatbot_history_type,
+    model_funct=get_contact_chatbot_history,
+    count_funct=get_contact_chatbot_history_count,
+    type_funct=get_contact_chatbot_history_type,
     # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
     # activity_history_funct=None,
 )
-def insert_customer_chatbot_history_handler(
+def insert_contact_chatbot_history_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
     company_id = kwargs.get("company_id")
     timestamp = kwargs.get("timestamp")
     if kwargs.get("entity") is None:
-        CustomerChatbotHistoryModel(
+        ContactChatbotHistoryModel(
             company_id,
             timestamp,
             **{
-                "customer_uuid": kwargs["customer_uuid"],
+                "contact_uuid": kwargs["contact_uuid"],
                 "place_uuid": kwargs["place_uuid"],
                 "region": kwargs["region"],
                 "assistant_id": kwargs["assistant_id"],
@@ -1432,9 +1426,9 @@ def insert_customer_chatbot_history_handler(
         "hash_key": "company_id",
         "range_key": "timestamp",
     },
-    model_funct=get_customer_chatbot_history,
+    model_funct=get_contact_chatbot_history,
 )
-def delete_customer_chatbot_history_handler(
+def delete_contact_chatbot_history_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> bool:
     kwargs.get("entity").delete()
@@ -1467,16 +1461,16 @@ def get_utm_tag_data_collection_type(
             utm_tag_data_collection.region, utm_tag_data_collection.place_uuid
         )
 
-        customer_profile = None
-        results = CustomerProfileModel.query(
+        contact_profile = None
+        results = ContactProfileModel.query(
             place["place_uuid"],
-            CustomerProfileModel.customer_uuid == utm_tag_data_collection.customer_uuid,
+            ContactProfileModel.contact_uuid == utm_tag_data_collection.contact_uuid,
         )
         results = [result for result in results]
         if len(results) > 0:
-            customer_place = results[0]
-            customer_profile = _get_customer_profile(
-                customer_place.place_uuid, utm_tag_data_collection.customer_uuid
+            contact_place = results[0]
+            contact_profile = _get_contact_profile(
+                contact_place.place_uuid, utm_tag_data_collection.contact_uuid
             )
     except Exception as e:
         log = traceback.format_exc()
@@ -1486,8 +1480,8 @@ def get_utm_tag_data_collection_type(
     utm_tag_data_collection["place"] = place
     utm_tag_data_collection.pop("region")
     utm_tag_data_collection.pop("place_uuid")
-    utm_tag_data_collection["customer_profile"] = customer_profile
-    utm_tag_data_collection.pop("customer_uuid")
+    utm_tag_data_collection["contact_profile"] = contact_profile
+    utm_tag_data_collection.pop("contact_uuid")
     return UtmTagDataCollectionType(
         **Utility.json_loads(Utility.json_dumps(utm_tag_data_collection))
     )
@@ -1516,7 +1510,7 @@ def resolve_utm_tag_data_collection_list_handler(
     company_id = kwargs.get("company_id")
     tag_name = kwargs.get("tag_name")
     place_uuids = kwargs.get("place_uuids")
-    customer_uuids = kwargs.get("customer_uuids")
+    contact_uuids = kwargs.get("contact_uuids")
     regions = kwargs.get("regions")
     keyword = kwargs.get("keyword")
 
@@ -1534,8 +1528,8 @@ def resolve_utm_tag_data_collection_list_handler(
     the_filters = None  # We can add filters for the query.
     if place_uuids:
         the_filters &= UtmTagDataCollectionModel.place_uuid.is_in(*place_uuids)
-    if customer_uuids:
-        the_filters &= UtmTagDataCollectionModel.customer_uuid.is_in(*customer_uuids)
+    if contact_uuids:
+        the_filters &= UtmTagDataCollectionModel.contact_uuid.is_in(*contact_uuids)
     if regions:
         the_filters &= UtmTagDataCollectionModel.region.is_in(*regions)
     if keyword:
@@ -1569,7 +1563,7 @@ def insert_utm_tag_data_collection_handler(
             **{
                 "tag_name": kwargs["tag_name"],
                 "place_uuid": kwargs["place_uuid"],
-                "customer_uuid": kwargs["customer_uuid"],
+                "contact_uuid": kwargs["contact_uuid"],
                 "region": kwargs["region"],
                 "keyword": kwargs["keyword"],
                 "utm_campaign": kwargs["utm_campaign"],
