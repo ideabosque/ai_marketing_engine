@@ -262,7 +262,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_contact_profile(self):
         payload = {
             "query": document,
@@ -273,6 +273,8 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "region": "XXXXXXXX",
                 # "firstName": "XXXXXXXX",
                 # "lastName": "XXXXXXXX",
+                "corporationType": "XXXXXXXX",
+                "corporationUuid": "10077997009953100271",
                 # "data": {},
                 "updatedBy": "XYZ",
             },
@@ -330,8 +332,6 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "contactUuid": "7942627832711090671",
                 "placeUuid": "6605612459024716271",
                 "email": "XXXXXXXX",
-                "corporationType": "XXXXXXXX",
-                "corporationUuid": "10077997009953100271",
                 "data": {},
                 "updatedBy": "XYZ",
             },
@@ -611,7 +611,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         payload = {
             "query": document,

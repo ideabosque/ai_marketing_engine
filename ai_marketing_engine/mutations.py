@@ -195,6 +195,8 @@ class InsertUpdateContactProfile(Mutation):
         region = String(required=False)
         first_name = String(required=False)
         last_name = String(required=False)
+        corporation_type = String(required=False)
+        corporation_uuid = String(required=False)
         data = JSON(required=False)
         updated_by = String(required=True)
 
@@ -241,8 +243,6 @@ class InsertUpdateCompanyContactProfile(Mutation):
         contact_uuid = String(required=True)
         email = String(required=False)
         place_uuid = String(required=False)
-        corporation_type = String(required=False)
-        corporation_uuid = String(required=False)
         data = JSON(required=False)
         updated_by = String(required=True)
 
