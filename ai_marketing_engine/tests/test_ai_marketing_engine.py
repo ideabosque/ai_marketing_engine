@@ -262,7 +262,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_contact_profile(self):
         payload = {
             "query": document,
@@ -309,12 +309,13 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_contact_profile_list(self):
         payload = {
             "query": document,
             "variables": {
-                "placeUuid": "16514110523281904111",
+                "placeUuid": "2182613588100714991",
+                "email": "bibo72@outlook.com",
                 "pageNumber": 1,
                 "limit": 10,
             },
