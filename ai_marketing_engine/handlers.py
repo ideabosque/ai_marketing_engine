@@ -10,6 +10,8 @@ from typing import Any, Dict
 
 import pendulum
 from graphene import ResolveInfo
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from silvaengine_dynamodb_base import (
     delete_decorator,
     insert_update_decorator,
@@ -17,7 +19,6 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .models import (
     CompanyContactProfileModel,
@@ -217,9 +218,7 @@ def get_question_criteria_count(company_id: str, question_group: str) -> int:
     )
 
 
-def _get_question_criteria(
-    company_id: str, question_group: str
-) -> QuestionCriteriaModel:
+def _get_question_criteria(company_id: str, question_group: str) -> Dict[str, Any]:
     question_criteria = get_question_criteria(company_id, question_group)
     return {
         "company_id": question_criteria.company_id,
@@ -386,7 +385,7 @@ def get_place(region: str, place_uuid: str) -> PlaceModel:
     return PlaceModel.get(region, place_uuid)
 
 
-def _get_place(region: str, place_uuid: str) -> PlaceModel:
+def _get_place(region: str, place_uuid: str) -> Dict[str, Any]:
     place = get_place(region, place_uuid)
     return {
         "region": place.region,
@@ -533,7 +532,7 @@ def get_contact_profile(place_uuid: str, contact_uuid: str) -> ContactProfileMod
     return ContactProfileModel.get(place_uuid, contact_uuid)
 
 
-def _get_contact_profile(place_uuid: str, contact_uuid: str) -> ContactProfileModel:
+def _get_contact_profile(place_uuid: str, contact_uuid: str) -> Dict[str, Any]:
     contact_profile = get_contact_profile(place_uuid, contact_uuid)
     return {
         "contact_uuid": contact_profile.contact_uuid,
@@ -876,7 +875,7 @@ def get_corporation_profile(
 
 def _get_corporation_profile(
     corporation_type: str, corporation_uuid: str
-) -> CorporationProfileModel:
+) -> Dict[str, Any]:
     corporation_profile = get_corporation_profile(corporation_type, corporation_uuid)
     return {
         "corporation_type": corporation_profile.corporation_type,
