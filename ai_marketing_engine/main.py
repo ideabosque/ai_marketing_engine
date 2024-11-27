@@ -8,6 +8,7 @@ import logging
 from typing import Any, Dict, List
 
 from graphene import Schema
+
 from silvaengine_dynamodb_base import SilvaEngineDynamoDBBase
 
 from .handlers import handlers_init
@@ -192,7 +193,7 @@ def deploy() -> List:
                     "support_methods": ["POST"],
                     "is_auth_required": False,
                     "is_graphql": True,
-                    "settings": "ai_marketing_engine",
+                    "settings": "beta_core_openai",
                     "disabled_in_resources": True,  # Ignore adding to resource list.
                 },
             },
