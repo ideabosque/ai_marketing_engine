@@ -10,8 +10,6 @@ from typing import Any, Dict
 
 import pendulum
 from graphene import ResolveInfo
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     delete_decorator,
     insert_update_decorator,
@@ -19,12 +17,14 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .models import (
     CompanyContactProfileModel,
     CompanyCorporationProfileModel,
     ContactChatbotHistoryModel,
     ContactProfileModel,
+    ContactRequestModel,
     CorporationPlaceModel,
     CorporationProfileModel,
     PlaceModel,
@@ -41,6 +41,8 @@ from .types import (
     ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
+    ContactRequestListType,
+    ContactRequestType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
@@ -858,6 +860,140 @@ def insert_update_company_contact_profile_handler(
 def delete_company_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> bool:
+    kwargs.get("entity").delete()
+    return True
+
+
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+def get_contact_request(contact_uuid: str, request_uuid: str) -> ContactRequestModel:
+    return ContactRequestModel.get(contact_uuid, request_uuid)
+
+
+def get_contact_request_count(contact_uuid: str, request_uuid: str) -> int:
+    return ContactRequestModel.count(
+        contact_uuid, ContactRequestModel.request_uuid == request_uuid
+    )
+
+
+def get_contact_request_type(
+    info: ResolveInfo, contact_request: ContactRequestModel
+) -> ContactRequestType:
+    try:
+        contact_profile = _get_contact_profile(
+            contact_request.place_uuid, contact_request.contact_uuid
+        )
+    except Exception as e:
+        log = traceback.format_exc()
+        info.context.get("logger").exception(log)
+        raise e
+    contact_request = contact_request.__dict__["attribute_values"]
+    contact_request["contact_profile"] = contact_profile
+    contact_request.pop("place_uuid")
+    contact_request.pop("contact_uuid")
+    return ContactRequestType(**Utility.json_loads(Utility.json_dumps(contact_request)))
+
+
+def resolve_contact_request_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> ContactRequestType:
+    return get_contact_request_type(
+        info,
+        get_contact_request(kwargs.get("contact_uuid"), kwargs.get("request_uuid")),
+    )
+
+
+@monitor_decorator
+@resolve_list_decorator(
+    attributes_to_get=["contact_uuid", "request_uuid"],
+    list_type_class=ContactRequestListType,
+    type_funct=get_contact_request_type,
+)
+def resolve_contact_request_list_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> Any:
+    contact_uuid = kwargs.get("contact_uuid")
+    place_uuid = kwargs.get("place_uuid")
+    request_title = kwargs.get("request_title")
+    request_detail = kwargs.get("request_detail")
+
+    args = []
+    inquiry_funct = ContactRequestModel.scan
+    count_funct = ContactRequestModel.count
+    if contact_uuid:
+        args = [contact_uuid, None]
+        inquiry_funct = ContactRequestModel.query
+
+    the_filters = None  # We can add filters for the query.
+    if place_uuid:
+        the_filters &= ContactRequestModel.contact_uuid.contains(place_uuid)
+    if request_title:
+        the_filters &= ContactRequestModel.request_title.contains(request_title)
+    if request_detail:
+        the_filters &= ContactRequestModel.request_detail.contains(request_detail)
+    if the_filters is not None:
+        args.append(the_filters)
+
+    return inquiry_funct, count_funct, args
+
+
+@insert_update_decorator(
+    keys={
+        "hash_key": "contact_uuid",
+        "range_key": "request_uuid",
+    },
+    model_funct=get_contact_request,
+    count_funct=get_contact_request_count,
+    type_funct=get_contact_request_type,
+    # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
+    # activity_history_funct=None,
+)
+def insert_update_contact_request_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> None:
+    contact_uuid = kwargs.get("contact_uuid")
+    request_uuid = kwargs.get("request_uuid")
+    if kwargs.get("entity") is None:
+        cols = {
+            "place_uuid": kwargs["place_uuid"],
+            "request_title": kwargs["request_title"],
+            "request_detail": kwargs["request_detail"],
+            "updated_by": kwargs["updated_by"],
+            "created_at": pendulum.now("UTC"),
+            "updated_at": pendulum.now("UTC"),
+        }
+        ContactRequestModel(
+            contact_uuid,
+            request_uuid,
+            **cols,
+        ).save()
+        return
+
+    contact_request = kwargs.get("entity")
+    actions = [
+        ContactRequestModel.updated_by.set(kwargs["updated_by"]),
+        ContactRequestModel.updated_at.set(pendulum.now("UTC")),
+    ]
+    if kwargs.get("request_title") is not None:
+        actions.append(ContactRequestModel.request_title.set(kwargs["request_title"]))
+    if kwargs.get("request_detail") is not None:
+        actions.append(ContactRequestModel.request_detail.set(kwargs["request_detail"]))
+
+    contact_request.update(actions=actions)
+    return
+
+
+@delete_decorator(
+    keys={
+        "hash_key": "contact_uuid",
+        "range_key": "request_uuid",
+    },
+    model_funct=get_contact_request,
+)
+def delete_contact_request_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True
 

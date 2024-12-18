@@ -17,6 +17,7 @@ from graphene import (
     ResolveInfo,
     String,
 )
+
 from silvaengine_utility import JSON
 
 from .mutations import (
@@ -24,6 +25,7 @@ from .mutations import (
     DeleteCompanyCorporationProfile,
     DeleteContactChatbotHistory,
     DeleteContactProfile,
+    DeleteContactRequest,
     DeleteCorporationPlace,
     DeleteCorporationProfile,
     DeletePlace,
@@ -34,6 +36,7 @@ from .mutations import (
     InsertUpdateCompanyContactProfile,
     InsertUpdateCompanyCorporationProfile,
     InsertUpdateContactProfile,
+    InsertUpdateContactRequest,
     InsertUpdateCorporationPlace,
     InsertUpdateCorporationProfile,
     InsertUpdatePlace,
@@ -50,6 +53,8 @@ from .queries import (
     resolve_contact_chatbot_history_list,
     resolve_contact_profile,
     resolve_contact_profile_list,
+    resolve_contact_request,
+    resolve_contact_request_list,
     resolve_corporation_place,
     resolve_corporation_place_list,
     resolve_corporation_profile,
@@ -72,6 +77,8 @@ from .types import (
     ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
+    ContactRequestListType,
+    ContactRequestType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
@@ -107,6 +114,8 @@ def type_class():
         QuestionType,
         UtmTagDataCollectionListType,
         UtmTagDataCollectionType,
+        ContactRequestType,
+        ContactRequestListType,
     ]
 
 
@@ -196,6 +205,23 @@ class Query(ObjectType):
         company_id=String(),
         email=String(),
         corporation_types=List(String),
+    )
+
+    contact_request = Field(
+        ContactRequestType,
+        required=True,
+        contact_uuid=String(required=True),
+        request_uuid=String(required=True),
+    )
+
+    contact_request_list = Field(
+        ContactRequestListType,
+        page_number=Int(),
+        limit=Int(),
+        contact_uuid=String(),
+        place_uuid=String(),
+        request_title=String(),
+        request_detail=String(),
     )
 
     corporation_profile = Field(
@@ -335,6 +361,16 @@ class Query(ObjectType):
     ) -> CompanyContactProfileListType:
         return resolve_company_contact_profile_list(info, **kwargs)
 
+    def resolve_contact_request(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> ContactRequestType:
+        return resolve_contact_request(info, **kwargs)
+
+    def resolve_contact_request_list(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> ContactRequestListType:
+        return resolve_contact_request_list(info, **kwargs)
+
     def resolve_corporation_profile(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> CorporationProfileType:
@@ -397,6 +433,8 @@ class Mutations(ObjectType):
     delete_contact_profile = DeleteContactProfile.Field()
     insert_update_company_contact_profile = InsertUpdateCompanyContactProfile.Field()
     delete_company_contact_profile = DeleteCompanyContactProfile.Field()
+    insert_update_contact_request = InsertUpdateContactRequest.Field()
+    delete_contact_request = DeleteContactRequest.Field()
     insert_update_corporation_profile = InsertUpdateCorporationProfile.Field()
     delete_corporation_profile = DeleteCorporationProfile.Field()
     insert_update_corporation_place = InsertUpdateCorporationPlace.Field()

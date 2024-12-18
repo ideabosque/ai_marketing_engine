@@ -82,6 +82,16 @@ class CompanyContactProfileType(ObjectType):
     updated_at = DateTime()
 
 
+class ContactRequestType(ObjectType):
+    contact_profile = JSON()
+    request_uuid = String()
+    request_title = String()
+    request_detail = String()
+    updated_by = String()
+    created_at = DateTime()
+    updated_at = DateTime()
+
+
 class CorporationProfileType(ObjectType):
     corporation_type = String()
     corporation_uuid = String()
@@ -157,6 +167,10 @@ class ContactProfileListType(ListObjectType):
 
 class CompanyContactProfileListType(ListObjectType):
     company_contact_profile_list = List(CompanyContactProfileType)
+
+
+class ContactRequestListType(ListObjectType):
+    contact_request_list = List(ContactRequestType)
 
 
 class CorporationProfileListType(ListObjectType):

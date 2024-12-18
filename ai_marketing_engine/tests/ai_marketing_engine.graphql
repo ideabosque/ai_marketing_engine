@@ -106,6 +106,25 @@ fragment CompanyContactProfileListInfo on CompanyContactProfileListType {
     total
 }
 
+fragment ContactRequestInfo on ContactRequestType {
+    contactProfile
+    requestUuid
+    requestTitle
+    requestDetail
+    updatedBy
+    createdAt
+    updatedAt
+}
+
+fragment ContactRequestListInfo on ContactRequestListType {
+    contactRequestList{
+        ...ContactRequestInfo
+    }
+    pageSize
+    pageNumber
+    total
+}
+
 fragment CorporationProfileInfo on CorporationProfileType {
     corporationType
     corporationUuid
@@ -561,6 +580,72 @@ mutation deleteCompanyContactProfile(
     deleteCompanyContactProfile(
         companyId: $companyId,
         contactUuid: $contactUuid
+    ) {
+        ok
+    }
+}
+
+query getContactRequest(
+    $contactUuid: String!,
+    $requestUuid: String!
+) {
+    contactRequest(
+        contactUuid: $contactUuid,
+        requestUuid: $requestUuid
+    ) {
+        ...ContactRequestInfo
+    }
+}
+
+query getContactRequestList(
+    $pageNumber: Int, 
+    $limit: Int,
+    $contactUuid: String,
+    $placeUuid: String,
+    $requestTitle: String,
+    $requestDetail: String
+) {
+    contactRequestList(
+        pageNumber: $pageNumber,
+        limit: $limit,
+        contactUuid: $contactUuid,
+        placeUuid: $placeUuid,
+        requestTitle: $requestTitle,
+        requestDetail: $requestDetail
+    ) {
+        ...ContactRequestListInfo
+    }
+}
+
+mutation insertUpdateContactRequest(
+    $contactUuid: String!,
+    $requestUuid: String,
+    $placeUuid: String,
+    $requestTitle: String,
+    $requestDetail: String,
+    $updatedBy: String!
+) {
+    insertUpdateContactRequest(
+        contactUuid: $contactUuid,
+        requestUuid: $requestUuid,
+        placeUuid: $placeUuid,
+        requestTitle: $requestTitle,
+        requestDetail: $requestDetail,
+        updatedBy: $updatedBy
+    ) {
+        contactRequest{
+            ...ContactRequestInfo
+        }
+    }
+}
+
+mutation deleteContactRequest(
+    $contactUuid: String!,
+    $requestUuid: String!
+) {
+    deleteContactRequest(
+        contactUuid: $contactUuid,
+        requestUuid: $requestUuid
     ) {
         ok
     }

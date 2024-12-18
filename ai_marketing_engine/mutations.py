@@ -8,6 +8,7 @@ import traceback
 from typing import Any, Dict
 
 from graphene import Boolean, DateTime, Field, Float, Int, List, Mutation, String
+
 from silvaengine_utility import JSON
 
 from .handlers import (
@@ -15,6 +16,7 @@ from .handlers import (
     delete_company_corporation_profile_handler,
     delete_contact_chatbot_history_handler,
     delete_contact_profile_handler,
+    delete_contact_request_handler,
     delete_corporation_place_handler,
     delete_corporation_profile_handler,
     delete_place_handler,
@@ -25,6 +27,7 @@ from .handlers import (
     insert_update_company_contact_profile_handler,
     insert_update_company_corporation_profile_handler,
     insert_update_contact_profile_handler,
+    insert_update_contact_request_handler,
     insert_update_corporation_place_handler,
     insert_update_corporation_profile_handler,
     insert_update_place_handler,
@@ -37,6 +40,7 @@ from .types import (
     CompanyCorporationProfileType,
     ContactChatbotHistoryType,
     ContactProfileType,
+    ContactRequestType,
     CorporationPlaceType,
     CorporationProfileType,
     PlaceType,
@@ -283,6 +287,52 @@ class DeleteCompanyContactProfile(Mutation):
             raise e
 
         return DeleteCompanyContactProfile(ok=ok)
+
+
+class InsertUpdateContactRequest(Mutation):
+    contact_request = Field(ContactRequestType)
+
+    class Arguments:
+        contact_uuid = String(required=True)
+        request_uuid = String(required=False)
+        place_uuid = String(required=False)
+        request_title = String(required=False)
+        request_detail = String(required=False)
+        updated_by = String(required=True)
+
+    @staticmethod
+    def mutate(
+        root: Any, info: Any, **kwargs: Dict[str, Any]
+    ) -> "InsertUpdateContactRequest":
+        try:
+            contact_request = insert_update_contact_request_handler(info, **kwargs)
+        except Exception as e:
+            log = traceback.format_exc()
+            info.context.get("logger").error(log)
+            raise e
+
+        return InsertUpdateContactRequest(contact_request=contact_request)
+
+
+class DeleteContactRequest(Mutation):
+    ok = Boolean()
+
+    class Arguments:
+        contact_uuid = String(required=True)
+        request_uuid = String(required=True)
+
+    @staticmethod
+    def mutate(
+        root: Any, info: Any, **kwargs: Dict[str, Any]
+    ) -> "DeleteContactRequest":
+        try:
+            ok = delete_contact_request_handler(info, **kwargs)
+        except Exception as e:
+            log = traceback.format_exc()
+            info.context.get("logger").error(log)
+            raise e
+
+        return DeleteContactRequest(ok=ok)
 
 
 class InsertUpdateCorporationProfile(Mutation):
