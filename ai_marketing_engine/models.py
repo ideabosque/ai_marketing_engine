@@ -13,6 +13,7 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
 )
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
+
 from silvaengine_dynamodb_base import BaseModel
 
 
@@ -140,6 +141,20 @@ class CompanyContactProfileModel(BaseModel):
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
     email_index = CompanyEmailIndex()
+
+
+class ContactRequestModel(BaseModel):
+    class Meta(BaseModel.Meta):
+        table_name = "ame-contact_requests"
+
+    contact_uuid = UnicodeAttribute(hash_key=True)
+    request_uuid = UnicodeAttribute(range_key=True)
+    place_uuid = UnicodeAttribute()
+    request_title = UnicodeAttribute()
+    request_detail = UnicodeAttribute()
+    updated_by = UnicodeAttribute()
+    created_at = UTCDateTimeAttribute()
+    updated_at = UTCDateTimeAttribute()
 
 
 class ExternalIdIndex(LocalSecondaryIndex):

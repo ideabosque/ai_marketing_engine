@@ -17,6 +17,8 @@ from .handlers import (
     resolve_contact_chatbot_history_list_handler,
     resolve_contact_profile_handler,
     resolve_contact_profile_list_handler,
+    resolve_contact_request_handler,
+    resolve_contact_request_list_handler,
     resolve_corporation_place_handler,
     resolve_corporation_place_list_handler,
     resolve_corporation_profile_handler,
@@ -39,6 +41,8 @@ from .types import (
     ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
+    ContactRequestListType,
+    ContactRequestType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
@@ -106,6 +110,18 @@ def resolve_company_contact_profile_list(
     info: ResolveInfo, **kwargs: Dict[Any, Any]
 ) -> CompanyContactProfileListType:
     return resolve_company_contact_profile_list_handler(info, **kwargs)
+
+
+def resolve_contact_request(
+    info: ResolveInfo, **kwargs: Dict[Any, Any]
+) -> ContactRequestType:
+    return resolve_contact_request_handler(info, **kwargs)
+
+
+def resolve_contact_request_list(
+    info: ResolveInfo, **kwargs: Dict[Any, Any]
+) -> ContactRequestListType:
+    return resolve_contact_request_list_handler(info, **kwargs)
 
 
 def resolve_corporation_profile(

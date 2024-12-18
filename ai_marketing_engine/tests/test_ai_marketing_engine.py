@@ -309,7 +309,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_contact_profile_list(self):
         payload = {
             "query": document,
@@ -377,6 +377,63 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "limit": 10,
             },
             "operation_name": "getCompanyContactProfileList",
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_insert_update_contact_request(self):
+        payload = {
+            "query": document,
+            "variables": {
+                "contactUuid": "7287581127491588591",
+                "requestUuid": "11230416751419396591",
+                "placeUuid": "2182613588100714991",
+                "requestTitle": "XXXXXXXX",
+                "requestDetail": "XXXXXXXX",
+                "updatedBy": "XYZ",
+            },
+            "operation_name": "insertUpdateContactRequest",
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_delete_contact_request(self):
+        payload = {
+            "query": document,
+            "variables": {
+                "contactUuid": "7287581127491588591",
+                "requestUuid": "17845643818736685551",
+            },
+            "operation_name": "deleteContactRequest",
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    # @unittest.skip("demonstrating skipping")
+    def test_graphql_contact_request(self):
+        payload = {
+            "query": document,
+            "variables": {
+                "contactUuid": "7287581127491588591",
+                "requestUuid": "11230416751419396591",
+            },
+            "operation_name": "getContactRequest",
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_contact_request_list(self):
+        payload = {
+            "query": document,
+            "variables": {
+                "contactUuid": "7287581127491588591",
+                "pageNumber": 1,
+                "limit": 10,
+            },
+            "operation_name": "getContactRequestList",
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
