@@ -13,10 +13,10 @@ from silvaengine_utility import JSON
 
 from .handlers import (
     delete_company_contact_profile_handler,
+    delete_company_contact_request_handler,
     delete_company_corporation_profile_handler,
     delete_contact_chatbot_history_handler,
     delete_contact_profile_handler,
-    delete_contact_request_handler,
     delete_corporation_place_handler,
     delete_corporation_profile_handler,
     delete_place_handler,
@@ -25,9 +25,9 @@ from .handlers import (
     delete_utm_tag_data_collection_handler,
     insert_contact_chatbot_history_handler,
     insert_update_company_contact_profile_handler,
+    insert_update_company_contact_request_handler,
     insert_update_company_corporation_profile_handler,
     insert_update_contact_profile_handler,
-    insert_update_contact_request_handler,
     insert_update_corporation_place_handler,
     insert_update_corporation_profile_handler,
     insert_update_place_handler,
@@ -37,10 +37,10 @@ from .handlers import (
 )
 from .types import (
     CompanyContactProfileType,
+    CompanyContactRequestType,
     CompanyCorporationProfileType,
     ContactChatbotHistoryType,
     ContactProfileType,
-    ContactRequestType,
     CorporationPlaceType,
     CorporationProfileType,
     PlaceType,
@@ -289,13 +289,13 @@ class DeleteCompanyContactProfile(Mutation):
         return DeleteCompanyContactProfile(ok=ok)
 
 
-class InsertUpdateContactRequest(Mutation):
-    contact_request = Field(ContactRequestType)
+class InsertUpdateCompanyContactRequest(Mutation):
+    company_contact_request = Field(CompanyContactRequestType)
 
     class Arguments:
         contact_uuid = String(required=True)
         request_uuid = String(required=False)
-        place_uuid = String(required=False)
+        company_id = String(required=True)
         request_title = String(required=False)
         request_detail = String(required=False)
         updated_by = String(required=True)
@@ -303,18 +303,22 @@ class InsertUpdateContactRequest(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "InsertUpdateContactRequest":
+    ) -> "InsertUpdateCompanyContactRequest":
         try:
-            contact_request = insert_update_contact_request_handler(info, **kwargs)
+            company_contact_request = insert_update_company_contact_request_handler(
+                info, **kwargs
+            )
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return InsertUpdateContactRequest(contact_request=contact_request)
+        return InsertUpdateCompanyContactRequest(
+            company_contact_request=company_contact_request
+        )
 
 
-class DeleteContactRequest(Mutation):
+class DeleteCompanyContactRequest(Mutation):
     ok = Boolean()
 
     class Arguments:
@@ -324,15 +328,15 @@ class DeleteContactRequest(Mutation):
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "DeleteContactRequest":
+    ) -> "DeleteCompanyContactRequest":
         try:
-            ok = delete_contact_request_handler(info, **kwargs)
+            ok = delete_company_contact_request_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
             raise e
 
-        return DeleteContactRequest(ok=ok)
+        return DeleteCompanyContactRequest(ok=ok)
 
 
 class InsertUpdateCorporationProfile(Mutation):

@@ -143,13 +143,13 @@ class CompanyContactProfileModel(BaseModel):
     email_index = CompanyEmailIndex()
 
 
-class ContactRequestModel(BaseModel):
+class CompanyContactRequestModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-contact_requests"
+        table_name = "ame-company_contact_requests"
 
     contact_uuid = UnicodeAttribute(hash_key=True)
     request_uuid = UnicodeAttribute(range_key=True)
-    place_uuid = UnicodeAttribute()
+    company_id = UnicodeAttribute()
     request_title = UnicodeAttribute()
     request_detail = UnicodeAttribute()
     updated_by = UnicodeAttribute()
@@ -270,7 +270,7 @@ class ContactChatbotHistoryModel(BaseModel):
     region = UnicodeAttribute()
     assistant_id = UnicodeAttribute()
     thread_id = UnicodeAttribute()
-    assistant_type = UnicodeAttribute()
+    endpoint_id = UnicodeAttribute()
     contact_uuid_index = ContactUuidIndex()
 
 

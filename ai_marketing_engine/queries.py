@@ -11,14 +11,14 @@ from graphene import ResolveInfo
 from .handlers import (
     resolve_company_contact_profile_handler,
     resolve_company_contact_profile_list_handler,
+    resolve_company_contact_request_handler,
+    resolve_company_contact_request_list_handler,
     resolve_company_corporation_profile_handler,
     resolve_company_corporation_profile_list_handler,
     resolve_contact_chatbot_history_handler,
     resolve_contact_chatbot_history_list_handler,
     resolve_contact_profile_handler,
     resolve_contact_profile_list_handler,
-    resolve_contact_request_handler,
-    resolve_contact_request_list_handler,
     resolve_corporation_place_handler,
     resolve_corporation_place_list_handler,
     resolve_corporation_profile_handler,
@@ -35,14 +35,14 @@ from .handlers import (
 from .types import (
     CompanyContactProfileListType,
     CompanyContactProfileType,
+    CompanyContactRequestListType,
+    CompanyContactRequestType,
     CompanyCorporationProfileListType,
     CompanyCorporationProfileType,
     ContactChatbotHistoryListType,
     ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
-    ContactRequestListType,
-    ContactRequestType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
@@ -112,16 +112,16 @@ def resolve_company_contact_profile_list(
     return resolve_company_contact_profile_list_handler(info, **kwargs)
 
 
-def resolve_contact_request(
+def resolve_company_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactRequestType:
-    return resolve_contact_request_handler(info, **kwargs)
+) -> CompanyContactRequestType:
+    return resolve_company_contact_request_handler(info, **kwargs)
 
 
-def resolve_contact_request_list(
+def resolve_company_contact_request_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactRequestListType:
-    return resolve_contact_request_list_handler(info, **kwargs)
+) -> CompanyContactRequestListType:
+    return resolve_company_contact_request_list_handler(info, **kwargs)
 
 
 def resolve_corporation_profile(
