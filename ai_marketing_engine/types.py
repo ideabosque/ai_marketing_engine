@@ -15,6 +15,7 @@ from graphene import (
     ObjectType,
     String,
 )
+
 from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSON
 
@@ -82,8 +83,8 @@ class CompanyContactProfileType(ObjectType):
     updated_at = DateTime()
 
 
-class ContactRequestType(ObjectType):
-    contact_profile = JSON()
+class CompanyContactRequestType(ObjectType):
+    company_contact_profile = JSON()
     request_uuid = String()
     request_title = String()
     request_detail = String()
@@ -131,7 +132,7 @@ class ContactChatbotHistoryType(ObjectType):
     region = String()
     assistant_id = String()
     thread_id = String()
-    assistant_type = String()
+    endpoint_id = String()
 
 
 class UtmTagDataCollectionType(ObjectType):
@@ -169,8 +170,8 @@ class CompanyContactProfileListType(ListObjectType):
     company_contact_profile_list = List(CompanyContactProfileType)
 
 
-class ContactRequestListType(ListObjectType):
-    contact_request_list = List(ContactRequestType)
+class CompanyContactRequestListType(ListObjectType):
+    company_contact_request_list = List(CompanyContactRequestType)
 
 
 class CorporationProfileListType(ListObjectType):

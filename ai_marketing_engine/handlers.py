@@ -10,6 +10,8 @@ from typing import Any, Dict
 
 import pendulum
 from graphene import ResolveInfo
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from silvaengine_dynamodb_base import (
     delete_decorator,
     insert_update_decorator,
@@ -17,14 +19,13 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .models import (
     CompanyContactProfileModel,
+    CompanyContactRequestModel,
     CompanyCorporationProfileModel,
     ContactChatbotHistoryModel,
     ContactProfileModel,
-    ContactRequestModel,
     CorporationPlaceModel,
     CorporationProfileModel,
     PlaceModel,
@@ -35,14 +36,14 @@ from .models import (
 from .types import (
     CompanyContactProfileListType,
     CompanyContactProfileType,
+    CompanyContactRequestListType,
+    CompanyContactRequestType,
     CompanyCorporationProfileListType,
     CompanyCorporationProfileType,
     ContactChatbotHistoryListType,
     ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
-    ContactRequestListType,
-    ContactRequestType,
     CorporationPlaceListType,
     CorporationPlaceType,
     CorporationProfileListType,
@@ -731,6 +732,19 @@ def get_company_contact_profile(
     return CompanyContactProfileModel.get(company_id, contact_uuid)
 
 
+def _get_company_contact_profile(company_id: str, contact_uuid: str) -> Dict[str, Any]:
+    company_contact_profile = get_company_contact_profile(company_id, contact_uuid)
+    return {
+        "company_id": company_contact_profile.company_id,
+        "contact_profile": _get_contact_profile(
+            company_contact_profile.place_uuid,
+            company_contact_profile.contact_uuid,
+        ),
+        "email": company_contact_profile.email,
+        "data": company_contact_profile.data,
+    }
+
+
 def get_company_contact_profile_count(company_id: str, contact_uuid: str) -> int:
     return CompanyContactProfileModel.count(
         company_id, CompanyContactProfileModel.contact_uuid == contact_uuid
@@ -781,6 +795,7 @@ def resolve_company_contact_profile_list_handler(
 ) -> Any:
     company_id = kwargs.get("company_id")
     email = kwargs.get("email")
+    place_uuid = kwargs.get("place_uuid")
     corporation_types = kwargs.get("corporation_types")
 
     args = []
@@ -795,6 +810,8 @@ def resolve_company_contact_profile_list_handler(
             count_funct = CompanyContactProfileModel.email_index.count
 
     the_filters = None  # We can add filters for the query.
+    if place_uuid:
+        the_filters &= CompanyContactProfileModel.place_uuid == place_uuid
     if corporation_types:
         the_filters &= CompanyContactProfileModel.corporation_type.is_in(
             *corporation_types
@@ -869,71 +886,79 @@ def delete_company_contact_profile_handler(
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_contact_request(contact_uuid: str, request_uuid: str) -> ContactRequestModel:
-    return ContactRequestModel.get(contact_uuid, request_uuid)
+def get_company_contact_request(
+    contact_uuid: str, request_uuid: str
+) -> CompanyContactRequestModel:
+    return CompanyContactRequestModel.get(contact_uuid, request_uuid)
 
 
-def get_contact_request_count(contact_uuid: str, request_uuid: str) -> int:
-    return ContactRequestModel.count(
-        contact_uuid, ContactRequestModel.request_uuid == request_uuid
+def get_company_contact_request_count(contact_uuid: str, request_uuid: str) -> int:
+    return CompanyContactRequestModel.count(
+        contact_uuid, CompanyContactRequestModel.request_uuid == request_uuid
     )
 
 
-def get_contact_request_type(
-    info: ResolveInfo, contact_request: ContactRequestModel
-) -> ContactRequestType:
+def get_company_contact_request_type(
+    info: ResolveInfo, company_contact_request: CompanyContactRequestModel
+) -> CompanyContactRequestType:
     try:
-        contact_profile = _get_contact_profile(
-            contact_request.place_uuid, contact_request.contact_uuid
+        company_contact_profile = _get_company_contact_profile(
+            company_contact_request.company_id, company_contact_request.contact_uuid
         )
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    contact_request = contact_request.__dict__["attribute_values"]
-    contact_request["contact_profile"] = contact_profile
-    contact_request.pop("place_uuid")
-    contact_request.pop("contact_uuid")
-    return ContactRequestType(**Utility.json_loads(Utility.json_dumps(contact_request)))
+    company_contact_request = company_contact_request.__dict__["attribute_values"]
+    company_contact_request["company_contact_profile"] = company_contact_profile
+    company_contact_request.pop("company_id")
+    company_contact_request.pop("contact_uuid")
+    return CompanyContactRequestType(
+        **Utility.json_loads(Utility.json_dumps(company_contact_request))
+    )
 
 
-def resolve_contact_request_handler(
+def resolve_company_contact_request_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactRequestType:
-    return get_contact_request_type(
+) -> CompanyContactRequestType:
+    return get_company_contact_request_type(
         info,
-        get_contact_request(kwargs.get("contact_uuid"), kwargs.get("request_uuid")),
+        get_company_contact_request(
+            kwargs.get("contact_uuid"), kwargs.get("request_uuid")
+        ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
     attributes_to_get=["contact_uuid", "request_uuid"],
-    list_type_class=ContactRequestListType,
-    type_funct=get_contact_request_type,
+    list_type_class=CompanyContactRequestListType,
+    type_funct=get_company_contact_request_type,
 )
-def resolve_contact_request_list_handler(
+def resolve_company_contact_request_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     contact_uuid = kwargs.get("contact_uuid")
-    place_uuid = kwargs.get("place_uuid")
+    company_id = kwargs["company_id"]
     request_title = kwargs.get("request_title")
     request_detail = kwargs.get("request_detail")
 
     args = []
-    inquiry_funct = ContactRequestModel.scan
-    count_funct = ContactRequestModel.count
+    inquiry_funct = CompanyContactRequestModel.scan
+    count_funct = CompanyContactRequestModel.count
     if contact_uuid:
         args = [contact_uuid, None]
-        inquiry_funct = ContactRequestModel.query
+        inquiry_funct = CompanyContactRequestModel.query
 
     the_filters = None  # We can add filters for the query.
-    if place_uuid:
-        the_filters &= ContactRequestModel.contact_uuid.contains(place_uuid)
+    if company_id:
+        the_filters &= CompanyContactRequestModel.company_id == company_id
     if request_title:
-        the_filters &= ContactRequestModel.request_title.contains(request_title)
+        the_filters &= CompanyContactRequestModel.request_title.contains(request_title)
     if request_detail:
-        the_filters &= ContactRequestModel.request_detail.contains(request_detail)
+        the_filters &= CompanyContactRequestModel.request_detail.contains(
+            request_detail
+        )
     if the_filters is not None:
         args.append(the_filters)
 
@@ -945,44 +970,48 @@ def resolve_contact_request_list_handler(
         "hash_key": "contact_uuid",
         "range_key": "request_uuid",
     },
-    model_funct=get_contact_request,
-    count_funct=get_contact_request_count,
-    type_funct=get_contact_request_type,
+    model_funct=get_company_contact_request,
+    count_funct=get_company_contact_request_count,
+    type_funct=get_company_contact_request_type,
     # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
     # activity_history_funct=None,
 )
-def insert_update_contact_request_handler(
+def insert_update_company_contact_request_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
     contact_uuid = kwargs.get("contact_uuid")
     request_uuid = kwargs.get("request_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "place_uuid": kwargs["place_uuid"],
+            "company_id": kwargs["company_id"],
             "request_title": kwargs["request_title"],
             "request_detail": kwargs["request_detail"],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        ContactRequestModel(
+        CompanyContactRequestModel(
             contact_uuid,
             request_uuid,
             **cols,
         ).save()
         return
 
-    contact_request = kwargs.get("entity")
+    company_contact_request = kwargs.get("entity")
     actions = [
-        ContactRequestModel.updated_by.set(kwargs["updated_by"]),
-        ContactRequestModel.updated_at.set(pendulum.now("UTC")),
+        CompanyContactRequestModel.updated_by.set(kwargs["updated_by"]),
+        CompanyContactRequestModel.updated_at.set(pendulum.now("UTC")),
     ]
     if kwargs.get("request_title") is not None:
-        actions.append(ContactRequestModel.request_title.set(kwargs["request_title"]))
+        actions.append(
+            CompanyContactRequestModel.request_title.set(kwargs["request_title"])
+        )
     if kwargs.get("request_detail") is not None:
-        actions.append(ContactRequestModel.request_detail.set(kwargs["request_detail"]))
+        actions.append(
+            CompanyContactRequestModel.request_detail.set(kwargs["request_detail"])
+        )
 
-    contact_request.update(actions=actions)
+    company_contact_request.update(actions=actions)
     return
 
 
@@ -991,9 +1020,11 @@ def insert_update_contact_request_handler(
         "hash_key": "contact_uuid",
         "range_key": "request_uuid",
     },
-    model_funct=get_contact_request,
+    model_funct=get_company_contact_request,
 )
-def delete_contact_request_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
+def delete_company_contact_request_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> bool:
     kwargs.get("entity").delete()
     return True
 
