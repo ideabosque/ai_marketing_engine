@@ -124,7 +124,6 @@ class Query(ObjectType):
     question = Field(
         QuestionType,
         required=True,
-        company_id=String(required=True),
         question_uuid=String(required=True),
     )
 
@@ -132,7 +131,6 @@ class Query(ObjectType):
         QuestionListType,
         page_number=Int(),
         limit=Int(),
-        company_id=String(),
         question_groups=List(String),
         question=String(),
         attribute=String(),
@@ -141,7 +139,6 @@ class Query(ObjectType):
     question_criteria = Field(
         QuestionCriteriaType,
         required=True,
-        company_id=String(required=True),
         question_group=String(required=True),
     )
 
@@ -149,7 +146,6 @@ class Query(ObjectType):
         QuestionCriteriaListType,
         page_number=Int(),
         limit=Int(),
-        company_id=String(),
         region=String(),
         question_criteria=JSON(),
     )
@@ -194,7 +190,6 @@ class Query(ObjectType):
     company_contact_profile = Field(
         CompanyContactProfileType,
         required=True,
-        company_id=String(required=True),
         contact_uuid=String(required=True),
     )
 
@@ -202,7 +197,6 @@ class Query(ObjectType):
         CompanyContactProfileListType,
         page_number=Int(),
         limit=Int(),
-        company_id=String(),
         email=String(),
         place_uuid=String(),
         corporation_types=List(String),
@@ -220,7 +214,6 @@ class Query(ObjectType):
         page_number=Int(),
         limit=Int(),
         contact_uuid=String(),
-        company_id=String(required=True),
         request_title=String(),
         request_detail=String(),
     )
@@ -261,7 +254,6 @@ class Query(ObjectType):
     company_corporation_profile = Field(
         CompanyCorporationProfileType,
         required=True,
-        company_id=String(required=True),
         corporation_uuid=String(required=True),
     )
 
@@ -269,7 +261,6 @@ class Query(ObjectType):
         CompanyCorporationProfileListType,
         page_number=Int(),
         limit=Int(),
-        company_id=String(),
         external_id=String(),
         corporation_types=List(String),
     )
@@ -277,7 +268,6 @@ class Query(ObjectType):
     contact_chatbot_history = Field(
         ContactChatbotHistoryType,
         required=True,
-        company_id=String(required=True),
         timestamp=Int(required=True),
     )
 
@@ -285,17 +275,14 @@ class Query(ObjectType):
         ContactChatbotHistoryListType,
         page_number=Int(),
         limit=Int(),
-        company_id=String(),
         contact_uuid=String(),
         place_uuids=List(String),
         regions=List(String),
-        assistant_types=List(String),
     )
 
     utm_tag_data_collection = Field(
         UtmTagDataCollectionType,
         required=True,
-        company_id=String(required=True),
         collection_uuid=String(required=True),
     )
 
@@ -303,7 +290,6 @@ class Query(ObjectType):
         UtmTagDataCollectionListType,
         page_number=Int(),
         limit=Int(),
-        company_id=String(),
         tag_name=String(),
         place_uuids=List(String),
         contact_uuids=List(String),
