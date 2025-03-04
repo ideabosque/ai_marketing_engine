@@ -73,18 +73,20 @@ def handlers_init(logger: logging.Logger, **setting: Dict[str, Any]) -> None:
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_question(company_id: str, question_uuid: str) -> QuestionModel:
-    return QuestionModel.get(company_id, question_uuid)
+def get_question(endpoint_id: str, question_uuid: str) -> QuestionModel:
+    return QuestionModel.get(endpoint_id, question_uuid)
 
 
-def get_question_count(company_id: str, question_uuid: str) -> int:
-    return QuestionModel.count(company_id, QuestionModel.question_uuid == question_uuid)
+def get_question_count(endpoint_id: str, question_uuid: str) -> int:
+    return QuestionModel.count(
+        endpoint_id, QuestionModel.question_uuid == question_uuid
+    )
 
 
 def get_question_type(info: ResolveInfo, question: QuestionModel) -> QuestionType:
     try:
         question_criteria = _get_question_criteria(
-            question.company_id, question.question_group
+            question.endpoint_id, question.question_group
         )
     except Exception as e:
         log = traceback.format_exc()
@@ -100,18 +102,18 @@ def resolve_question_handler(
 ) -> QuestionType:
     return get_question_type(
         info,
-        get_question(kwargs.get("company_id"), kwargs.get("question_uuid")),
+        get_question(info.context["endpoint_id"], kwargs.get("question_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "question_uuid"],
+    attributes_to_get=["endpoint_id", "question_uuid"],
     list_type_class=QuestionListType,
     type_funct=get_question_type,
 )
 def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    company_id = kwargs.get("company_id")
+    endpoint_id = info.context["endpoint_id"]
     question_groups = kwargs.get("question_groups")
     question = kwargs.get("question")
     attribute = kwargs.get("attribute")
@@ -119,8 +121,8 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     args = []
     inquiry_funct = QuestionModel.scan
     count_funct = QuestionModel.count
-    if company_id:
-        args = [company_id, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = QuestionModel.query
 
     the_filters = None  # We can add filters for the query.
@@ -138,7 +140,7 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
 
 @insert_update_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "question_uuid",
     },
     model_funct=get_question,
@@ -148,7 +150,7 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     # activity_history_funct=None,
 )
 def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    company_id = kwargs.get("company_id")
+    endpoint_id = kwargs.get("endpoint_id")
     question_uuid = kwargs.get("question_uuid")
     if kwargs.get("entity") is None:
         cols = {
@@ -160,12 +162,11 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        if kwargs.get("option_values") is not None:
-            cols["option_values"] = kwargs["option_values"]
-        if kwargs.get("condition") is not None:
-            cols["condition"] = kwargs["condition"]
+        for key in ["option_values", "condition"]:
+            if key in kwargs:
+                cols[key] = kwargs[key]
         QuestionModel(
-            company_id,
+            endpoint_id,
             question_uuid,
             **cols,
         ).save()
@@ -173,28 +174,33 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
 
     question = kwargs.get("entity")
     actions = [
-        QuestionModel.updated_by.set(kwargs.get("updated_by")),
+        QuestionModel.updated_by.set(kwargs["updated_by"]),
         QuestionModel.updated_at.set(pendulum.now("UTC")),
     ]
-    if kwargs.get("question_group") is not None:
-        actions.append(QuestionModel.question_group.set(kwargs.get("question_group")))
-    if kwargs.get("question") is not None:
-        actions.append(QuestionModel.question.set(kwargs.get("question")))
-    if kwargs.get("priority") is not None:
-        actions.append(QuestionModel.priority.set(kwargs.get("priority")))
-    if kwargs.get("attribute") is not None:
-        actions.append(QuestionModel.attribute.set(kwargs.get("attribute")))
-    if kwargs.get("option_values") is not None:
-        actions.append(QuestionModel.option_values.set(kwargs.get("option_values")))
-    if kwargs.get("condition") is not None:
-        actions.append(QuestionModel.condition.set(kwargs.get("condition")))
+
+    # Map of kwargs keys to QuestionModel attributes
+    field_map = {
+        "question_group": QuestionModel.question_group,
+        "question": QuestionModel.question,
+        "priority": QuestionModel.priority,
+        "attribute": QuestionModel.attribute,
+        "option_values": QuestionModel.option_values,
+        "condition": QuestionModel.condition,
+    }
+
+    # Add actions dynamically based on the presence of keys in kwargs
+    for key, field in field_map.items():
+        if key in kwargs:  # Check if the key exists in kwargs
+            actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
+
+    # Update the question
     question.update(actions=actions)
     return
 
 
 @delete_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "question_uuid",
     },
     model_funct=get_question,
@@ -210,21 +216,21 @@ def delete_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool
     stop=stop_after_attempt(5),
 )
 def get_question_criteria(
-    company_id: str, question_group: str
+    endpoint_id: str, question_group: str
 ) -> QuestionCriteriaModel:
-    return QuestionCriteriaModel.get(company_id, question_group)
+    return QuestionCriteriaModel.get(endpoint_id, question_group)
 
 
-def get_question_criteria_count(company_id: str, question_group: str) -> int:
+def get_question_criteria_count(endpoint_id: str, question_group: str) -> int:
     return QuestionCriteriaModel.count(
-        company_id, QuestionCriteriaModel.question_group == question_group
+        endpoint_id, QuestionCriteriaModel.question_group == question_group
     )
 
 
-def _get_question_criteria(company_id: str, question_group: str) -> Dict[str, Any]:
-    question_criteria = get_question_criteria(company_id, question_group)
+def _get_question_criteria(endpoint_id: str, question_group: str) -> Dict[str, Any]:
+    question_criteria = get_question_criteria(endpoint_id, question_group)
     return {
-        "company_id": question_criteria.company_id,
+        "endpoint_id": question_criteria.endpoint_id,
         "question_group": question_criteria.question_group,
         "region": question_criteria.region,
         "question_criteria": question_criteria.question_criteria,
@@ -246,28 +252,30 @@ def resolve_question_criteria_handler(
 ) -> QuestionCriteriaType:
     return get_question_criteria_type(
         info,
-        get_question_criteria(kwargs.get("company_id"), kwargs.get("question_group")),
+        get_question_criteria(
+            info.context["endpoint_id"], kwargs.get("question_group")
+        ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "question_group"],
+    attributes_to_get=["endpoint_id", "question_group"],
     list_type_class=QuestionCriteriaListType,
     type_funct=get_question_criteria_type,
 )
 def resolve_question_criteria_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    company_id = kwargs.get("company_id")
+    endpoint_id = info.context["endpoint_id"]
     region = kwargs.get("region")
     question_criteria = kwargs.get("question_criteria")
 
     args = []
     inquiry_funct = QuestionCriteriaModel.scan
     count_funct = QuestionCriteriaModel.count
-    if company_id:
-        args = [company_id, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = QuestionCriteriaModel.query
 
     the_filters = None  # We can add filters for the query.
@@ -319,7 +327,7 @@ def resolve_question_criteria_list_handler(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "question_group",
     },
     range_key_required=True,
@@ -332,7 +340,7 @@ def resolve_question_criteria_list_handler(
 def insert_update_question_criteria_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    company_id = kwargs.get("company_id")
+    endpoint_id = kwargs.get("endpoint_id")
     question_group = kwargs.get("question_group")
     if kwargs.get("entity") is None:
         cols = {
@@ -341,33 +349,38 @@ def insert_update_question_criteria_handler(
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        if kwargs.get("question_criteria") is not None:
-            cols["question_criteria"] = kwargs["question_criteria"]
-        if kwargs.get("weight") is not None:
-            cols["weight"] = kwargs["weight"]
-        QuestionCriteriaModel(company_id, question_group, **cols).save()
+        for key in ["question_criteria", "weight"]:
+            if key in kwargs:
+                cols[key] = kwargs[key]
+        QuestionCriteriaModel(endpoint_id, question_group, **cols).save()
         return
 
     question_criteria = kwargs.get("entity")
     actions = [
-        QuestionCriteriaModel.updated_by.set(kwargs.get("updated_by")),
+        QuestionCriteriaModel.updated_by.set(kwargs["updated_by"]),
         QuestionCriteriaModel.updated_at.set(pendulum.now("UTC")),
     ]
-    if kwargs.get("region") is not None:
-        actions.append(QuestionCriteriaModel.region.set(kwargs.get("region")))
-    if kwargs.get("question_criteria") is not None:
-        actions.append(
-            QuestionCriteriaModel.question_criteria.set(kwargs.get("question_criteria"))
-        )
-    if kwargs.get("weight") is not None:
-        actions.append(QuestionCriteriaModel.weight.set(kwargs.get("weight")))
+
+    # Map of kwargs keys to QuestionCriteriaModel attributes
+    field_map = {
+        "region": QuestionCriteriaModel.region,
+        "question_criteria": QuestionCriteriaModel.question_criteria,
+        "weight": QuestionCriteriaModel.weight,
+    }
+
+    # Add actions dynamically based on the presence of keys in kwargs
+    for key, field in field_map.items():
+        if key in kwargs:  # Check if the key exists in kwargs
+            actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
+
+    # Update the question criteria
     question_criteria.update(actions=actions)
     return
 
 
 @delete_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "question_group",
     },
     model_funct=get_question_criteria,
@@ -480,10 +493,9 @@ def insert_update_place_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> 
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        if kwargs.get("phone_number") is not None:
-            cols["phone_number"] = kwargs["phone_number"]
-        if kwargs.get("types") is not None:
-            cols["types"] = kwargs["types"]
+        for key in ["phone_number", "types", "website"]:
+            if key in kwargs:
+                cols[key] = kwargs[key]
         PlaceModel(
             region,
             place_uuid,
@@ -493,23 +505,27 @@ def insert_update_place_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -> 
 
     place = kwargs.get("entity")
     actions = [
-        PlaceModel.updated_by.set(kwargs.get("updated_by")),
+        PlaceModel.updated_by.set(kwargs["updated_by"]),
         PlaceModel.updated_at.set(pendulum.now("UTC")),
     ]
-    if kwargs.get("latitude") is not None:
-        actions.append(PlaceModel.latitude.set(kwargs.get("latitude")))
-    if kwargs.get("longitude") is not None:
-        actions.append(PlaceModel.longitude.set(kwargs.get("longitude")))
-    if kwargs.get("business_name") is not None:
-        actions.append(PlaceModel.business_name.set(kwargs.get("business_name")))
-    if kwargs.get("address") is not None:
-        actions.append(PlaceModel.address.set(kwargs.get("address")))
-    if kwargs.get("phone_number") is not None:
-        actions.append(PlaceModel.phone_number.set(kwargs.get("phone_number")))
-    if kwargs.get("website") is not None:
-        actions.append(PlaceModel.website.set(kwargs.get("website")))
-    if kwargs.get("types") is not None:
-        actions.append(PlaceModel.types.set(kwargs.get("types")))
+
+    # Map of kwargs keys to PlaceModel attributes
+    field_map = {
+        "latitude": PlaceModel.latitude,
+        "longitude": PlaceModel.longitude,
+        "business_name": PlaceModel.business_name,
+        "address": PlaceModel.address,
+        "phone_number": PlaceModel.phone_number,
+        "website": PlaceModel.website,
+        "types": PlaceModel.types,
+    }
+
+    # Add actions dynamically based on the presence of keys in kwargs
+    for key, field in field_map.items():
+        if key in kwargs:  # Check if the key exists in kwargs
+            actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
+
+    # Update the place
     place.update(actions=actions)
     return
 
@@ -660,16 +676,15 @@ def insert_update_contact_profile_handler(
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        if kwargs.get("first_name") is not None:
-            cols["first_name"] = kwargs["first_name"]
-        if kwargs.get("last_name") is not None:
-            cols["last_name"] = kwargs["last_name"]
-        if kwargs.get("corporation_type") is not None:
-            cols["corporation_type"] = kwargs["corporation_type"]
-        if kwargs.get("corporation_uuid") is not None:
-            cols["corporation_uuid"] = kwargs["corporation_uuid"]
-        if kwargs.get("data") is not None:
-            cols["data"] = kwargs["data"]
+        for key in [
+            "first_name",
+            "last_name",
+            "corporation_type",
+            "corporation_uuid",
+            "data",
+        ]:
+            if key in kwargs:
+                cols[key] = kwargs[key]
         ContactProfileModel(
             place_uuid,
             contact_uuid,
@@ -679,17 +694,25 @@ def insert_update_contact_profile_handler(
 
     contact_profile = kwargs.get("entity")
     actions = [
-        ContactProfileModel.updated_by.set(kwargs.get("updated_by")),
+        ContactProfileModel.updated_by.set(kwargs["updated_by"]),
         ContactProfileModel.updated_at.set(pendulum.now("UTC")),
     ]
-    if kwargs.get("email") is not None:
-        actions.append(ContactProfileModel.email.set(kwargs.get("email")))
-    if kwargs.get("region") is not None:
-        actions.append(ContactProfileModel.region.set(kwargs.get("region")))
-    if kwargs.get("first_name") is not None:
-        actions.append(ContactProfileModel.first_name.set(kwargs.get("first_name")))
-    if kwargs.get("last_name") is not None:
-        actions.append(ContactProfileModel.last_name.set(kwargs.get("last_name")))
+
+    # Map of kwargs keys to ContactProfileModel attributes
+    field_map = {
+        "email": ContactProfileModel.email,
+        "region": ContactProfileModel.region,
+        "first_name": ContactProfileModel.first_name,
+        "last_name": ContactProfileModel.last_name,
+        "data": ContactProfileModel.data,
+    }
+
+    # Add actions dynamically based on the presence of keys in kwargs
+    for key, field in field_map.items():
+        if key in kwargs:  # Check if the key exists in kwargs
+            actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
+
+    # Handle corporation fields separately due to their special logic
     if (
         kwargs.get("corporation_type") is not None
         and kwargs.get("corporation_uuid") is not None
@@ -700,11 +723,11 @@ def insert_update_contact_profile_handler(
         actions.append(
             ContactProfileModel.corporation_uuid.set(kwargs.get("corporation_uuid"))
         )
-    else:
+    elif "corporation_type" in kwargs or "corporation_uuid" in kwargs:
         actions.append(ContactProfileModel.corporation_type.remove())
         actions.append(ContactProfileModel.corporation_uuid.remove())
-    if kwargs.get("data") is not None:
-        actions.append(ContactProfileModel.data.set(kwargs.get("data")))
+
+    # Update the contact profile
     contact_profile.update(actions=actions)
     return
 
@@ -727,15 +750,15 @@ def delete_contact_profile_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
     stop=stop_after_attempt(5),
 )
 def get_company_contact_profile(
-    company_id: str, contact_uuid: str
+    endpoint_id: str, contact_uuid: str
 ) -> CompanyContactProfileModel:
-    return CompanyContactProfileModel.get(company_id, contact_uuid)
+    return CompanyContactProfileModel.get(endpoint_id, contact_uuid)
 
 
-def _get_company_contact_profile(company_id: str, contact_uuid: str) -> Dict[str, Any]:
-    company_contact_profile = get_company_contact_profile(company_id, contact_uuid)
+def _get_company_contact_profile(endpoint_id: str, contact_uuid: str) -> Dict[str, Any]:
+    company_contact_profile = get_company_contact_profile(endpoint_id, contact_uuid)
     return {
-        "company_id": company_contact_profile.company_id,
+        "endpoint_id": company_contact_profile.endpoint_id,
         "contact_profile": _get_contact_profile(
             company_contact_profile.place_uuid,
             company_contact_profile.contact_uuid,
@@ -745,9 +768,9 @@ def _get_company_contact_profile(company_id: str, contact_uuid: str) -> Dict[str
     }
 
 
-def get_company_contact_profile_count(company_id: str, contact_uuid: str) -> int:
+def get_company_contact_profile_count(endpoint_id: str, contact_uuid: str) -> int:
     return CompanyContactProfileModel.count(
-        company_id, CompanyContactProfileModel.contact_uuid == contact_uuid
+        endpoint_id, CompanyContactProfileModel.contact_uuid == contact_uuid
     )
 
 
@@ -779,21 +802,21 @@ def resolve_company_contact_profile_handler(
     return get_company_contact_profile_type(
         info,
         get_company_contact_profile(
-            kwargs.get("company_id"), kwargs.get("contact_uuid")
+            info.context["endpoint_id"], kwargs.get("contact_uuid")
         ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "contact_uuid", "email"],
+    attributes_to_get=["endpoint_id", "contact_uuid", "email"],
     list_type_class=CompanyContactProfileListType,
     type_funct=get_company_contact_profile_type,
 )
 def resolve_company_contact_profile_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    company_id = kwargs.get("company_id")
+    endpoint_id = info.context["endpoint_id"]
     email = kwargs.get("email")
     place_uuid = kwargs.get("place_uuid")
     corporation_types = kwargs.get("corporation_types")
@@ -801,8 +824,8 @@ def resolve_company_contact_profile_list_handler(
     args = []
     inquiry_funct = CompanyContactProfileModel.scan
     count_funct = CompanyContactProfileModel.count
-    if company_id:
-        args = [company_id, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = CompanyContactProfileModel.query
         if email:
             inquiry_funct = CompanyContactProfileModel.email_index.query
@@ -824,7 +847,7 @@ def resolve_company_contact_profile_list_handler(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "contact_uuid",
     },
     range_key_required=True,
@@ -837,7 +860,7 @@ def resolve_company_contact_profile_list_handler(
 def insert_update_company_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    company_id = kwargs.get("company_id")
+    endpoint_id = kwargs.get("endpoint_id")
     contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
         cols = {
@@ -850,7 +873,7 @@ def insert_update_company_contact_profile_handler(
         if kwargs.get("data") is not None:
             cols["data"] = kwargs["data"]
         CompanyContactProfileModel(
-            company_id,
+            endpoint_id,
             contact_uuid,
             **cols,
         ).save()
@@ -869,7 +892,7 @@ def insert_update_company_contact_profile_handler(
 
 @delete_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "contact_uuid",
     },
     model_funct=get_company_contact_profile,
@@ -887,14 +910,14 @@ def delete_company_contact_profile_handler(
     stop=stop_after_attempt(5),
 )
 def get_company_contact_request(
-    contact_uuid: str, request_uuid: str
+    endpoint_id: str, request_uuid: str
 ) -> CompanyContactRequestModel:
-    return CompanyContactRequestModel.get(contact_uuid, request_uuid)
+    return CompanyContactRequestModel.get(endpoint_id, request_uuid)
 
 
-def get_company_contact_request_count(contact_uuid: str, request_uuid: str) -> int:
+def get_company_contact_request_count(endpoint_id: str, request_uuid: str) -> int:
     return CompanyContactRequestModel.count(
-        contact_uuid, CompanyContactRequestModel.request_uuid == request_uuid
+        endpoint_id, CompanyContactRequestModel.request_uuid == request_uuid
     )
 
 
@@ -903,7 +926,7 @@ def get_company_contact_request_type(
 ) -> CompanyContactRequestType:
     try:
         company_contact_profile = _get_company_contact_profile(
-            company_contact_request.company_id, company_contact_request.contact_uuid
+            company_contact_request.endpoint_id, company_contact_request.contact_uuid
         )
     except Exception as e:
         log = traceback.format_exc()
@@ -911,7 +934,7 @@ def get_company_contact_request_type(
         raise e
     company_contact_request = company_contact_request.__dict__["attribute_values"]
     company_contact_request["company_contact_profile"] = company_contact_profile
-    company_contact_request.pop("company_id")
+    company_contact_request.pop("endpoint_id")
     company_contact_request.pop("contact_uuid")
     return CompanyContactRequestType(
         **Utility.json_loads(Utility.json_dumps(company_contact_request))
@@ -924,14 +947,14 @@ def resolve_company_contact_request_handler(
     return get_company_contact_request_type(
         info,
         get_company_contact_request(
-            kwargs.get("contact_uuid"), kwargs.get("request_uuid")
+            kwargs.get("endpoint_id"), kwargs.get("request_uuid")
         ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["contact_uuid", "request_uuid"],
+    attributes_to_get=["endpoint_id", "request_uuid", "contact_uuid"],
     list_type_class=CompanyContactRequestListType,
     type_funct=get_company_contact_request_type,
 )
@@ -939,20 +962,22 @@ def resolve_company_contact_request_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
     contact_uuid = kwargs.get("contact_uuid")
-    company_id = kwargs["company_id"]
+    endpoint_id = info.context["endpoint_id"]
     request_title = kwargs.get("request_title")
     request_detail = kwargs.get("request_detail")
 
     args = []
     inquiry_funct = CompanyContactRequestModel.scan
     count_funct = CompanyContactRequestModel.count
-    if contact_uuid:
-        args = [contact_uuid, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = CompanyContactRequestModel.query
+        if contact_uuid:
+            inquiry_funct = CompanyContactRequestModel.contact_uuid_index.query
+            args[1] = CompanyContactRequestModel.contact_uuid == contact_uuid
+            count_funct = CompanyContactRequestModel.contact_uuid_index.count
 
     the_filters = None  # We can add filters for the query.
-    if company_id:
-        the_filters &= CompanyContactRequestModel.company_id == company_id
     if request_title:
         the_filters &= CompanyContactRequestModel.request_title.contains(request_title)
     if request_detail:
@@ -967,7 +992,7 @@ def resolve_company_contact_request_list_handler(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "contact_uuid",
+        "hash_key": "endpoint_id",
         "range_key": "request_uuid",
     },
     model_funct=get_company_contact_request,
@@ -979,11 +1004,11 @@ def resolve_company_contact_request_list_handler(
 def insert_update_company_contact_request_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    contact_uuid = kwargs.get("contact_uuid")
+    endpoint_id = kwargs.get("endpoint_id")
     request_uuid = kwargs.get("request_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "company_id": kwargs["company_id"],
+            "contact_uuid": kwargs["contact_uuid"],
             "request_title": kwargs["request_title"],
             "request_detail": kwargs["request_detail"],
             "updated_by": kwargs["updated_by"],
@@ -991,7 +1016,7 @@ def insert_update_company_contact_request_handler(
             "updated_at": pendulum.now("UTC"),
         }
         CompanyContactRequestModel(
-            contact_uuid,
+            endpoint_id,
             request_uuid,
             **cols,
         ).save()
@@ -1017,7 +1042,7 @@ def insert_update_company_contact_request_handler(
 
 @delete_decorator(
     keys={
-        "hash_key": "contact_uuid",
+        "hash_key": "endpoint_id",
         "range_key": "request_uuid",
     },
     model_funct=get_company_contact_request,
@@ -1142,10 +1167,9 @@ def insert_update_corporation_profile_handler(
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        if kwargs.get("categories") is not None:
-            cols["categories"] = kwargs["categories"]
-        if kwargs.get("data") is not None:
-            cols["data"] = kwargs["data"]
+        for key in ["categories", "data"]:
+            if key in kwargs:
+                cols[key] = kwargs[key]
         CorporationProfileModel(
             corporation_type,
             corporation_uuid,
@@ -1155,19 +1179,24 @@ def insert_update_corporation_profile_handler(
 
     corporation_profile = kwargs.get("entity")
     actions = [
-        CorporationProfileModel.updated_by.set(kwargs.get("updated_by")),
+        CorporationProfileModel.updated_by.set(kwargs["updated_by"]),
         CorporationProfileModel.updated_at.set(pendulum.now("UTC")),
     ]
-    if kwargs.get("business_name") is not None:
-        actions.append(
-            CorporationProfileModel.business_name.set(kwargs.get("business_name"))
-        )
-    if kwargs.get("categories") is not None:
-        actions.append(CorporationProfileModel.categories.set(kwargs.get("categories")))
-    if kwargs.get("address") is not None:
-        actions.append(CorporationProfileModel.address.set(kwargs.get("address")))
-    if kwargs.get("data") is not None:
-        actions.append(CorporationProfileModel.data.set(kwargs.get("data")))
+
+    # Map of kwargs keys to CorporationProfileModel attributes
+    field_map = {
+        "external_id": CorporationProfileModel.external_id,
+        "business_name": CorporationProfileModel.business_name,
+        "categories": CorporationProfileModel.categories,
+        "address": CorporationProfileModel.address,
+        "data": CorporationProfileModel.data,
+    }
+
+    # Add actions dynamically based on the presence of keys in kwargs
+    for key, field in field_map.items():
+        if key in kwargs:  # Check if the key exists in kwargs
+            actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
+
     corporation_profile.update(actions=actions)
     return
 
@@ -1338,16 +1367,16 @@ def delete_corporation_place_handler(
     stop=stop_after_attempt(5),
 )
 def get_company_corporation_profile(
-    company_id: str, corporation_uuid: str
+    endpoint_id: str, corporation_uuid: str
 ) -> CompanyCorporationProfileModel:
-    return CompanyCorporationProfileModel.get(company_id, corporation_uuid)
+    return CompanyCorporationProfileModel.get(endpoint_id, corporation_uuid)
 
 
 def get_company_corporation_profile_count(
-    company_id: str, corporation_uuid: str
+    endpoint_id: str, corporation_uuid: str
 ) -> int:
     return CompanyCorporationProfileModel.count(
-        company_id,
+        endpoint_id,
         CompanyCorporationProfileModel.corporation_uuid == corporation_uuid,
     )
 
@@ -1382,29 +1411,29 @@ def resolve_company_corporation_profile_handler(
     return get_company_corporation_profile_type(
         info,
         get_company_corporation_profile(
-            kwargs.get("company_id"), kwargs.get("corporation_uuid")
+            info.context["endpoint_id"], kwargs.get("corporation_uuid")
         ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "corporation_uuid", "external_id"],
+    attributes_to_get=["endpoint_id", "corporation_uuid", "external_id"],
     list_type_class=CompanyCorporationProfileListType,
     type_funct=get_company_corporation_profile_type,
 )
 def resolve_company_corporation_profile_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    company_id = kwargs.get("company_id")
+    endpoint_id = info.context["endpoint_id"]
     external_id = kwargs.get("external_id")
     corporation_types = kwargs.get("corporation_types")
 
     args = []
     inquiry_funct = CompanyCorporationProfileModel.scan
     count_funct = CompanyCorporationProfileModel.count
-    if company_id:
-        args = [company_id, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = CompanyCorporationProfileModel.query
         if external_id:
             inquiry_funct = CompanyCorporationProfileModel.external_id_index.query
@@ -1424,7 +1453,7 @@ def resolve_company_corporation_profile_list_handler(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "corporation_uuid",
     },
     range_key_required=True,
@@ -1437,7 +1466,7 @@ def resolve_company_corporation_profile_list_handler(
 def insert_update_company_corporation_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    company_id = kwargs.get("company_id")
+    endpoint_id = kwargs.get("endpoint_id")
     corporation_uuid = kwargs.get("corporation_uuid")
     if kwargs.get("entity") is None:
         cols = {
@@ -1450,7 +1479,7 @@ def insert_update_company_corporation_profile_handler(
         if kwargs.get("data"):
             cols["data"] = kwargs.get("data")
         CompanyCorporationProfileModel(
-            company_id,
+            endpoint_id,
             corporation_uuid,
             **cols,
         ).save()
@@ -1469,7 +1498,7 @@ def insert_update_company_corporation_profile_handler(
 
 @delete_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "corporation_uuid",
     },
     model_funct=get_company_corporation_profile,
@@ -1487,14 +1516,14 @@ def delete_company_corporation_profile_handler(
     stop=stop_after_attempt(5),
 )
 def get_contact_chatbot_history(
-    company_id: str, timestamp: str
+    endpoint_id: str, timestamp: str
 ) -> ContactChatbotHistoryModel:
-    return ContactChatbotHistoryModel.get(company_id, timestamp)
+    return ContactChatbotHistoryModel.get(endpoint_id, timestamp)
 
 
-def get_contact_chatbot_history_count(company_id: str, timestamp: str) -> int:
+def get_contact_chatbot_history_count(endpoint_id: str, timestamp: str) -> int:
     return ContactChatbotHistoryModel.count(
-        company_id,
+        endpoint_id,
         ContactChatbotHistoryModel.timestamp == timestamp,
     )
 
@@ -1513,30 +1542,31 @@ def resolve_contact_chatbot_history_handler(
 ) -> ContactChatbotHistoryType:
     return get_contact_chatbot_history_type(
         info,
-        get_contact_chatbot_history(kwargs.get("company_id"), kwargs.get("timestamp")),
+        get_contact_chatbot_history(
+            info.context["endpoint_id"], kwargs.get("timestamp")
+        ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "timestamp", "contact_uuid"],
+    attributes_to_get=["endpoint_id", "timestamp", "contact_uuid"],
     list_type_class=ContactChatbotHistoryListType,
     type_funct=get_contact_chatbot_history_type,
 )
 def resolve_contact_chatbot_history_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    company_id = kwargs.get("company_id")
+    endpoint_id = info.context["endpoint_id"]
     contact_uuid = kwargs.get("contact_uuid")
     place_uuids = kwargs.get("place_uuids")
     regions = kwargs.get("regions")
-    assistant_types = kwargs.get("assistant_types")
 
     args = []
     inquiry_funct = ContactChatbotHistoryModel.scan
     count_funct = ContactChatbotHistoryModel.count
-    if company_id:
-        args = [company_id, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = ContactChatbotHistoryModel.query
         if contact_uuid:
             inquiry_funct = ContactChatbotHistoryModel.contact_uuid_index.query
@@ -1548,8 +1578,6 @@ def resolve_contact_chatbot_history_list_handler(
         the_filters &= ContactChatbotHistoryModel.place_uuid.is_in(*place_uuids)
     if regions:
         the_filters &= ContactChatbotHistoryModel.region.is_in(*regions)
-    if assistant_types:
-        the_filters &= ContactChatbotHistoryModel.assistant_type.is_in(*assistant_types)
     if the_filters is not None:
         args.append(the_filters)
 
@@ -1558,7 +1586,7 @@ def resolve_contact_chatbot_history_list_handler(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "timestamp",
     },
     range_key_required=True,
@@ -1571,11 +1599,11 @@ def resolve_contact_chatbot_history_list_handler(
 def insert_contact_chatbot_history_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    company_id = kwargs.get("company_id")
+    endpoint_id = kwargs.get("endpoint_id")
     timestamp = kwargs.get("timestamp")
     if kwargs.get("entity") is None:
         ContactChatbotHistoryModel(
-            company_id,
+            endpoint_id,
             timestamp,
             **{
                 "contact_uuid": kwargs["contact_uuid"],
@@ -1583,7 +1611,6 @@ def insert_contact_chatbot_history_handler(
                 "region": kwargs["region"],
                 "assistant_id": kwargs["assistant_id"],
                 "thread_id": kwargs["thread_id"],
-                "assistant_type": kwargs["assistant_type"],
             },
         ).save()
         return
@@ -1593,7 +1620,7 @@ def insert_contact_chatbot_history_handler(
 
 @delete_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "timestamp",
     },
     model_funct=get_contact_chatbot_history,
@@ -1611,14 +1638,14 @@ def delete_contact_chatbot_history_handler(
     stop=stop_after_attempt(5),
 )
 def get_utm_tag_data_collection(
-    company_id: str, collection_uuid: str
+    endpoint_id: str, collection_uuid: str
 ) -> UtmTagDataCollectionModel:
-    return UtmTagDataCollectionModel.get(company_id, collection_uuid)
+    return UtmTagDataCollectionModel.get(endpoint_id, collection_uuid)
 
 
-def get_utm_tag_data_collection_count(company_id: str, collection_uuid: str) -> int:
+def get_utm_tag_data_collection_count(endpoint_id: str, collection_uuid: str) -> int:
     return UtmTagDataCollectionModel.count(
-        company_id,
+        endpoint_id,
         UtmTagDataCollectionModel.collection_uuid == collection_uuid,
     )
 
@@ -1663,21 +1690,21 @@ def resolve_utm_tag_data_collection_handler(
     return get_utm_tag_data_collection_type(
         info,
         get_utm_tag_data_collection(
-            kwargs.get("company_id"), kwargs.get("collection_uuid")
+            info.context["endpoint_id"], kwargs.get("collection_uuid")
         ),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["company_id", "collection_uuid", "tag_name"],
+    attributes_to_get=["endpoint_id", "collection_uuid", "tag_name"],
     list_type_class=UtmTagDataCollectionListType,
     type_funct=get_utm_tag_data_collection_type,
 )
 def resolve_utm_tag_data_collection_list_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    company_id = kwargs.get("company_id")
+    endpoint_id = info.context["endpoint_id"]
     tag_name = kwargs.get("tag_name")
     place_uuids = kwargs.get("place_uuids")
     contact_uuids = kwargs.get("contact_uuids")
@@ -1687,8 +1714,8 @@ def resolve_utm_tag_data_collection_list_handler(
     args = []
     inquiry_funct = UtmTagDataCollectionModel.scan
     count_funct = UtmTagDataCollectionModel.count
-    if company_id:
-        args = [company_id, None]
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = UtmTagDataCollectionModel.query
         if tag_name:
             inquiry_funct = UtmTagDataCollectionModel.tag_name_index.query
@@ -1712,7 +1739,7 @@ def resolve_utm_tag_data_collection_list_handler(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "collection_uuid",
     },
     model_funct=get_utm_tag_data_collection,
@@ -1724,11 +1751,11 @@ def resolve_utm_tag_data_collection_list_handler(
 def insert_utm_tag_data_collection_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    company_id = kwargs.get("company_id")
+    endpoint_id = kwargs.get("endpoint_id")
     collection_uuid = kwargs.get("collection_uuid")
     if kwargs.get("entity") is None:
         UtmTagDataCollectionModel(
-            company_id,
+            endpoint_id,
             collection_uuid,
             **{
                 "tag_name": kwargs["tag_name"],
@@ -1751,7 +1778,7 @@ def insert_utm_tag_data_collection_handler(
 
 @delete_decorator(
     keys={
-        "hash_key": "company_id",
+        "hash_key": "endpoint_id",
         "range_key": "collection_uuid",
     },
     model_funct=get_utm_tag_data_collection,

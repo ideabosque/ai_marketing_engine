@@ -54,7 +54,6 @@ class InsertUpdateQuestion(Mutation):
     question = Field(QuestionType)
 
     class Arguments:
-        company_id = String(required=True)
         question_uuid = String(required=False)
         question_group = String(required=False)
         question = String(required=False)
@@ -69,6 +68,7 @@ class InsertUpdateQuestion(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateQuestion":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             question = insert_update_question_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -82,12 +82,12 @@ class DeleteQuestion(Mutation):
     ok = Boolean()
 
     class Arguments:
-        company_id = String(required=True)
         question_uuid = String(required=True)
 
     @staticmethod
     def mutate(root: Any, info: Any, **kwargs: Dict[str, Any]) -> "DeleteQuestion":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_question_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -101,7 +101,6 @@ class InsertUpdateQuestionCriteria(Mutation):
     question_criteria = Field(QuestionCriteriaType)
 
     class Arguments:
-        company_id = String(required=True)
         question_group = String(required=True)
         region = String(required=True)
         question_criteria = JSON(required=False)
@@ -113,6 +112,7 @@ class InsertUpdateQuestionCriteria(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateQuestionCriteria":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             question_criteria = insert_update_question_criteria_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -126,7 +126,6 @@ class DeleteQuestionCriteria(Mutation):
     ok = Boolean()
 
     class Arguments:
-        company_id = String(required=True)
         question_group = String(required=True)
 
     @staticmethod
@@ -134,6 +133,7 @@ class DeleteQuestionCriteria(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteQuestionCriteria":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_question_criteria_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -243,7 +243,6 @@ class InsertUpdateCompanyContactProfile(Mutation):
     company_contact_profile = Field(CompanyContactProfileType)
 
     class Arguments:
-        company_id = String(required=True)
         contact_uuid = String(required=True)
         email = String(required=False)
         place_uuid = String(required=False)
@@ -255,6 +254,7 @@ class InsertUpdateCompanyContactProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCompanyContactProfile":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             company_contact_profile = insert_update_company_contact_profile_handler(
                 info, **kwargs
             )
@@ -272,7 +272,6 @@ class DeleteCompanyContactProfile(Mutation):
     ok = Boolean()
 
     class Arguments:
-        company_id = String(required=True)
         contact_uuid = String(required=True)
 
     @staticmethod
@@ -280,6 +279,7 @@ class DeleteCompanyContactProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCompanyContactProfile":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_company_contact_profile_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -293,9 +293,8 @@ class InsertUpdateCompanyContactRequest(Mutation):
     company_contact_request = Field(CompanyContactRequestType)
 
     class Arguments:
-        contact_uuid = String(required=True)
         request_uuid = String(required=False)
-        company_id = String(required=True)
+        contact_uuid = String(required=False)
         request_title = String(required=False)
         request_detail = String(required=False)
         updated_by = String(required=True)
@@ -305,6 +304,7 @@ class InsertUpdateCompanyContactRequest(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCompanyContactRequest":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             company_contact_request = insert_update_company_contact_request_handler(
                 info, **kwargs
             )
@@ -322,7 +322,6 @@ class DeleteCompanyContactRequest(Mutation):
     ok = Boolean()
 
     class Arguments:
-        contact_uuid = String(required=True)
         request_uuid = String(required=True)
 
     @staticmethod
@@ -330,6 +329,7 @@ class DeleteCompanyContactRequest(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCompanyContactRequest":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_company_contact_request_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -438,7 +438,6 @@ class InsertUpdateCompanyCorporationProfile(Mutation):
     company_corporation_profile = Field(CompanyCorporationProfileType)
 
     class Arguments:
-        company_id = String(required=True)
         corporation_uuid = String(required=True)
         external_id = String(required=False)
         corporation_type = String(required=False)
@@ -450,6 +449,7 @@ class InsertUpdateCompanyCorporationProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCompanyCorporationProfile":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             company_corporation_profile = (
                 insert_update_company_corporation_profile_handler(info, **kwargs)
             )
@@ -467,7 +467,6 @@ class DeleteCompanyCorporationProfile(Mutation):
     ok = Boolean()
 
     class Arguments:
-        company_id = String(required=True)
         corporation_uuid = String(required=True)
 
     @staticmethod
@@ -475,6 +474,7 @@ class DeleteCompanyCorporationProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCompanyCorporationProfile":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_company_corporation_profile_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -488,20 +488,19 @@ class InsertContactChatbotHistory(Mutation):
     contact_chatbot_history = Field(ContactChatbotHistoryType)
 
     class Arguments:
-        company_id = String(required=True)
         timestamp = Int(required=True)
         contact_uuid = String(required=True)
         place_uuid = String(required=True)
         region = String(required=True)
         assistant_id = String(required=True)
         thread_id = String(required=True)
-        assistant_type = String(required=True)
 
     @staticmethod
     def mutate(
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertContactChatbotHistory":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             contact_chatbot_history = insert_contact_chatbot_history_handler(
                 info, **kwargs
             )
@@ -519,7 +518,6 @@ class DeleteContactChatbotHistory(Mutation):
     ok = Boolean()
 
     class Arguments:
-        company_id = String(required=True)
         timestamp = Int(required=True)
 
     @staticmethod
@@ -527,6 +525,7 @@ class DeleteContactChatbotHistory(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteContactChatbotHistory":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_contact_chatbot_history_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -540,7 +539,6 @@ class InsertUtmTagDataCollection(Mutation):
     utm_tag_data_collection = Field(UtmTagDataCollectionType)
 
     class Arguments:
-        company_id = String(required=True)
         tag_name = String(required=True)
         place_uuid = String(required=True)
         contact_uuid = String(required=True)
@@ -557,6 +555,7 @@ class InsertUtmTagDataCollection(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUtmTagDataCollection":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             utm_tag_data_collection = insert_utm_tag_data_collection_handler(
                 info, **kwargs
             )
@@ -574,7 +573,6 @@ class DeleteUtmTagDataCollection(Mutation):
     ok = Boolean()
 
     class Arguments:
-        company_id = String(required=True)
         collection_uuid = String(required=True)
 
     @staticmethod
@@ -582,6 +580,7 @@ class DeleteUtmTagDataCollection(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteUtmTagDataCollection":
         try:
+            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_utm_tag_data_collection_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()

@@ -77,8 +77,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                # "questionUuid": "10575006544938275311",
+                "questionUuid": "17090916094743351791",
                 "questionGroup": "12345678",
                 "question": "What is the material you interested?",
                 "priority": 5,
@@ -118,8 +117,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "questionUuid": "10575006544938275311",
+                "questionUuid": "9872603553811337711",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -132,8 +130,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "questionUuid": "10575006544938275311",
+                "questionUuid": "17090916094743351791",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -146,7 +143,6 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
                 "questionGroups": ["12345678"],
                 "pageNumber": 1,
                 "limit": 10,
@@ -164,7 +160,6 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
                 "questionGroup": "12345678",
                 "region": "US",
                 "questionCriteria": {
@@ -206,8 +201,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "questionGroup": "XXXXXXXX",
+                "questionGroup": "12345678",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -222,14 +216,13 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "region": "XXXXXXXX",
+                "region": "US",
                 "questionCriteria": {
-                    "place_types": ["abc", "xyz"],
-                    "corporation_type": "XXXXXXXX",
-                    "corporation_categories": ["XXXXXXXX"],
-                    "utm_tag_name": "XXXXXXXX",
-                    "corporation_uuid": "4188232447431807471",
+                    # "place_types": ["abc", "xyz"],
+                    # "corporation_type": "XXXXXXXX",
+                    # "corporation_categories": ["XXXXXXXX"],
+                    # "utm_tag_name": "XXXXXXXX",
+                    # "corporation_uuid": "4188232447431807471",
                 },
                 "pageNumber": 1,
                 "limit": 10,
@@ -247,7 +240,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "region": "XXXXXXXX",
+                "region": "US",
                 # "placeUuid": "16514110523281904111",
                 "latitude": "XXXXXXXX",
                 "longitude": "XXXXXXXX",
@@ -316,14 +309,14 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "6605612459024716271",
-                "contactUuid": "7942627832711090671",
+                "placeUuid": "7888864077977555439",
+                "contactUuid": "6676570951220597231",
                 "email": "XXXXXXXX",
-                "region": "XXXXXXXX",
+                "region": "US",
                 # "firstName": "XXXXXXXX",
                 # "lastName": "XXXXXXXX",
-                "corporationType": "XXXXXXXX",
-                "corporationUuid": "10077997009953100271",
+                # "corporationType": "XXXXXXXX",
+                # "corporationUuid": "10077997009953100271",
                 # "data": {},
                 "updatedBy": "XYZ",
             },
@@ -390,9 +383,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "contactUuid": "7942627832711090671",
-                "placeUuid": "6605612459024716271",
+                "contactUuid": "6676570951220597231",
+                "placeUuid": "7888864077977555439",
                 "email": "XXXXXXXX",
                 "data": {},
                 "updatedBy": "XYZ",
@@ -459,9 +451,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "136056295826461167",
-                "requestUuid": "13024172026426298863",
-                "companyId": "XXXXXXXX",
+                "contactUuid": "6676570951220597231",
+                # "requestUuid": "13024172026426298863",
                 "requestTitle": "XXXXXXXX",
                 "requestDetail": "XXXXXXXX",
                 "updatedBy": "XYZ",
@@ -502,7 +493,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_company_contact_request_list(self):
         query = Utility.generate_graphql_operation(
             "companyContactRequestList", "Query", self.schema
@@ -530,7 +521,7 @@ class AIMarketingEngineTest(unittest.TestCase):
             "query": query,
             "variables": {
                 "corporationType": "XXXXXXXX",
-                "corporationUuid": "10077997009953100271",
+                # "corporationUuid": "10077997009953100271",
                 "externalId": "XXXXXXXX",
                 "businessName": "XXXXXXXX",
                 "categories": ["XXXXXXXX"],
@@ -600,9 +591,9 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "region": "XXXXXXXX",
-                "corporationUuid": "10077997009953100271",
-                "placeUuid": "6605612459024716271",
+                "region": "US",
+                "corporationUuid": "7839731756645421551",
+                "placeUuid": "7888864077977555439",
                 "corporationType": "XXXXXXXX",
                 "updatedBy": "XYZ",
             },
@@ -668,8 +659,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "corporationUuid": "10077997009953100271",
+                "corporationUuid": "7839731756645421551",
                 "externalId": "XXXXXXXX",
                 "corporationType": "XXXXXXXX",
                 "data": {},
@@ -737,14 +727,12 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
                 "timestamp": 1724514266,
-                "contactUuid": "7942627832711090671",
-                "placeUuid": "XXXXXXXX",
-                "region": "XXXXXXXX",
+                "contactUuid": "6676570951220597231",
+                "placeUuid": "7888864077977555439",
+                "region": "US",
                 "assistantId": "XXXXXXXX",
                 "threadId": "XXXXXXXX",
-                "assistantType": "XXXXXXXX",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -799,7 +787,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         query = Utility.generate_graphql_operation(
             "insertUtmTagDataCollection", "Mutation", self.schema
@@ -808,11 +796,10 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
                 "tagName": "XXXXXXXX",
-                "contactUuid": "7942627832711090671",
-                "placeUuid": "6605612459024716271",
-                "region": "XXXXXXXX",
+                "contactUuid": "7888864077977555439",
+                "placeUuid": "7888864077977555439",
+                "region": "US",
                 "keyword": "XXXXXXXX",
                 "utmCampaign": "XXXXXXXX",
                 "utmContent": "XXXXXXXX",

@@ -21,7 +21,7 @@ from silvaengine_utility import JSON
 
 
 class QuestionType(ObjectType):
-    company_id = String()
+    endpoint_id = String()
     question_uuid = String()
     question_group = String()
     question = String()
@@ -35,7 +35,7 @@ class QuestionType(ObjectType):
 
 
 class QuestionCriteriaType(ObjectType):
-    company_id = String()
+    endpoint_id = String()
     question_group = String()
     region = String()
     question_criteria = JSON()
@@ -74,7 +74,7 @@ class ContactProfileType(ObjectType):
 
 
 class CompanyContactProfileType(ObjectType):
-    company_id = String()
+    endpoint_id = String()
     contact_profile = JSON()
     email = String()
     data = JSON()
@@ -115,7 +115,7 @@ class CorporationPlaceType(ObjectType):
 
 
 class CompanyCorporationProfileType(ObjectType):
-    company_id = String()
+    endpoint_id = String()
     corporation_profile = JSON()
     external_id = String()
     data = JSON()
@@ -125,18 +125,17 @@ class CompanyCorporationProfileType(ObjectType):
 
 
 class ContactChatbotHistoryType(ObjectType):
-    company_id = String()
+    endpoint_id = String()
     timestamp = Int()
     contact_uuid = String()
     place_uuid = String()
     region = String()
     assistant_id = String()
     thread_id = String()
-    endpoint_id = String()
 
 
 class UtmTagDataCollectionType(ObjectType):
-    company_id = String()
+    endpoint_id = String()
     collection_uuid = String()
     tag_name = String()
     place = JSON()
