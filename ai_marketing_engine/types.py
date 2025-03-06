@@ -27,6 +27,7 @@ class QuestionType(ObjectType):
     question = String()
     priority = Int()
     attribute = String()
+    attribute_type = String()
     option_values = List(String)
     condition = List(JSON)
     updated_by = String()

@@ -158,6 +158,7 @@ class Query(ObjectType):
         question_groups=List(String),
         question=String(),
         attribute=String(),
+        attribute_type=String(),
     )
 
     question_criteria = Field(

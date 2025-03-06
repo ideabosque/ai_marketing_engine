@@ -11,7 +11,7 @@ from pynamodb.attributes import (
     UnicodeAttribute,
     UTCDateTimeAttribute,
 )
-from pynamodb.indexes import AllProjection, LocalSecondaryIndex, GlobalSecondaryIndex
+from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, LocalSecondaryIndex
 
 from silvaengine_dynamodb_base import BaseModel
 
@@ -40,6 +40,7 @@ class QuestionModel(BaseModel):
     question = UnicodeAttribute()
     priority = NumberAttribute()
     attribute = UnicodeAttribute()
+    attribute_type = UnicodeAttribute(default="string")
     option_values = ListAttribute(of=UnicodeAttribute, null=True)
     condition = ListAttribute(of=MapAttribute, null=True)
     updated_by = UnicodeAttribute()
