@@ -11,7 +11,7 @@ from pynamodb.attributes import (
     UnicodeAttribute,
     UTCDateTimeAttribute,
 )
-from pynamodb.indexes import AllProjection, LocalSecondaryIndex
+from pynamodb.indexes import AllProjection, LocalSecondaryIndex, GlobalSecondaryIndex
 
 from silvaengine_dynamodb_base import BaseModel
 
@@ -319,3 +319,31 @@ class UtmTagDataCollectionModel(BaseModel):
     utm_term = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     tag_name_index = TageNameIndex()
+
+
+class TypeIdIndex(GlobalSecondaryIndex):
+    class Meta:
+        # index_name is optional, but can be provided to override the default name
+        index_name = "type-id-index"
+        billing_mode = "PAY_PER_REQUEST"
+        projection = AllProjection()
+
+    # This attribute is the hash key for the index
+    # Note that this attribute must also exist
+    # in the model
+    type = UnicodeAttribute(hash_key=True)
+    id = UnicodeAttribute(range_key=True)
+
+
+class ActivityHistoryModel(BaseModel):
+    class Meta(BaseModel.Meta):
+        table_name = "ame-activity_history"
+
+    id = UnicodeAttribute(hash_key=True)
+    timestamp = NumberAttribute(range_key=True)
+    log = UnicodeAttribute()
+    data_diff = MapAttribute(default={})
+    type = UnicodeAttribute()
+    updated_by = UnicodeAttribute(null=True)
+    updated_at = UTCDateTimeAttribute()
+    type_id_index = TypeIdIndex()

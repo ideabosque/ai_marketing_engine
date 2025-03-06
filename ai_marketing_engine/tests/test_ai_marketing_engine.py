@@ -69,6 +69,81 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
+    def test_graphql_insert_activity_history(self):
+        query = Utility.generate_graphql_operation(
+            "insertActivityHistory", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "id": "company_contact_profile-openai-9687284472428368367",
+                "dataDiff": {
+                    "values_changed": {
+                        "root['data']['product_name']": {
+                            "new_value": "toy",
+                            "old_value": "clothes",
+                        }
+                    }
+                },
+                "log": "The company_contact_profile with the endpoint_id/contact_uuid (openai/9687284472428368367) is updated at 4:24:00.",
+                "type": "company_contact_profile",
+                "updatedBy": "XYZ",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_delete_activity_history(self):
+        query = Utility.generate_graphql_operation(
+            "deleteActivityHistory", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "id": "company_contact_profile-openai-9687284472428368367",
+                "timestamp": "1741220959",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_activity_history(self):
+        query = Utility.generate_graphql_operation(
+            "activityHistory", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "id": "company_contact_profile-openai-9687284472428368367",
+                "timestamp": "1741200290",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_activity_history_list(self):
+        query = Utility.generate_graphql_operation(
+            "activityHistoryList", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "id": "company_contact_profile-openai-9687284472428368367",
+                "limit": 10,
+                "offset": 0,
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_question(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateQuestion", "Mutation", self.schema
@@ -374,7 +449,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_company_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateCompanyContactProfile", "Mutation", self.schema
@@ -383,10 +458,10 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "6676570951220597231",
-                "placeUuid": "7888864077977555439",
-                "email": "XXXXXXXX",
-                "data": {},
+                "contactUuid": "9687284472428368367",
+                "placeUuid": "11580716724379521519",
+                "email": "bibo72@outlook.com",
+                "data": {"product_name": "toy"},
                 "updatedBy": "XYZ",
             },
         }
@@ -787,7 +862,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         query = Utility.generate_graphql_operation(
             "insertUtmTagDataCollection", "Mutation", self.schema

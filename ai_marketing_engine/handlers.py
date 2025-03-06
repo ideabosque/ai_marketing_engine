@@ -4,10 +4,14 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
+import functools
 import logging
+import time
 import traceback
+from datetime import datetime
 from typing import Any, Dict
 
+import boto3
 import pendulum
 from graphene import ResolveInfo
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -21,6 +25,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from .models import (
+    ActivityHistoryModel,
     CompanyContactProfileModel,
     CompanyContactRequestModel,
     CompanyCorporationProfileModel,
@@ -34,6 +39,8 @@ from .models import (
     UtmTagDataCollectionModel,
 )
 from .types import (
+    ActivityHistoryListType,
+    ActivityHistoryType,
     CompanyContactProfileListType,
     CompanyContactProfileType,
     CompanyContactRequestListType,
@@ -58,14 +65,278 @@ from .types import (
     UtmTagDataCollectionType,
 )
 
+schemas = {}
+
 
 def handlers_init(logger: logging.Logger, **setting: Dict[str, Any]) -> None:
     try:
-        pass
+        global aws_lambda
+
+        _initialize_aws_services(setting)
     except Exception as e:
         log = traceback.format_exc()
         logger.error(log)
         raise e
+
+
+def _initialize_aws_services(setting: Dict[str, Any]) -> None:
+    global aws_lambda
+
+    if all(
+        setting.get(k)
+        for k in ["region_name", "aws_access_key_id", "aws_secret_access_key"]
+    ):
+        aws_credentials = {
+            "region_name": setting["region_name"],
+            "aws_access_key_id": setting["aws_access_key_id"],
+            "aws_secret_access_key": setting["aws_secret_access_key"],
+        }
+    else:
+        aws_credentials = {}
+
+    aws_lambda = boto3.client("lambda", **aws_credentials)
+
+
+def fetch_graphql_schema(
+    logger: logging.Logger,
+    endpoint_id: str,
+    function_name: str,
+    setting: Dict[str, Any] = {},
+) -> Dict[str, Any]:
+    global schemas, aws_lambda
+    if schemas.get(function_name) is None:
+        schemas[function_name] = Utility.fetch_graphql_schema(
+            logger,
+            endpoint_id,
+            function_name,
+            setting=setting,
+            aws_lambda=aws_lambda,
+            test_mode=setting.get("test_mode"),
+        )
+    return schemas[function_name]
+
+
+def execute_graphql_query(
+    logger: logging.Logger,
+    endpoint_id: str,
+    function_name: str,
+    operation_name: str,
+    operation_type: str,
+    variables: Dict[str, Any],
+    setting: Dict[str, Any] = {},
+    connection_id: str = None,
+) -> Dict[str, Any]:
+    global aws_lambda
+
+    schema = fetch_graphql_schema(logger, endpoint_id, function_name, setting=setting)
+    result = Utility.execute_graphql_query(
+        logger,
+        endpoint_id,
+        function_name,
+        Utility.generate_graphql_operation(operation_name, operation_type, schema),
+        variables,
+        setting=setting,
+        aws_lambda=aws_lambda,
+        connection_id=connection_id,
+        test_mode=setting.get("test_mode"),
+    )
+    return result
+
+
+def put_message_to_target(
+    logger: logging.Logger,
+    endpoint_id: str,
+    data_type: str,
+    message: Dict[str, Any],
+    setting: Dict[str, Any] = {},
+) -> Any:
+    """
+    Sends messages to the target system using GraphQL mutation.
+
+    Args:
+        logger: Logger instance for logging operations
+        endpoint_id: Identifier for the endpoint
+        data_type: Type of data being sent
+        messages: Dictionary containing message data
+        setting: Configuration settings with data_mapping and target info
+
+    Returns:
+        The message_group_id returned from the GraphQL mutation
+    """
+    # Prepare variables for GraphQL mutation
+    tx_type = setting.get("data_mapping", {}).get(data_type)
+    target = setting.get("target")
+    if tx_type is None or target is None:
+        return None
+
+    variables = {
+        "txType": tx_type,
+        "source": "sqs",
+        "target": target,
+        "messages": [message],
+    }
+
+    # Execute GraphQL mutation and return the result
+    return Utility.execute_graphql_query(
+        logger,
+        endpoint_id,
+        "datawald_interface_graphql",
+        "putMessages",
+        "Mutation",
+        variables,
+        setting=setting,
+    )
+
+
+def data_sync_decorator(original_function):
+    @functools.wraps(original_function)
+    def wrapper_function(*args, **kwargs):
+
+        # Extract endpoint_id from kwargs
+        endpoint_id = kwargs.get("endpoint_id")
+        if endpoint_id is not None:
+            # Log the endpoint ID
+            logging.info(f"Endpoint ID: {endpoint_id}")
+
+        # Execute the original function
+        result = original_function(*args, **kwargs)
+
+        # Extract data type and message from the result
+        # TODO: add the logic to sync data to other data sources
+        data_type = type(result).__name__
+        message = result.__dict__ if hasattr(result, "__dict__") else result
+
+        # Log information about the function execution
+        logging.info(
+            f"Function {original_function.__name__} returned data of type: {data_type}"
+        )
+        logging.info(
+            f"Function {original_function.__name__} messages: {Utility.json_dumps(message)}"
+        )
+
+        # Send the message to the target system
+        put_message_to_target(
+            args[0].context.get("logger"),
+            endpoint_id,
+            data_type,
+            message,
+            setting=args[0].context.get("setting"),
+        )
+
+        # Return the original function's result
+        return result
+
+    return wrapper_function
+
+
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+def get_activity_history(id: str, timestamp: int) -> ActivityHistoryModel:
+    return ActivityHistoryModel.get(id, timestamp)
+
+
+def get_activity_history_type(
+    info: ResolveInfo, activity_history: ActivityHistoryModel
+) -> ActivityHistoryType:
+    activity_history = activity_history.__dict__["attribute_values"]
+    return ActivityHistoryType(
+        **Utility.json_loads(Utility.json_dumps(activity_history))
+    )
+
+
+def resolve_activity_history_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> ActivityHistoryType:
+    return get_activity_history_type(
+        info,
+        get_activity_history(kwargs.get("id"), kwargs.get("timestamp")),
+    )
+
+
+@monitor_decorator
+@resolve_list_decorator(
+    attributes_to_get=["id", "timestamp"],
+    list_type_class=ActivityHistoryListType,
+    type_funct=get_activity_history_type,
+)
+def resolve_activity_history_list_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> Any:
+    id = kwargs.get("id")
+    activity_type = kwargs.get("activity_type")
+    log = kwargs.get("log")
+    activity_types = None
+
+    if activity_type is None:
+        activity_types = kwargs.get("activity_types")
+
+    args = []
+    inquiry_funct = ActivityHistoryModel.scan
+    count_funct = ActivityHistoryModel.count
+    if id:
+        args = [id, None]
+        inquiry_funct = ActivityHistoryModel.query
+    if activity_type and not id:
+        args = [activity_type, None]
+        inquiry_funct = ActivityHistoryModel.type_id_index.query
+        count_funct = ActivityHistoryModel.type_id_index.count
+
+    the_filters = None  # We can add filters for the query.
+    if log:
+        the_filters &= ActivityHistoryModel.log.contains(log)
+    if activity_types:
+        the_filters &= ActivityHistoryModel.type.is_in(*activity_types)
+    if the_filters is not None:
+        args.append(the_filters)
+
+    return inquiry_funct, count_funct, args
+
+
+def insert_activity_history_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> ActivityHistoryType:
+    id = kwargs.get("id")
+    updated_at = pendulum.now("UTC")
+    timestamp = int(datetime.timestamp(updated_at))
+    ActivityHistoryModel(
+        id,
+        timestamp,
+        **{
+            "log": kwargs.get("log"),
+            "data_diff": kwargs.get("data_diff", {}),
+            "type": kwargs.get("type"),
+            "updated_by": kwargs.get("updated_by"),
+            "updated_at": updated_at,
+        },
+    ).save()
+    info.context.get("logger").info(
+        f"The activity history with the id/timestamp ({id}/{timestamp}) is inserted at {time.strftime('%X')}."
+    )
+
+    return ActivityHistoryType(
+        **Utility.json_loads(
+            Utility.json_dumps(
+                get_activity_history(id, timestamp).__dict__["attribute_values"]
+            )
+        )
+    )
+
+
+@delete_decorator(
+    keys={
+        "hash_key": "id",
+        "range_key": "timestamp",
+    },
+    model_funct=get_activity_history,
+)
+def delete_activity_history_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> bool:
+    kwargs.get("entity").delete()
+    return True
 
 
 @retry(
@@ -845,6 +1116,7 @@ def resolve_company_contact_profile_list_handler(
     return inquiry_funct, count_funct, args
 
 
+@data_sync_decorator
 @insert_update_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -854,8 +1126,8 @@ def resolve_company_contact_profile_list_handler(
     model_funct=get_company_contact_profile,
     count_funct=get_company_contact_profile_count,
     type_funct=get_company_contact_profile_type,
-    # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
-    # activity_history_funct=None,
+    data_attributes_except_for_data_diff=["created_at", "updated_at"],
+    activity_history_funct=insert_activity_history_handler,
 )
 def insert_update_company_contact_profile_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]

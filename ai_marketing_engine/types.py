@@ -149,6 +149,16 @@ class UtmTagDataCollectionType(ObjectType):
     created_at = DateTime()
 
 
+class ActivityHistoryType(ObjectType):
+    id = String()
+    timestamp = Decimal()
+    log = String()
+    data_diff = JSON()
+    type = String()
+    updated_by = String()
+    updated_at = DateTime()
+
+
 class QuestionListType(ListObjectType):
     question_list = List(QuestionType)
 
@@ -191,3 +201,7 @@ class ContactChatbotHistoryListType(ListObjectType):
 
 class UtmTagDataCollectionListType(ListObjectType):
     utm_tag_data_collection_list = List(UtmTagDataCollectionType)
+
+
+class ActivityHistoryListType(ListObjectType):
+    activity_history_list = List(ActivityHistoryType)

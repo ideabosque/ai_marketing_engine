@@ -21,6 +21,7 @@ from graphene import (
 from silvaengine_utility import JSON
 
 from .mutations import (
+    DeleteActivityHistory,
     DeleteCompanyContactProfile,
     DeleteCompanyContactRequest,
     DeleteCompanyCorporationProfile,
@@ -32,6 +33,7 @@ from .mutations import (
     DeleteQuestion,
     DeleteQuestionCriteria,
     DeleteUtmTagDataCollection,
+    InsertActivityHistory,
     InsertContactChatbotHistory,
     InsertUpdateCompanyContactProfile,
     InsertUpdateCompanyContactRequest,
@@ -45,6 +47,8 @@ from .mutations import (
     InsertUtmTagDataCollection,
 )
 from .queries import (
+    resolve_activity_history,
+    resolve_activity_history_list,
     resolve_company_contact_profile,
     resolve_company_contact_profile_list,
     resolve_company_contact_request,
@@ -69,6 +73,8 @@ from .queries import (
     resolve_utm_tag_data_collection_list,
 )
 from .types import (
+    ActivityHistoryListType,
+    ActivityHistoryType,
     CompanyContactProfileListType,
     CompanyContactProfileType,
     CompanyContactRequestListType,
@@ -121,6 +127,24 @@ def type_class():
 
 class Query(ObjectType):
     ping = String()
+
+    activity_history = Field(
+        ActivityHistoryType,
+        required=True,
+        id=String(required=True),
+        timestamp=Int(required=True),
+    )
+
+    activity_history_list = Field(
+        ActivityHistoryListType,
+        page_number=Int(),
+        limit=Int(),
+        id=String(),
+        activity_type=String(),
+        activity_types=List(String),
+        log=String(),
+    )
+
     question = Field(
         QuestionType,
         required=True,
@@ -300,6 +324,16 @@ class Query(ObjectType):
     def resolve_ping(self, info: ResolveInfo) -> str:
         return f"Hello at {time.strftime('%X')}!!"
 
+    def resolve_activity_history(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> ActivityHistoryType:
+        return resolve_activity_history(info, **kwargs)
+
+    def resolve_activity_history_list(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> ActivityHistoryListType:
+        return resolve_activity_history_list(info, **kwargs)
+
     def resolve_question(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> QuestionType:
@@ -410,6 +444,8 @@ class Query(ObjectType):
 
 
 class Mutations(ObjectType):
+    insert_activity_history = InsertActivityHistory.Field()
+    delete_activity_history = DeleteActivityHistory.Field()
     insert_update_question = InsertUpdateQuestion.Field()
     delete_question = DeleteQuestion.Field()
     insert_update_question_criteria = InsertUpdateQuestionCriteria.Field()
