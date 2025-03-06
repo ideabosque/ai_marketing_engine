@@ -260,7 +260,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "questionGroup": "XXXXXXXX",
             },
         }
@@ -449,7 +449,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_company_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateCompanyContactProfile", "Mutation", self.schema
@@ -477,14 +477,14 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "contactUuid": "12355966540142023151",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_company_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "companyContactProfile", "Query", self.schema
@@ -493,8 +493,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
-                "contactUuid": "7942627832711090671",
+                "endpointId": "openai",
+                "contactUuid": "136056295826461167",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -509,7 +509,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -578,7 +578,7 @@ class AIMarketingEngineTest(unittest.TestCase):
             "query": query,
             "variables": {
                 "contactUuid": "136056295826461167",
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -753,7 +753,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "corporationUuid": "4188232447431807471",
             },
         }
@@ -769,7 +769,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "corporationUuid": "4188232447431807471",
             },
         }
@@ -785,7 +785,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -822,7 +822,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "timestamp": 1724514266,
             },
         }
@@ -838,7 +838,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "timestamp": 1724514266,
             },
         }
@@ -854,7 +854,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -895,7 +895,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "collectionUuid": "359510789495853551",
             },
         }
@@ -911,7 +911,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "collectionUuid": "15513258872781541871",
             },
         }
@@ -927,7 +927,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "companyId": "XXXXXXXX",
+                "endpointId": "openai",
                 "pageNumber": 1,
                 "limit": 10,
             },
