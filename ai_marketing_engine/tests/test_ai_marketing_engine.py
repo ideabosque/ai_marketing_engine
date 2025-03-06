@@ -143,7 +143,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_question(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateQuestion", "Mutation", self.schema
@@ -158,6 +158,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "priority": 6,
                 "attribute": "sales_certification",
                 "attributeType": "file",
+                "awsS3Bucket": "XXXXXXX",
                 # "optionValues": [
                 #     "white",
                 #     "black",
@@ -212,7 +213,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_question_list(self):
         query = Utility.generate_graphql_operation("questionList", "Query", self.schema)
         logger.info(f"Query: {query}")

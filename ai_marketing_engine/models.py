@@ -41,6 +41,7 @@ class QuestionModel(BaseModel):
     priority = NumberAttribute()
     attribute = UnicodeAttribute()
     attribute_type = UnicodeAttribute(default="string")
+    aws_s3_bucket = UnicodeAttribute(null=True)
     option_values = ListAttribute(of=UnicodeAttribute, null=True)
     condition = ListAttribute(of=MapAttribute, null=True)
     updated_by = UnicodeAttribute()
