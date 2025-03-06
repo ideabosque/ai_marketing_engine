@@ -388,6 +388,7 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     question_groups = kwargs.get("question_groups")
     question = kwargs.get("question")
     attribute = kwargs.get("attribute")
+    attribute_type = kwargs.get("attribute_type")
 
     args = []
     inquiry_funct = QuestionModel.scan
@@ -403,6 +404,8 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
         the_filters &= QuestionModel.question.contains(question)
     if attribute:
         the_filters &= QuestionModel.attribute.contains(attribute)
+    if attribute_type:
+        the_filters &= QuestionModel.attribute_type.contains(attribute_type)
     if the_filters is not None:
         args.append(the_filters)
 
@@ -433,7 +436,7 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        for key in ["option_values", "condition"]:
+        for key in ["option_values", "condition", "attribute_type"]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         QuestionModel(
@@ -455,6 +458,7 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
         "question": QuestionModel.question,
         "priority": QuestionModel.priority,
         "attribute": QuestionModel.attribute,
+        "attribute_type": QuestionModel.attribute_type,
         "option_values": QuestionModel.option_values,
         "condition": QuestionModel.condition,
     }

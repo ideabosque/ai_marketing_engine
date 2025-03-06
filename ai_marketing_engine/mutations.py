@@ -107,6 +107,7 @@ class InsertUpdateQuestion(Mutation):
         question = String(required=False)
         priority = Int(required=False)
         attribute = String(required=False)
+        attribute_type = String(required=False)
         option_values = List(String, required=False)
         condition = List(JSON, required=False)
         updated_by = String(required=True)

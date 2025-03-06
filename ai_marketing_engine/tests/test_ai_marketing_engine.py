@@ -152,11 +152,12 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "questionUuid": "17090916094743351791",
+                "questionUuid": "6103791325217231343",
                 "questionGroup": "12345678",
-                "question": "What is the material you interested?",
-                "priority": 5,
-                "attribute": "material",
+                "question": "Can you provide your sales certification?",
+                "priority": 6,
+                "attribute": "sales_certification",
+                "attributeType": "file",
                 # "optionValues": [
                 #     "white",
                 #     "black",
@@ -211,7 +212,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_question_list(self):
         query = Utility.generate_graphql_operation("questionList", "Query", self.schema)
         logger.info(f"Query: {query}")
@@ -484,7 +485,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_company_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "companyContactProfile", "Query", self.schema
