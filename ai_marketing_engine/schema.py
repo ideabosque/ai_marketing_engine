@@ -159,6 +159,7 @@ class Query(ObjectType):
         question=String(),
         attribute=String(),
         attribute_type=String(),
+        aws_s3_bucket=String(),
     )
 
     question_criteria = Field(

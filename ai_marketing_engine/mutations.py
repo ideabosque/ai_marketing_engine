@@ -108,6 +108,7 @@ class InsertUpdateQuestion(Mutation):
         priority = Int(required=False)
         attribute = String(required=False)
         attribute_type = String(required=False)
+        aws_s3_bucket = String(required=False)
         option_values = List(String, required=False)
         condition = List(JSON, required=False)
         updated_by = String(required=True)

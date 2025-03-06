@@ -389,6 +389,7 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     question = kwargs.get("question")
     attribute = kwargs.get("attribute")
     attribute_type = kwargs.get("attribute_type")
+    aws_s3_bucket = kwargs.get("aws_s3_bucket")
 
     args = []
     inquiry_funct = QuestionModel.scan
@@ -403,9 +404,11 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     if question:
         the_filters &= QuestionModel.question.contains(question)
     if attribute:
-        the_filters &= QuestionModel.attribute.contains(attribute)
+        the_filters &= QuestionModel.attribute == attribute
     if attribute_type:
-        the_filters &= QuestionModel.attribute_type.contains(attribute_type)
+        the_filters &= QuestionModel.attribute_type == attribute_type
+    if aws_s3_bucket:
+        the_filters &= QuestionModel.aws_s3_bucket == aws_s3_bucket
     if the_filters is not None:
         args.append(the_filters)
 
@@ -436,7 +439,7 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        for key in ["option_values", "condition", "attribute_type"]:
+        for key in ["option_values", "condition", "attribute_type", "aws_s3_bucket"]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         QuestionModel(
@@ -459,6 +462,7 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
         "priority": QuestionModel.priority,
         "attribute": QuestionModel.attribute,
         "attribute_type": QuestionModel.attribute_type,
+        "aws_s3_bucket": QuestionModel.aws_s3_bucket,
         "option_values": QuestionModel.option_values,
         "condition": QuestionModel.condition,
     }
