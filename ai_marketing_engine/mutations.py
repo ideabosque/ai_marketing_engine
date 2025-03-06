@@ -12,6 +12,7 @@ from graphene import Boolean, DateTime, Field, Float, Int, List, Mutation, Strin
 from silvaengine_utility import JSON
 
 from .handlers import (
+    delete_activity_history_handler,
     delete_company_contact_profile_handler,
     delete_company_contact_request_handler,
     delete_company_corporation_profile_handler,
@@ -23,6 +24,7 @@ from .handlers import (
     delete_question_criteria_handler,
     delete_question_handler,
     delete_utm_tag_data_collection_handler,
+    insert_activity_history_handler,
     insert_contact_chatbot_history_handler,
     insert_update_company_contact_profile_handler,
     insert_update_company_contact_request_handler,
@@ -36,6 +38,7 @@ from .handlers import (
     insert_utm_tag_data_collection_handler,
 )
 from .types import (
+    ActivityHistoryType,
     CompanyContactProfileType,
     CompanyContactRequestType,
     CompanyCorporationProfileType,
@@ -48,6 +51,51 @@ from .types import (
     QuestionType,
     UtmTagDataCollectionType,
 )
+
+
+class InsertActivityHistory(Mutation):
+    activity_history = Field(ActivityHistoryType)
+
+    class Arguments:
+        id = String(required=True)
+        data_diff = JSON(required=False)
+        log = String(required=False)
+        type = String(required=False)
+        updated_by = String(required=True)
+
+    @staticmethod
+    def mutate(
+        root: Any, info: Any, **kwargs: Dict[str, Any]
+    ) -> "InsertActivityHistory":
+        try:
+            activity_history = insert_activity_history_handler(info, **kwargs)
+        except Exception as e:
+            log = traceback.format_exc()
+            info.context.get("logger").error(log)
+            raise e
+
+        return InsertActivityHistory(activity_history=activity_history)
+
+
+class DeleteActivityHistory(Mutation):
+    ok = Boolean()
+
+    class Arguments:
+        id = String(required=True)
+        timestamp = Int(required=True)
+
+    @staticmethod
+    def mutate(
+        root: Any, info: Any, **kwargs: Dict[str, Any]
+    ) -> "DeleteActivityHistory":
+        try:
+            ok = delete_activity_history_handler(info, **kwargs)
+        except Exception as e:
+            log = traceback.format_exc()
+            info.context.get("logger").error(log)
+            raise e
+
+        return DeleteActivityHistory(ok=ok)
 
 
 class InsertUpdateQuestion(Mutation):

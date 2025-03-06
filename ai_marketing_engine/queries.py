@@ -9,6 +9,8 @@ from typing import Any, Dict
 from graphene import ResolveInfo
 
 from .handlers import (
+    resolve_activity_history_handler,
+    resolve_activity_history_list_handler,
     resolve_company_contact_profile_handler,
     resolve_company_contact_profile_list_handler,
     resolve_company_contact_request_handler,
@@ -33,6 +35,8 @@ from .handlers import (
     resolve_utm_tag_data_collection_list_handler,
 )
 from .types import (
+    ActivityHistoryListType,
+    ActivityHistoryType,
     CompanyContactProfileListType,
     CompanyContactProfileType,
     CompanyContactRequestListType,
@@ -56,6 +60,18 @@ from .types import (
     UtmTagDataCollectionListType,
     UtmTagDataCollectionType,
 )
+
+
+def resolve_activity_history(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> ActivityHistoryType:
+    return resolve_activity_history_handler(info, **kwargs)
+
+
+def resolve_activity_history_list(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> ActivityHistoryListType:
+    return resolve_activity_history_list_handler(info, **kwargs)
 
 
 def resolve_question(info: ResolveInfo, **kwargs: Dict[str, Any]) -> QuestionType:
