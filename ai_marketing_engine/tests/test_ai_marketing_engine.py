@@ -68,6 +68,22 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
+    # @unittest.skip("demonstrating skipping")
+    def test_graphql_presigned_upload_url(self):
+        query = Utility.generate_graphql_operation(
+            "presignedUploadUrl", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "bucketName": "ai-marketing-files",
+                "objectKey": "test.txt",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
     @unittest.skip("demonstrating skipping")
     def test_graphql_insert_activity_history(self):
         query = Utility.generate_graphql_operation(
@@ -143,7 +159,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_question(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateQuestion", "Mutation", self.schema

@@ -20,6 +20,13 @@ from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSON
 
 
+class PresignedUploadUrlType(ObjectType):
+    url = String()
+    bucket_name = String()
+    object_key = String()
+    expiration = Int()
+
+
 class QuestionType(ObjectType):
     endpoint_id = String()
     question_uuid = String()
