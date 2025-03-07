@@ -25,6 +25,7 @@ setting = {
             "class_name": "AIMarketingEngine",
         },
     },
+    "aws_s3_bucket": os.getenv("aws_s3_bucket"),
     "endpoint_id": os.getenv("endpoint_id"),
     "test_mode": os.getenv("test_mode"),
 }
@@ -77,7 +78,6 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "bucketName": "ai-marketing-files",
                 "objectKey": "test.txt",
             },
         }
