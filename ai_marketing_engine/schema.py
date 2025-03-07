@@ -134,9 +134,7 @@ class Query(ObjectType):
     presigned_upload_url = Field(
         PresignedUploadUrlType,
         required=True,
-        bucket_name=String(required=True),
         object_key=String(required=True),
-        expiration=Int(required=False),
     )
 
     activity_history = Field(
@@ -170,7 +168,6 @@ class Query(ObjectType):
         question=String(),
         attribute=String(),
         attribute_type=String(),
-        aws_s3_bucket=String(),
     )
 
     question_criteria = Field(

@@ -247,9 +247,9 @@ def resolve_presigned_upload_url_handler(
     """
     global aws_s3
 
-    bucket_name = kwargs.get("bucket_name")
+    bucket_name = info.context["setting"].get("aws_s3_bucket")
     object_key = kwargs.get("object_key")
-    expiration = kwargs.get("expiration", 3600)  # Default to 1 hour
+    expiration = info.context["setting"].get("expiration", 3600)  # Default to 1 hour
 
     # Generate the presigned URL for put_object
     try:
@@ -262,7 +262,6 @@ def resolve_presigned_upload_url_handler(
 
         return PresignedUploadUrlType(
             url=response,
-            bucket_name=bucket_name,
             object_key=object_key,
             expiration=expiration,
         )
@@ -432,7 +431,6 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     question = kwargs.get("question")
     attribute = kwargs.get("attribute")
     attribute_type = kwargs.get("attribute_type")
-    aws_s3_bucket = kwargs.get("aws_s3_bucket")
 
     args = []
     inquiry_funct = QuestionModel.scan
@@ -450,8 +448,6 @@ def resolve_question_list_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) -
         the_filters &= QuestionModel.attribute == attribute
     if attribute_type:
         the_filters &= QuestionModel.attribute_type == attribute_type
-    if aws_s3_bucket:
-        the_filters &= QuestionModel.aws_s3_bucket == aws_s3_bucket
     if the_filters is not None:
         args.append(the_filters)
 
@@ -482,7 +478,7 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        for key in ["option_values", "condition", "attribute_type", "aws_s3_bucket"]:
+        for key in ["option_values", "condition", "attribute_type"]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         QuestionModel(
@@ -505,7 +501,6 @@ def insert_update_question_handler(info: ResolveInfo, **kwargs: Dict[str, Any]) 
         "priority": QuestionModel.priority,
         "attribute": QuestionModel.attribute,
         "attribute_type": QuestionModel.attribute_type,
-        "aws_s3_bucket": QuestionModel.aws_s3_bucket,
         "option_values": QuestionModel.option_values,
         "condition": QuestionModel.condition,
     }

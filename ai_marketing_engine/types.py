@@ -22,7 +22,6 @@ from silvaengine_utility import JSON
 
 class PresignedUploadUrlType(ObjectType):
     url = String()
-    bucket_name = String()
     object_key = String()
     expiration = Int()
 
@@ -35,7 +34,6 @@ class QuestionType(ObjectType):
     priority = Int()
     attribute = String()
     attribute_type = String()
-    aws_s3_bucket = String()
     option_values = List(String)
     condition = List(JSON)
     updated_by = String()

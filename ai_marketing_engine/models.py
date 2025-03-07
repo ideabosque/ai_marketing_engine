@@ -12,7 +12,6 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
 )
 from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, LocalSecondaryIndex
-
 from silvaengine_dynamodb_base import BaseModel
 
 
@@ -41,7 +40,6 @@ class QuestionModel(BaseModel):
     priority = NumberAttribute()
     attribute = UnicodeAttribute()
     attribute_type = UnicodeAttribute(default="string")
-    aws_s3_bucket = UnicodeAttribute(null=True)
     option_values = ListAttribute(of=UnicodeAttribute, null=True)
     condition = ListAttribute(of=MapAttribute, null=True)
     updated_by = UnicodeAttribute()
