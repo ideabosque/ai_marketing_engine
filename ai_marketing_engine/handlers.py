@@ -57,6 +57,7 @@ from .types import (
     CorporationProfileType,
     PlaceListType,
     PlaceType,
+    PresignedUploadUrlType,
     QuestionCriteriaListType,
     QuestionCriteriaType,
     QuestionListType,
@@ -65,12 +66,14 @@ from .types import (
     UtmTagDataCollectionType,
 )
 
+aws_lambda = None
+aws_s3 = None
 schemas = {}
 
 
 def handlers_init(logger: logging.Logger, **setting: Dict[str, Any]) -> None:
     try:
-        global aws_lambda
+        global aws_lambda, aws_s3
 
         _initialize_aws_services(setting)
     except Exception as e:
@@ -80,7 +83,7 @@ def handlers_init(logger: logging.Logger, **setting: Dict[str, Any]) -> None:
 
 
 def _initialize_aws_services(setting: Dict[str, Any]) -> None:
-    global aws_lambda
+    global aws_lambda, aws_s3
 
     if all(
         setting.get(k)
@@ -95,6 +98,7 @@ def _initialize_aws_services(setting: Dict[str, Any]) -> None:
         aws_credentials = {}
 
     aws_lambda = boto3.client("lambda", **aws_credentials)
+    aws_s3 = boto3.client("s3", **aws_credentials)
 
 
 def fetch_graphql_schema(
@@ -227,6 +231,45 @@ def data_sync_decorator(original_function):
         return result
 
     return wrapper_function
+
+
+def resolve_presigned_upload_url_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> PresignedUploadUrlType:
+    # bucket_name, object_key, expiration=3600):
+    """
+    Generate a presigned URL to upload a file to an S3 bucket.
+
+    :param bucket_name: Name of the S3 bucket.
+    :param object_key: Name of the file to be uploaded (object key).
+    :param expiration: Time in seconds for the presigned URL to remain valid.
+    :return: Presigned URL as a string.
+    """
+    global aws_s3
+
+    bucket_name = kwargs.get("bucket_name")
+    object_key = kwargs.get("object_key")
+    expiration = kwargs.get("expiration", 3600)  # Default to 1 hour
+
+    # Generate the presigned URL for put_object
+    try:
+        response = aws_s3.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={"Bucket": bucket_name, "Key": object_key},
+            ExpiresIn=expiration,
+            HttpMethod="PUT",
+        )
+
+        return PresignedUploadUrlType(
+            url=response,
+            bucket_name=bucket_name,
+            object_key=object_key,
+            expiration=expiration,
+        )
+    except Exception as e:
+        log = traceback.format_exc()
+        info.context.get("logger").error(log)
+        raise e
 
 
 @retry(

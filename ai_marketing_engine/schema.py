@@ -65,6 +65,7 @@ from .queries import (
     resolve_corporation_profile_list,
     resolve_place,
     resolve_place_list,
+    resolve_presigned_upload_url,
     resolve_question,
     resolve_question_criteria,
     resolve_question_criteria_list,
@@ -91,6 +92,7 @@ from .types import (
     CorporationProfileType,
     PlaceListType,
     PlaceType,
+    PresignedUploadUrlType,
     QuestionCriteriaListType,
     QuestionCriteriaType,
     QuestionListType,
@@ -122,11 +124,20 @@ def type_class():
         UtmTagDataCollectionType,
         CompanyContactRequestType,
         CompanyContactRequestListType,
+        PresignedUploadUrlType,
     ]
 
 
 class Query(ObjectType):
     ping = String()
+
+    presigned_upload_url = Field(
+        PresignedUploadUrlType,
+        required=True,
+        bucket_name=String(required=True),
+        object_key=String(required=True),
+        expiration=Int(required=False),
+    )
 
     activity_history = Field(
         ActivityHistoryType,
@@ -325,6 +336,11 @@ class Query(ObjectType):
 
     def resolve_ping(self, info: ResolveInfo) -> str:
         return f"Hello at {time.strftime('%X')}!!"
+
+    def resolve_presigned_upload_url(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> PresignedUploadUrlType:
+        return resolve_presigned_upload_url(info, **kwargs)
 
     def resolve_activity_history(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]

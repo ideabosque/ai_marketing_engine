@@ -27,6 +27,7 @@ from .handlers import (
     resolve_corporation_profile_list_handler,
     resolve_place_handler,
     resolve_place_list_handler,
+    resolve_presigned_upload_url_handler,
     resolve_question_criteria_handler,
     resolve_question_criteria_list_handler,
     resolve_question_handler,
@@ -53,6 +54,7 @@ from .types import (
     CorporationProfileType,
     PlaceListType,
     PlaceType,
+    PresignedUploadUrlType,
     QuestionCriteriaListType,
     QuestionCriteriaType,
     QuestionListType,
@@ -60,6 +62,12 @@ from .types import (
     UtmTagDataCollectionListType,
     UtmTagDataCollectionType,
 )
+
+
+def resolve_presigned_upload_url(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> PresignedUploadUrlType:
+    return resolve_presigned_upload_url_handler(info, **kwargs)
 
 
 def resolve_activity_history(
