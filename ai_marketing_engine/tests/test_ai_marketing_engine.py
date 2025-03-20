@@ -69,7 +69,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_presigned_upload_url(self):
         query = Utility.generate_graphql_operation(
             "presignedUploadUrl", "Query", self.schema
@@ -300,7 +300,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_question_criteria_list(self):
         query = Utility.generate_graphql_operation(
             "questionCriteriaList", "Query", self.schema

@@ -6,10 +6,13 @@ __author__ = "bibow"
 
 import functools
 import logging
+import os
+import sys
 import time
 import traceback
+import zipfile
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
 
 import boto3
 import pendulum
@@ -55,6 +58,8 @@ from .types import (
     CorporationPlaceType,
     CorporationProfileListType,
     CorporationProfileType,
+    CrmUserListType,
+    CrmUserType,
     PlaceListType,
     PlaceType,
     PresignedUploadUrlType,
@@ -69,17 +74,34 @@ from .types import (
 aws_lambda = None
 aws_s3 = None
 schemas = {}
+module_bucket_name = None
+module_zip_path = None
+module_extract_path = None
+crm_connector = None
 
 
 def handlers_init(logger: logging.Logger, **setting: Dict[str, Any]) -> None:
     try:
+        global module_bucket_name, module_zip_path, module_extract_path
         global aws_lambda, aws_s3
+        global crm_connector
 
+        _setup_function_paths(setting)
         _initialize_aws_services(setting)
+        _initialize_crm_connector(logger, setting)
     except Exception as e:
         log = traceback.format_exc()
         logger.error(log)
         raise e
+
+
+def _setup_function_paths(setting: Dict[str, Any]) -> None:
+    global module_bucket_name, module_zip_path, module_extract_path
+    module_bucket_name = setting.get("module_bucket_name")
+    module_zip_path = setting.get("module_zip_path", "/tmp/adaptor_zips")
+    module_extract_path = setting.get("module_extract_path", "/tmp/adaptors")
+    os.makedirs(module_zip_path, exist_ok=True)
+    os.makedirs(module_extract_path, exist_ok=True)
 
 
 def _initialize_aws_services(setting: Dict[str, Any]) -> None:
@@ -99,6 +121,67 @@ def _initialize_aws_services(setting: Dict[str, Any]) -> None:
 
     aws_lambda = boto3.client("lambda", **aws_credentials)
     aws_s3 = boto3.client("s3", **aws_credentials)
+
+
+def _initialize_crm_connector(logger: logging.Logger, setting: Dict[str, Any]) -> None:
+    global crm_connector
+    if "crm_connector_config" in setting:
+        crm_connector = _get_class_object(
+            logger,
+            setting["crm_connector_config"]["module_name"],
+            setting["crm_connector_config"]["class_name"],
+            **setting["crm_connector_config"]["setting"],
+        )
+
+
+def _module_exists(logger: logging.Logger, module_name: str) -> bool:
+    """Check if the module exists in the specified path."""
+    module_dir = os.path.join(module_extract_path, module_name)
+    if os.path.exists(module_dir) and os.path.isdir(module_dir):
+        logger.info(f"Module {module_name} found in {module_extract_path}.")
+        return True
+    logger.info(f"Module {module_name} not found in {module_extract_path}.")
+    return False
+
+
+def _download_and_extract_module(logger: logging.Logger, module_name: str) -> None:
+    """Download and extract the module from S3 if not already extracted."""
+    key = f"{module_name}.zip"
+    zip_path = f"{module_zip_path}/{key}"
+
+    logger.info(f"Downloading module from S3: bucket={module_bucket_name}, key={key}")
+    aws_s3.download_file(module_bucket_name, key, zip_path)
+    logger.info(f"Downloaded {key} from S3 to {zip_path}")
+
+    # Extract the ZIP file
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(module_extract_path)
+    logger.info(f"Extracted module to {module_extract_path}")
+
+
+def _get_class_object(
+    logger: logging.Logger, module_name: str, class_name: str, **setting: Dict[str, Any]
+) -> Optional[Callable]:
+    try:
+        if not _module_exists(logger, module_name):
+            # Download and extract the module if it doesn't exist
+            _download_and_extract_module(logger, module_name)
+
+        # Add the extracted module to sys.path
+        module_path = f"{module_extract_path}/{module_name}"
+        if module_path not in sys.path:
+            sys.path.append(module_path)
+
+        _class = getattr(__import__(module_name), class_name)
+
+        return _class(
+            logger,
+            **Utility.json_loads(Utility.json_dumps(setting)),
+        )
+    except Exception as e:
+        log = traceback.format_exc()
+        logger.error(log)
+        raise e
 
 
 def fetch_graphql_schema(
@@ -2106,3 +2189,26 @@ def delete_utm_tag_data_collection_handler(
 ) -> bool:
     kwargs.get("entity").delete()
     return True
+
+
+def resolve_crm_user_list_handler(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> CrmUserListType:
+    place = get_place(kwargs.get("region"), kwargs.get("place_uuid"))
+    crm_user_list = crm_connector.lookup_crm_user_list(
+        info.context["logger"],
+        **{
+            "address": place.address,
+            "page_size": kwargs.get("page_size", 100),
+            "page_number": kwargs.get("page_number", 0),
+        },
+    )
+
+    return CrmUserListType(
+        page_size=crm_user_list["page_size"],
+        page_number=crm_user_list["page_number"],
+        total=crm_user_list["total"],
+        crm_user_list=[
+            CrmUserType(**crm_user) for crm_user in crm_user_list["crm_user_list"]
+        ],
+    )

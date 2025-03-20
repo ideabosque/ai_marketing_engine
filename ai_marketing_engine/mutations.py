@@ -8,6 +8,7 @@ import traceback
 from typing import Any, Dict
 
 from graphene import Boolean, DateTime, Field, Float, Int, List, Mutation, String
+
 from silvaengine_utility import JSON
 
 from .handlers import (
@@ -116,7 +117,6 @@ class InsertUpdateQuestion(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateQuestion":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             question = insert_update_question_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -135,7 +135,6 @@ class DeleteQuestion(Mutation):
     @staticmethod
     def mutate(root: Any, info: Any, **kwargs: Dict[str, Any]) -> "DeleteQuestion":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_question_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -160,7 +159,6 @@ class InsertUpdateQuestionCriteria(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateQuestionCriteria":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             question_criteria = insert_update_question_criteria_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -181,7 +179,6 @@ class DeleteQuestionCriteria(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteQuestionCriteria":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_question_criteria_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -302,7 +299,6 @@ class InsertUpdateCompanyContactProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCompanyContactProfile":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             company_contact_profile = insert_update_company_contact_profile_handler(
                 info, **kwargs
             )
@@ -327,7 +323,6 @@ class DeleteCompanyContactProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCompanyContactProfile":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_company_contact_profile_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -352,7 +347,6 @@ class InsertUpdateCompanyContactRequest(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCompanyContactRequest":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             company_contact_request = insert_update_company_contact_request_handler(
                 info, **kwargs
             )
@@ -377,7 +371,6 @@ class DeleteCompanyContactRequest(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCompanyContactRequest":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_company_contact_request_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -497,7 +490,6 @@ class InsertUpdateCompanyCorporationProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCompanyCorporationProfile":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             company_corporation_profile = (
                 insert_update_company_corporation_profile_handler(info, **kwargs)
             )
@@ -522,7 +514,6 @@ class DeleteCompanyCorporationProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCompanyCorporationProfile":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_company_corporation_profile_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -548,7 +539,6 @@ class InsertContactChatbotHistory(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertContactChatbotHistory":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             contact_chatbot_history = insert_contact_chatbot_history_handler(
                 info, **kwargs
             )
@@ -573,7 +563,6 @@ class DeleteContactChatbotHistory(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteContactChatbotHistory":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_contact_chatbot_history_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
@@ -603,7 +592,6 @@ class InsertUtmTagDataCollection(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUtmTagDataCollection":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             utm_tag_data_collection = insert_utm_tag_data_collection_handler(
                 info, **kwargs
             )
@@ -628,7 +616,6 @@ class DeleteUtmTagDataCollection(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteUtmTagDataCollection":
         try:
-            kwargs["endpoint_id"] = info.context["endpoint_id"]
             ok = delete_utm_tag_data_collection_handler(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()

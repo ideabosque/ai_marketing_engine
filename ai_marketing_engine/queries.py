@@ -25,6 +25,7 @@ from .handlers import (
     resolve_corporation_place_list_handler,
     resolve_corporation_profile_handler,
     resolve_corporation_profile_list_handler,
+    resolve_crm_user_list_handler,
     resolve_place_handler,
     resolve_place_list_handler,
     resolve_presigned_upload_url_handler,
@@ -52,6 +53,7 @@ from .types import (
     CorporationPlaceType,
     CorporationProfileListType,
     CorporationProfileType,
+    CrmUserListType,
     PlaceListType,
     PlaceType,
     PresignedUploadUrlType,
@@ -206,3 +208,9 @@ def resolve_utm_tag_data_collection_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> UtmTagDataCollectionListType:
     return resolve_utm_tag_data_collection_list_handler(info, **kwargs)
+
+
+def resolve_crm_user_list(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> CrmUserListType:
+    return resolve_crm_user_list_handler(info, **kwargs)
