@@ -166,6 +166,12 @@ class ActivityHistoryType(ObjectType):
     updated_at = DateTime()
 
 
+class CrmUserType(ObjectType):
+    email = String()
+    first_name = String()
+    last_name = String()
+
+
 class QuestionListType(ListObjectType):
     question_list = List(QuestionType)
 
@@ -212,3 +218,7 @@ class UtmTagDataCollectionListType(ListObjectType):
 
 class ActivityHistoryListType(ListObjectType):
     activity_history_list = List(ActivityHistoryType)
+
+
+class CrmUserListType(ListObjectType):
+    crm_user_list = List(CrmUserType)

@@ -63,6 +63,7 @@ from .queries import (
     resolve_corporation_place_list,
     resolve_corporation_profile,
     resolve_corporation_profile_list,
+    resolve_crm_user_list,
     resolve_place,
     resolve_place_list,
     resolve_presigned_upload_url,
@@ -90,6 +91,7 @@ from .types import (
     CorporationPlaceType,
     CorporationProfileListType,
     CorporationProfileType,
+    CrmUserListType,
     PlaceListType,
     PlaceType,
     PresignedUploadUrlType,
@@ -125,6 +127,7 @@ def type_class():
         CompanyContactRequestType,
         CompanyContactRequestListType,
         PresignedUploadUrlType,
+        CrmUserListType,
     ]
 
 
@@ -331,6 +334,13 @@ class Query(ObjectType):
         keyword=String(),
     )
 
+    crm_user_list = Field(
+        CrmUserListType,
+        page_number=Int(),
+        limit=Int(),
+        address=String(),
+    )
+
     def resolve_ping(self, info: ResolveInfo) -> str:
         return f"Hello at {time.strftime('%X')}!!"
 
@@ -456,6 +466,11 @@ class Query(ObjectType):
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> UtmTagDataCollectionListType:
         return resolve_utm_tag_data_collection_list(info, **kwargs)
+
+    def resolve_crm_user_list(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> CrmUserListType:
+        return resolve_crm_user_list(info, **kwargs)
 
 
 class Mutations(ObjectType):
