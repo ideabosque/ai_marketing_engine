@@ -300,7 +300,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_question_criteria_list(self):
         query = Utility.generate_graphql_operation(
             "questionCriteriaList", "Query", self.schema
@@ -518,7 +518,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_company_contact_profile_list(self):
         query = Utility.generate_graphql_operation(
             "companyContactProfileList", "Query", self.schema
@@ -527,6 +527,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
+                "email": "bibo72@yahoo.com",
+                "placeUuid": "11580716724379521519",
                 "endpointId": "openai",
                 "pageNumber": 1,
                 "limit": 10,
