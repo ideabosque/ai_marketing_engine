@@ -12,6 +12,7 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
 )
 from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, LocalSecondaryIndex
+
 from silvaengine_dynamodb_base import BaseModel
 
 
@@ -271,20 +272,6 @@ class ContactUuidIndex(LocalSecondaryIndex):
     # in the model
     endpoint_id = UnicodeAttribute(hash_key=True)
     contact_uuid = UnicodeAttribute(range_key=True)
-
-
-class ContactChatbotHistoryModel(BaseModel):
-    class Meta(BaseModel.Meta):
-        table_name = "ame-contact_chatbot_history"
-
-    endpoint_id = UnicodeAttribute(hash_key=True)
-    timestamp = NumberAttribute(range_key=True)
-    contact_uuid = UnicodeAttribute()
-    place_uuid = UnicodeAttribute()
-    region = UnicodeAttribute()
-    assistant_id = UnicodeAttribute()
-    thread_id = UnicodeAttribute()
-    contact_uuid_index = ContactUuidIndex()
 
 
 class TageNameIndex(LocalSecondaryIndex):

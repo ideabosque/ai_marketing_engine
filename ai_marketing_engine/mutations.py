@@ -16,7 +16,6 @@ from .handlers import (
     delete_company_contact_profile_handler,
     delete_company_contact_request_handler,
     delete_company_corporation_profile_handler,
-    delete_contact_chatbot_history_handler,
     delete_contact_profile_handler,
     delete_corporation_place_handler,
     delete_corporation_profile_handler,
@@ -25,7 +24,6 @@ from .handlers import (
     delete_question_handler,
     delete_utm_tag_data_collection_handler,
     insert_activity_history_handler,
-    insert_contact_chatbot_history_handler,
     insert_update_company_contact_profile_handler,
     insert_update_company_contact_request_handler,
     insert_update_company_corporation_profile_handler,
@@ -42,7 +40,6 @@ from .types import (
     CompanyContactProfileType,
     CompanyContactRequestType,
     CompanyCorporationProfileType,
-    ContactChatbotHistoryType,
     ContactProfileType,
     CorporationPlaceType,
     CorporationProfileType,
@@ -521,55 +518,6 @@ class DeleteCompanyCorporationProfile(Mutation):
             raise e
 
         return DeleteCompanyCorporationProfile(ok=ok)
-
-
-class InsertContactChatbotHistory(Mutation):
-    contact_chatbot_history = Field(ContactChatbotHistoryType)
-
-    class Arguments:
-        timestamp = Int(required=True)
-        contact_uuid = String(required=True)
-        place_uuid = String(required=True)
-        region = String(required=True)
-        assistant_id = String(required=True)
-        thread_id = String(required=True)
-
-    @staticmethod
-    def mutate(
-        root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "InsertContactChatbotHistory":
-        try:
-            contact_chatbot_history = insert_contact_chatbot_history_handler(
-                info, **kwargs
-            )
-        except Exception as e:
-            log = traceback.format_exc()
-            info.context.get("logger").error(log)
-            raise e
-
-        return InsertContactChatbotHistory(
-            contact_chatbot_history=contact_chatbot_history
-        )
-
-
-class DeleteContactChatbotHistory(Mutation):
-    ok = Boolean()
-
-    class Arguments:
-        timestamp = Int(required=True)
-
-    @staticmethod
-    def mutate(
-        root: Any, info: Any, **kwargs: Dict[str, Any]
-    ) -> "DeleteContactChatbotHistory":
-        try:
-            ok = delete_contact_chatbot_history_handler(info, **kwargs)
-        except Exception as e:
-            log = traceback.format_exc()
-            info.context.get("logger").error(log)
-            raise e
-
-        return DeleteContactChatbotHistory(ok=ok)
 
 
 class InsertUtmTagDataCollection(Mutation):
