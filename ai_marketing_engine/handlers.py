@@ -120,7 +120,9 @@ def _initialize_aws_services(setting: Dict[str, Any]) -> None:
         aws_credentials = {}
 
     aws_lambda = boto3.client("lambda", **aws_credentials)
-    aws_s3 = boto3.client("s3", **aws_credentials)
+    aws_s3 = boto3.client(
+        "s3", **aws_credentials, config=boto3.session.Config(signature_version="s3v4")
+    )
 
 
 def _initialize_crm_connector(logger: logging.Logger, setting: Dict[str, Any]) -> None:
