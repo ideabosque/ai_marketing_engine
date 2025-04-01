@@ -25,7 +25,6 @@ from .mutations import (
     DeleteCompanyContactProfile,
     DeleteCompanyContactRequest,
     DeleteCompanyCorporationProfile,
-    DeleteContactChatbotHistory,
     DeleteContactProfile,
     DeleteCorporationPlace,
     DeleteCorporationProfile,
@@ -34,7 +33,6 @@ from .mutations import (
     DeleteQuestionCriteria,
     DeleteUtmTagDataCollection,
     InsertActivityHistory,
-    InsertContactChatbotHistory,
     InsertUpdateCompanyContactProfile,
     InsertUpdateCompanyContactRequest,
     InsertUpdateCompanyCorporationProfile,
@@ -55,8 +53,6 @@ from .queries import (
     resolve_company_contact_request_list,
     resolve_company_corporation_profile,
     resolve_company_corporation_profile_list,
-    resolve_contact_chatbot_history,
-    resolve_contact_chatbot_history_list,
     resolve_contact_profile,
     resolve_contact_profile_list,
     resolve_corporation_place,
@@ -83,8 +79,6 @@ from .types import (
     CompanyContactRequestType,
     CompanyCorporationProfileListType,
     CompanyCorporationProfileType,
-    ContactChatbotHistoryListType,
-    ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
     CorporationPlaceListType,
@@ -112,8 +106,6 @@ def type_class():
         CompanyCorporationProfileType,
         CorporationProfileListType,
         CorporationProfileType,
-        ContactChatbotHistoryListType,
-        ContactChatbotHistoryType,
         CompanyContactProfileListType,
         CompanyContactProfileType,
         ContactProfileListType,
@@ -302,21 +294,6 @@ class Query(ObjectType):
         corporation_types=List(String),
     )
 
-    contact_chatbot_history = Field(
-        ContactChatbotHistoryType,
-        required=True,
-        timestamp=Int(required=True),
-    )
-
-    contact_chatbot_history_list = Field(
-        ContactChatbotHistoryListType,
-        page_number=Int(),
-        limit=Int(),
-        contact_uuid=String(),
-        place_uuids=List(String),
-        regions=List(String),
-    )
-
     utm_tag_data_collection = Field(
         UtmTagDataCollectionType,
         required=True,
@@ -447,16 +424,6 @@ class Query(ObjectType):
     ) -> CompanyCorporationProfileListType:
         return resolve_company_corporation_profile_list(info, **kwargs)
 
-    def resolve_contact_chatbot_history(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> ContactChatbotHistoryType:
-        return resolve_contact_chatbot_history(info, **kwargs)
-
-    def resolve_contact_chatbot_history_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> ContactChatbotHistoryListType:
-        return resolve_contact_chatbot_history_list(info, **kwargs)
-
     def resolve_utm_tag_data_collection(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> UtmTagDataCollectionType:
@@ -496,7 +463,5 @@ class Mutations(ObjectType):
         InsertUpdateCompanyCorporationProfile.Field()
     )
     delete_company_corporation_profile = DeleteCompanyCorporationProfile.Field()
-    insert_contact_chatbot_history = InsertContactChatbotHistory.Field()
-    delete_contact_chatbot_history = DeleteContactChatbotHistory.Field()
     insert_utm_tag_data_collection = InsertUtmTagDataCollection.Field()
     delete_utm_tag_data_collection = DeleteUtmTagDataCollection.Field()

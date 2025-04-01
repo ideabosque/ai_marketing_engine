@@ -131,16 +131,6 @@ class CompanyCorporationProfileType(ObjectType):
     updated_at = DateTime()
 
 
-class ContactChatbotHistoryType(ObjectType):
-    endpoint_id = String()
-    timestamp = Int()
-    contact_uuid = String()
-    place_uuid = String()
-    region = String()
-    assistant_id = String()
-    thread_id = String()
-
-
 class UtmTagDataCollectionType(ObjectType):
     endpoint_id = String()
     collection_uuid = String()
@@ -206,10 +196,6 @@ class CorporationPlaceListType(ListObjectType):
 
 class CompanyCorporationProfileListType(ListObjectType):
     company_corporation_profile_list = List(CompanyCorporationProfileType)
-
-
-class ContactChatbotHistoryListType(ListObjectType):
-    contact_chatbot_history_list = List(ContactChatbotHistoryType)
 
 
 class UtmTagDataCollectionListType(ListObjectType):

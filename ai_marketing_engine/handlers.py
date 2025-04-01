@@ -32,7 +32,6 @@ from .models import (
     CompanyContactProfileModel,
     CompanyContactRequestModel,
     CompanyCorporationProfileModel,
-    ContactChatbotHistoryModel,
     ContactProfileModel,
     CorporationPlaceModel,
     CorporationProfileModel,
@@ -50,8 +49,6 @@ from .types import (
     CompanyContactRequestType,
     CompanyCorporationProfileListType,
     CompanyCorporationProfileType,
-    ContactChatbotHistoryListType,
-    ContactChatbotHistoryType,
     ContactProfileListType,
     ContactProfileType,
     CorporationPlaceListType,
@@ -1907,128 +1904,6 @@ def insert_update_company_corporation_profile_handler(
     model_funct=get_company_corporation_profile,
 )
 def delete_company_corporation_profile_handler(
-    info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> bool:
-    kwargs.get("entity").delete()
-    return True
-
-
-@retry(
-    reraise=True,
-    wait=wait_exponential(multiplier=1, max=60),
-    stop=stop_after_attempt(5),
-)
-def get_contact_chatbot_history(
-    endpoint_id: str, timestamp: str
-) -> ContactChatbotHistoryModel:
-    return ContactChatbotHistoryModel.get(endpoint_id, timestamp)
-
-
-def get_contact_chatbot_history_count(endpoint_id: str, timestamp: str) -> int:
-    return ContactChatbotHistoryModel.count(
-        endpoint_id,
-        ContactChatbotHistoryModel.timestamp == timestamp,
-    )
-
-
-def get_contact_chatbot_history_type(
-    info: ResolveInfo, contact_chatbot_history: ContactChatbotHistoryModel
-) -> ContactChatbotHistoryType:
-    contact_chatbot_history = contact_chatbot_history.__dict__["attribute_values"]
-    return ContactChatbotHistoryType(
-        **Utility.json_loads(Utility.json_dumps(contact_chatbot_history))
-    )
-
-
-def resolve_contact_chatbot_history_handler(
-    info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactChatbotHistoryType:
-    return get_contact_chatbot_history_type(
-        info,
-        get_contact_chatbot_history(
-            info.context["endpoint_id"], kwargs.get("timestamp")
-        ),
-    )
-
-
-@monitor_decorator
-@resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "timestamp", "contact_uuid"],
-    list_type_class=ContactChatbotHistoryListType,
-    type_funct=get_contact_chatbot_history_type,
-)
-def resolve_contact_chatbot_history_list_handler(
-    info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> Any:
-    endpoint_id = info.context["endpoint_id"]
-    contact_uuid = kwargs.get("contact_uuid")
-    place_uuids = kwargs.get("place_uuids")
-    regions = kwargs.get("regions")
-
-    args = []
-    inquiry_funct = ContactChatbotHistoryModel.scan
-    count_funct = ContactChatbotHistoryModel.count
-    if endpoint_id:
-        args = [endpoint_id, None]
-        inquiry_funct = ContactChatbotHistoryModel.query
-        if contact_uuid:
-            inquiry_funct = ContactChatbotHistoryModel.contact_uuid_index.query
-            args[1] = ContactChatbotHistoryModel.contact_uuid == contact_uuid
-            count_funct = ContactChatbotHistoryModel.contact_uuid_index.count
-
-    the_filters = None  # We can add filters for the query.
-    if place_uuids:
-        the_filters &= ContactChatbotHistoryModel.place_uuid.is_in(*place_uuids)
-    if regions:
-        the_filters &= ContactChatbotHistoryModel.region.is_in(*regions)
-    if the_filters is not None:
-        args.append(the_filters)
-
-    return inquiry_funct, count_funct, args
-
-
-@insert_update_decorator(
-    keys={
-        "hash_key": "endpoint_id",
-        "range_key": "timestamp",
-    },
-    range_key_required=True,
-    model_funct=get_contact_chatbot_history,
-    count_funct=get_contact_chatbot_history_count,
-    type_funct=get_contact_chatbot_history_type,
-    # data_attributes_except_for_data_diff=data_attributes_except_for_data_diff,
-    # activity_history_funct=None,
-)
-def insert_contact_chatbot_history_handler(
-    info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
-    timestamp = kwargs.get("timestamp")
-    if kwargs.get("entity") is None:
-        ContactChatbotHistoryModel(
-            endpoint_id,
-            timestamp,
-            **{
-                "contact_uuid": kwargs["contact_uuid"],
-                "place_uuid": kwargs["place_uuid"],
-                "region": kwargs["region"],
-                "assistant_id": kwargs["assistant_id"],
-                "thread_id": kwargs["thread_id"],
-            },
-        ).save()
-        return
-
-    return
-
-
-@delete_decorator(
-    keys={
-        "hash_key": "endpoint_id",
-        "range_key": "timestamp",
-    },
-    model_funct=get_contact_chatbot_history,
-)
-def delete_contact_chatbot_history_handler(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> bool:
     kwargs.get("entity").delete()
