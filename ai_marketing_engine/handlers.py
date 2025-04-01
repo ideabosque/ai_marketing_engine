@@ -294,10 +294,10 @@ def data_sync_decorator(original_function):
         message = result.__dict__ if hasattr(result, "__dict__") else result
 
         # Log information about the function execution
-        logging.info(
+        args[0].context.get("logger").info(
             f"Function {original_function.__name__} returned data of type: {data_type}"
         )
-        logging.info(
+        args[0].context.get("logger").info(
             f"Function {original_function.__name__} messages: {Utility.json_dumps(message)}"
         )
 
