@@ -7,117 +7,98 @@ __author__ = "bibow"
 import time
 from typing import Any, Dict
 
-from graphene import (
-    Boolean,
-    DateTime,
-    Field,
-    Int,
-    List,
-    ObjectType,
-    ResolveInfo,
-    String,
-)
+from graphene import Field, Int, List, ObjectType, ResolveInfo, String
 
 from silvaengine_utility import JSON
 
-from .mutations import (
-    DeleteActivityHistory,
-    DeleteCompanyContactProfile,
-    DeleteCompanyContactRequest,
-    DeleteCompanyCorporationProfile,
-    DeleteContactProfile,
-    DeleteCorporationPlace,
+from .mutations.activity_history import DeleteActivityHistory, InsertActivityHistory
+from .mutations.attribute_value import DeleteAttributeValue, InsertUpdateAttributeValue
+from .mutations.contact_profile import DeleteContactProfile, InsertUpdateContactProfile
+from .mutations.contact_request import DeleteContactRequest, InsertUpdateContactRequest
+from .mutations.corporation_profile import (
     DeleteCorporationProfile,
-    DeletePlace,
-    DeleteQuestion,
-    DeleteQuestionCriteria,
-    DeleteUtmTagDataCollection,
-    InsertActivityHistory,
-    InsertUpdateCompanyContactProfile,
-    InsertUpdateCompanyContactRequest,
-    InsertUpdateCompanyCorporationProfile,
-    InsertUpdateContactProfile,
-    InsertUpdateCorporationPlace,
     InsertUpdateCorporationProfile,
-    InsertUpdatePlace,
-    InsertUpdateQuestion,
-    InsertUpdateQuestionCriteria,
+)
+from .mutations.place import DeletePlace, InsertUpdatePlace
+from .mutations.question import DeleteQuestion, InsertUpdateQuestion
+from .mutations.question_group import DeleteQuestionGroup, InsertUpdateQuestionGroup
+from .mutations.utm_tag_data_collection import (
+    DeleteUtmTagDataCollection,
     InsertUtmTagDataCollection,
 )
-from .queries import (
+from .mutations.wizard import DeleteWizard, InsertUpdateWizard
+from .queries.activity_history import (
     resolve_activity_history,
     resolve_activity_history_list,
-    resolve_company_contact_profile,
-    resolve_company_contact_profile_list,
-    resolve_company_contact_request,
-    resolve_company_contact_request_list,
-    resolve_company_corporation_profile,
-    resolve_company_corporation_profile_list,
+)
+from .queries.ai_marketing import resolve_crm_user_list, resolve_presigned_upload_url
+from .queries.attribute_value import (
+    resolve_attribute_value,
+    resolve_attribute_value_list,
+)
+from .queries.contact_profile import (
     resolve_contact_profile,
     resolve_contact_profile_list,
-    resolve_corporation_place,
-    resolve_corporation_place_list,
+)
+from .queries.contact_request import (
+    resolve_contact_request,
+    resolve_contact_request_list,
+)
+from .queries.corporation_profile import (
     resolve_corporation_profile,
     resolve_corporation_profile_list,
-    resolve_crm_user_list,
-    resolve_place,
-    resolve_place_list,
-    resolve_presigned_upload_url,
-    resolve_question,
-    resolve_question_criteria,
-    resolve_question_criteria_list,
-    resolve_question_list,
+)
+from .queries.place import resolve_place, resolve_place_list
+from .queries.question import resolve_question, resolve_question_list
+from .queries.question_group import resolve_question_group, resolve_question_group_list
+from .queries.utm_tag_data_collection import (
     resolve_utm_tag_data_collection,
     resolve_utm_tag_data_collection_list,
 )
-from .types import (
-    ActivityHistoryListType,
-    ActivityHistoryType,
-    CompanyContactProfileListType,
-    CompanyContactProfileType,
-    CompanyContactRequestListType,
-    CompanyContactRequestType,
-    CompanyCorporationProfileListType,
-    CompanyCorporationProfileType,
-    ContactProfileListType,
-    ContactProfileType,
-    CorporationPlaceListType,
-    CorporationPlaceType,
+from .queries.wizard import resolve_wizard, resolve_wizard_list
+from .types.activity_history import ActivityHistoryListType, ActivityHistoryType
+from .types.ai_marketing import CrmUserListType, PresignedUploadUrlType
+from .types.attribute_value import AttributeValueListType, AttributeValueType
+from .types.contact_profile import ContactProfileListType, ContactProfileType
+from .types.contact_request import ContactRequestListType, ContactRequestType
+from .types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
-    CrmUserListType,
-    PlaceListType,
-    PlaceType,
-    PresignedUploadUrlType,
-    QuestionCriteriaListType,
-    QuestionCriteriaType,
-    QuestionListType,
-    QuestionType,
+)
+from .types.place import PlaceListType, PlaceType
+from .types.question import QuestionListType, QuestionType
+from .types.question_group import QuestionGroupListType, QuestionGroupType
+from .types.utm_tag_data_collection import (
     UtmTagDataCollectionListType,
     UtmTagDataCollectionType,
 )
+from .types.wizard import WizardListType, WizardType
 
 
 def type_class():
     return [
-        CorporationPlaceListType,
-        CorporationPlaceType,
-        CompanyCorporationProfileListType,
-        CompanyCorporationProfileType,
+        AttributeValueType,
+        AttributeValueListType,
         CorporationProfileListType,
         CorporationProfileType,
-        CompanyContactProfileListType,
-        CompanyContactProfileType,
+        CorporationProfileListType,
+        CorporationProfileType,
+        ContactProfileListType,
+        ContactProfileType,
         ContactProfileListType,
         ContactProfileType,
         PlaceListType,
         PlaceType,
+        QuestionGroupListType,
+        QuestionGroupType,
         QuestionListType,
         QuestionType,
         UtmTagDataCollectionListType,
         UtmTagDataCollectionType,
-        CompanyContactRequestType,
-        CompanyContactRequestListType,
+        ContactRequestType,
+        ContactRequestListType,
+        WizardListType,
+        WizardType,
         PresignedUploadUrlType,
         CrmUserListType,
     ]
@@ -159,20 +140,39 @@ class Query(ObjectType):
         QuestionListType,
         page_number=Int(),
         limit=Int(),
-        question_groups=List(String),
+        wizard_uuid=String(),
+        data_type=String(),
+        question_group_uuids=List(String),
         question=String(),
-        attribute=String(),
+        attribute_name=String(),
         attribute_type=String(),
     )
 
-    question_criteria = Field(
-        QuestionCriteriaType,
+    wizard = Field(
+        WizardType,
+        required=True,
+        wizard_uuid=String(required=True),
+    )
+
+    wizard_list = Field(
+        WizardListType,
+        page_number=Int(),
+        limit=Int(),
+        question_group_uuid=String(),
+        wizard_title=String(),
+        wizard_description=String(),
+        priority=Int(),
+        wizard_types=List(String),
+    )
+
+    question_group = Field(
+        QuestionGroupType,
         required=True,
         question_group=String(required=True),
     )
 
-    question_criteria_list = Field(
-        QuestionCriteriaListType,
+    question_group_list = Field(
+        QuestionGroupListType,
         page_number=Int(),
         limit=Int(),
         region=String(),
@@ -196,6 +196,7 @@ class Query(ObjectType):
         business_name=String(),
         address=String(),
         website=String(),
+        corporation_uuid=String(),
     )
 
     contact_profile = Field(
@@ -211,40 +212,25 @@ class Query(ObjectType):
         limit=Int(),
         place_uuid=String(),
         email=String(),
-        regions=List(String),
         first_name=String(),
         last_name=String(),
     )
 
-    company_contact_profile = Field(
-        CompanyContactProfileType,
-        required=True,
-        contact_uuid=String(required=True),
-    )
-
-    company_contact_profile_list = Field(
-        CompanyContactProfileListType,
-        page_number=Int(),
-        limit=Int(),
-        email=String(),
-        place_uuid=String(),
-        corporation_types=List(String),
-    )
-
-    company_contact_request = Field(
-        CompanyContactRequestType,
+    contact_request = Field(
+        ContactRequestType,
         required=True,
         contact_uuid=String(required=True),
         request_uuid=String(required=True),
     )
 
-    company_contact_request_list = Field(
-        CompanyContactRequestListType,
+    contact_request_list = Field(
+        ContactRequestListType,
         page_number=Int(),
         limit=Int(),
         contact_uuid=String(),
         request_title=String(),
         request_detail=String(),
+        place_uuid=String(),
     )
 
     corporation_profile = Field(
@@ -262,36 +248,24 @@ class Query(ObjectType):
         external_id=String(),
         business_name=String(),
         category=String(),
+        address=String(),
     )
 
-    corporation_place = Field(
-        CorporationPlaceType,
+    attribute_value = Field(
+        AttributeValueType,
         required=True,
-        region=String(required=True),
-        corporation_uuid=String(required=True),
+        data_type_attribute_name=String(required=True),
+        value_version_uuid=String(required=True),
     )
 
-    corporation_place_list = Field(
-        CorporationPlaceListType,
+    attribute_value_list = Field(
+        AttributeValueListType,
         page_number=Int(),
         limit=Int(),
-        region=String(),
-        place_uuid=String(),
-        corporation_types=List(String),
-    )
-
-    company_corporation_profile = Field(
-        CompanyCorporationProfileType,
-        required=True,
-        corporation_uuid=String(required=True),
-    )
-
-    company_corporation_profile_list = Field(
-        CompanyCorporationProfileListType,
-        page_number=Int(),
-        limit=Int(),
-        external_id=String(),
-        corporation_types=List(String),
+        data_type_attribute_name=String(),
+        data_identity=String(),
+        value=String(),
+        statuses=List(String),
     )
 
     utm_tag_data_collection = Field(
@@ -307,7 +281,6 @@ class Query(ObjectType):
         tag_name=String(),
         place_uuids=List(String),
         contact_uuids=List(String),
-        regions=List(String),
         keyword=String(),
     )
 
@@ -346,15 +319,23 @@ class Query(ObjectType):
     ) -> QuestionListType:
         return resolve_question_list(info, **kwargs)
 
-    def resolve_question_criteria(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> QuestionCriteriaType:
-        return resolve_question_criteria(info, **kwargs)
+    def resolve_wizard(self, info: ResolveInfo, **kwargs: Dict[str, Any]) -> WizardType:
+        return resolve_wizard(info, **kwargs)
 
-    def resolve_question_criteria_list(
+    def resolve_wizard_list(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> QuestionCriteriaListType:
-        return resolve_question_criteria_list(info, **kwargs)
+    ) -> WizardListType:
+        return resolve_wizard_list(info, **kwargs)
+
+    def resolve_question_group(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> QuestionGroupType:
+        return resolve_question_group(info, **kwargs)
+
+    def resolve_question_group_list(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> QuestionGroupListType:
+        return resolve_question_group_list(info, **kwargs)
 
     def resolve_place(self, info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
         return resolve_place(info, **kwargs)
@@ -374,25 +355,15 @@ class Query(ObjectType):
     ) -> ContactProfileListType:
         return resolve_contact_profile_list(info, **kwargs)
 
-    def resolve_company_contact_profile(
+    def resolve_contact_request(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CompanyContactProfileType:
-        return resolve_company_contact_profile(info, **kwargs)
+    ) -> ContactRequestType:
+        return resolve_contact_request(info, **kwargs)
 
-    def resolve_company_contact_profile_list(
+    def resolve_contact_request_list(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CompanyContactProfileListType:
-        return resolve_company_contact_profile_list(info, **kwargs)
-
-    def resolve_company_contact_request(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CompanyContactRequestType:
-        return resolve_company_contact_request(info, **kwargs)
-
-    def resolve_company_contact_request_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CompanyContactRequestListType:
-        return resolve_company_contact_request_list(info, **kwargs)
+    ) -> ContactRequestListType:
+        return resolve_contact_request_list(info, **kwargs)
 
     def resolve_corporation_profile(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
@@ -404,26 +375,6 @@ class Query(ObjectType):
     ) -> CorporationProfileListType:
         return resolve_corporation_profile_list(info, **kwargs)
 
-    def resolve_corporation_place(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CorporationPlaceType:
-        return resolve_corporation_place(info, **kwargs)
-
-    def resolve_corporation_place_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CorporationPlaceListType:
-        return resolve_corporation_place_list(info, **kwargs)
-
-    def resolve_company_corporation_profile(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CompanyCorporationProfileType:
-        return resolve_company_corporation_profile(info, **kwargs)
-
-    def resolve_company_corporation_profile_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CompanyCorporationProfileListType:
-        return resolve_company_corporation_profile_list(info, **kwargs)
-
     def resolve_utm_tag_data_collection(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> UtmTagDataCollectionType:
@@ -434,6 +385,16 @@ class Query(ObjectType):
     ) -> UtmTagDataCollectionListType:
         return resolve_utm_tag_data_collection_list(info, **kwargs)
 
+    def resolve_attribute_value(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> AttributeValueType:
+        return resolve_attribute_value(info, **kwargs)
+
+    def resolve_attribute_value_list(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> AttributeValueListType:
+        return resolve_attribute_value_list(info, **kwargs)
+
     def resolve_crm_user_list(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> CrmUserListType:
@@ -443,25 +404,21 @@ class Query(ObjectType):
 class Mutations(ObjectType):
     insert_activity_history = InsertActivityHistory.Field()
     delete_activity_history = DeleteActivityHistory.Field()
+    insert_update_question_group = InsertUpdateQuestionGroup.Field()
+    delete_question_group = DeleteQuestionGroup.Field()
+    insert_update_wizard = InsertUpdateWizard.Field()
+    delete_wizard = DeleteWizard.Field()
     insert_update_question = InsertUpdateQuestion.Field()
     delete_question = DeleteQuestion.Field()
-    insert_update_question_criteria = InsertUpdateQuestionCriteria.Field()
-    delete_question_criteria = DeleteQuestionCriteria.Field()
     insert_update_place = InsertUpdatePlace.Field()
     delete_place = DeletePlace.Field()
-    insert_update_contact_profile = InsertUpdateContactProfile.Field()
-    delete_contact_profile = DeleteContactProfile.Field()
-    insert_update_company_contact_profile = InsertUpdateCompanyContactProfile.Field()
-    delete_company_contact_profile = DeleteCompanyContactProfile.Field()
-    insert_update_company_contact_request = InsertUpdateCompanyContactRequest.Field()
-    delete_company_contact_request = DeleteCompanyContactRequest.Field()
     insert_update_corporation_profile = InsertUpdateCorporationProfile.Field()
     delete_corporation_profile = DeleteCorporationProfile.Field()
-    insert_update_corporation_place = InsertUpdateCorporationPlace.Field()
-    delete_corporation_place = DeleteCorporationPlace.Field()
-    insert_update_company_corporation_profile = (
-        InsertUpdateCompanyCorporationProfile.Field()
-    )
-    delete_company_corporation_profile = DeleteCompanyCorporationProfile.Field()
+    insert_update_contact_profile = InsertUpdateContactProfile.Field()
+    delete_contact_profile = DeleteContactProfile.Field()
+    insert_update_contact_request = InsertUpdateContactRequest.Field()
+    delete_contact_request = DeleteContactRequest.Field()
+    insert_update_attribute_value = InsertUpdateAttributeValue.Field()
+    delete_attribute_value = DeleteAttributeValue.Field()
     insert_utm_tag_data_collection = InsertUtmTagDataCollection.Field()
     delete_utm_tag_data_collection = DeleteUtmTagDataCollection.Field()
