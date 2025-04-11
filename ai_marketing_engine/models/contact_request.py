@@ -159,7 +159,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     request_uuid = kwargs.get("request_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "endpoint_id": kwargs["endpoint_id"],
+            "endpoint_id": info.context["endpoint_id"],
             "request_title": kwargs["request_title"],
             "request_detail": kwargs["request_detail"],
             "place_uuid": kwargs["place_uuid"],

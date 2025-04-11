@@ -20,8 +20,8 @@ class InsertUpdateQuestionGroup(Mutation):
 
     class Arguments:
         question_group_uuid = String(required=False)
-        question_name = String(required=False)
-        question_description = String(required=False)
+        question_group_name = String(required=False)
+        question_group_description = String(required=False)
         region = String(required=False)
         question_criteria = JSON(required=False)
         weight = Int(required=False)

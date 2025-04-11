@@ -24,7 +24,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
-from .utils import _get_corporation_profile, _get_place
+from .utils import _get_place
 
 
 class EmailIndex(LocalSecondaryIndex):
@@ -51,7 +51,6 @@ class ContactProfileModel(BaseModel):
     endpoint_id = UnicodeAttribute()
     first_name = UnicodeAttribute(null=True)
     last_name = UnicodeAttribute(null=True)
-    corporation_uuid = UnicodeAttribute(null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
@@ -87,18 +86,9 @@ def get_contact_profile_type(
 ) -> ContactProfileType:
     try:
         place = _get_place(contact_profile.endpoint_id, contact_profile.place_uuid)
-        corporation_profile = None
-        if contact_profile.corporation_uuid:
-            corporation_profile = _get_corporation_profile(
-                contact_profile.endpoint_id,
-                contact_profile.corporation_uuid,
-            )
         contact_profile = contact_profile.__dict__["attribute_values"]
         contact_profile["place"] = place
         contact_profile.pop("place_uuid")
-        if corporation_profile:
-            contact_profile["corporation_profile"] = corporation_profile
-            contact_profile.pop("corporation_uuid")
 
     except Exception as e:
         log = traceback.format_exc()
@@ -202,14 +192,6 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     for key, field in field_map.items():
         if key in kwargs:  # Check if the key exists in kwargs
             actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
-
-    # Handle corporation_uuid separately
-    if kwargs.get("corporation_uuid") is not None:
-        actions.append(
-            ContactProfileModel.corporation_uuid.set(kwargs.get("corporation_uuid"))
-        )
-    elif "corporation_uuid" in kwargs:
-        actions.append(ContactProfileModel.corporation_uuid.remove())
 
     # Update the contact profile
     contact_profile.update(actions=actions)

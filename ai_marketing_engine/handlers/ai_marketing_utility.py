@@ -128,6 +128,17 @@ def _get_class_object(
         raise e
 
 
+def get_crm_connector(logger: logging.Logger, setting: Dict[str, Any]) -> Optional[Any]:
+    if "crm_connector_config" in setting:
+        crm_connector = _get_class_object(
+            logger,
+            setting["crm_connector_config"]["module_name"],
+            setting["crm_connector_config"]["class_name"],
+            **setting["crm_connector_config"]["setting"],
+        )
+        return crm_connector
+
+
 def put_message_to_target(
     logger: logging.Logger,
     endpoint_id: str,

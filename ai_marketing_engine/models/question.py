@@ -30,7 +30,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.question import QuestionListType, QuestionType
-from .utils import _get_question_group
+from .utils import _get_wizard
 
 
 class DataTypeIndex(LocalSecondaryIndex):
@@ -124,11 +124,14 @@ def get_question_count(endpoint_id: str, question_uuid: str) -> int:
 
 def get_question_type(info: ResolveInfo, question: QuestionModel) -> QuestionType:
     try:
-        question_group = _get_question_group(
-            question.endpoint_id, question.question_group_uuid
-        )
+        wizard = _get_wizard(question.endpoint_id, question.wizard_uuid)
         question = question.__dict__["attribute_values"]
-        question["priority"] = question_group["weight"] * 10 + question["priority"]
+        question["priority"] = (
+            wizard["question_group"]["weight"] * 10 + question["priority"]
+        )
+        question["wizard"] = wizard
+        question.pop("wizard_uuid")
+        question.pop("question_group_uuid")
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -154,7 +157,7 @@ def resolve_question_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     endpoint_id = info.context["endpoint_id"]
     wizard_uuid = kwargs.get("wizard_uuid")
     data_type = kwargs.get("data_type")
-    question_group_uuids = kwargs.get("question_group_uuids")
+    question_group_uuid = kwargs.get("question_group_uuid")
     question = kwargs.get("question")
     attribute_name = kwargs.get("attribute_name")
     attribute_type = kwargs.get("attribute_type")
@@ -175,8 +178,8 @@ def resolve_question_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
             inquiry_funct = QuestionModel.data_type_index.query
 
     the_filters = None  # We can add filters for the query.
-    if question_group_uuids:
-        the_filters &= QuestionModel.question_group_uuid.is_in(*question_group_uuids)
+    if question_group_uuid:
+        the_filters &= QuestionModel.question_group_uuid == question_group_uuid
     if question:
         the_filters &= QuestionModel.question.contains(question)
     if attribute_name:

@@ -69,7 +69,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_presigned_upload_url(self):
         query = Utility.generate_graphql_operation(
             "presignedUploadUrl", "Query", self.schema
@@ -160,6 +160,153 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
+    def test_graphql_insert_update_question_group(self):
+        query = Utility.generate_graphql_operation(
+            "insertUpdateQuestionGroup", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "questionGroupUuid": "15006769565442904560",
+                "questionGroupName": "XXXXXXXX",
+                "questionGroupDescription": "XXXXXXXX",
+                "region": "US",
+                "questionCriteria": {
+                    "place_type": "establishment",
+                    "corporation_type": "XXXXXXXX",
+                    # "corporation_category": "XXXXXXXX",
+                    # "utm_tag_name": "XXXXXXXX",
+                    # "corporation_uuids": ["4188232447431807471"],
+                },
+                "weight": 0,
+                "updatedBy": "XYZ",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_delete_question_group(self):
+        query = Utility.generate_graphql_operation(
+            "deleteQuestionGroup", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "questionGroupUuid": "8734185510007607792",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_question_group(self):
+        query = Utility.generate_graphql_operation(
+            "questionGroup", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "questionGroupUuid": "15006769565442904560",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_question_group_list(self):
+        query = Utility.generate_graphql_operation(
+            "questionGroupList", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "region": "US",
+                "questionCriteria": {
+                    # "place_types": ["abc", "xyz"],
+                    # "corporation_type": "XXXXXXXX",
+                    # "corporation_categories": ["XXXXXXXX"],
+                    # "utm_tag_name": "XXXXXXXX",
+                    # "corporation_uuid": "4188232447431807471",
+                },
+                "pageNumber": 1,
+                "limit": 10,
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_insert_update_wizard(self):
+        query = Utility.generate_graphql_operation(
+            "insertUpdateWizard", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "wizardUuid": "1943415144959382000",
+                "questionGroupUuid": "15006769565442904560",
+                "wizardTitle": "XXXXXXXX",
+                "wizardDescription": "XXXXXXXX",
+                "wizardType": "page",
+                # "formSchema": None,
+                # "embedContent": None,
+                # "priority": 0,
+                "updatedBy": "XYZ",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_delete_wizard(self):
+        query = Utility.generate_graphql_operation(
+            "deleteWizard", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "wizardUuid": "2325624121421009392",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_wizard(self):
+        query = Utility.generate_graphql_operation("wizard", "Query", self.schema)
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "wizardUuid": "8254212722722410992",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_wizard_list(self):
+        query = Utility.generate_graphql_operation("wizardList", "Query", self.schema)
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "questionGroupUuid": "15006769565442904560",
+                "pageNumber": 1,
+                "limit": 10,
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_question(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateQuestion", "Mutation", self.schema
@@ -168,13 +315,14 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "questionUuid": "6103791325217231343",
-                "questionGroup": "12345678",
+                "questionUuid": "115703653371220464",
+                "questionGroupUuid": "15006769565442904560",
+                "wizardUuid": "1943415144959382000",
+                "dataType": "contact",
                 "question": "Can you provide your sales certification?",
                 "priority": 6,
-                "attribute": "sales_certification",
+                "attributeName": "sales_certification",
                 "attributeType": "file",
-                "awsS3Bucket": "XXXXXXX",
                 # "optionValues": [
                 #     "white",
                 #     "black",
@@ -223,7 +371,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "questionUuid": "17090916094743351791",
+                "questionUuid": "115703653371220464",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -236,87 +384,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "questionGroups": ["12345678"],
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_question_criteria(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateQuestionCriteria", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "questionGroup": "12345678",
-                "region": "US",
-                "questionCriteria": {
-                    "place_type": "establishment",
-                    "corporation_type": "XXXXXXXX",
-                    # "corporation_category": "XXXXXXXX",
-                    # "utm_tag_name": "XXXXXXXX",
-                    # "corporation_uuids": ["4188232447431807471"],
-                },
-                "weight": 0,
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_question_criteria(self):
-        query = Utility.generate_graphql_operation(
-            "deleteQuestionCriteria", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "questionGroup": "XXXXXXXX",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_question_criteria(self):
-        query = Utility.generate_graphql_operation(
-            "questionCriteria", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "questionGroup": "12345678",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_question_criteria_list(self):
-        query = Utility.generate_graphql_operation(
-            "questionCriteriaList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "region": "US",
-                "questionCriteria": {
-                    # "place_types": ["abc", "xyz"],
-                    # "corporation_type": "XXXXXXXX",
-                    # "corporation_categories": ["XXXXXXXX"],
-                    # "utm_tag_name": "XXXXXXXX",
-                    # "corporation_uuid": "4188232447431807471",
-                },
+                "questionGroupUuid": "15006769565442904560",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -333,8 +401,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
+                "placeUuid": "10869587599689126384",
                 "region": "US",
-                # "placeUuid": "16514110523281904111",
                 "latitude": "XXXXXXXX",
                 "longitude": "XXXXXXXX",
                 "businessName": "XXXXXXXX",
@@ -342,6 +410,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "phoneNumber": "XXXXXXXX",
                 "website": "XXXXXXXX",
                 "types": ["abc", "xyz"],
+                "corporationUuid": "11884466832473330160",
                 "updatedBy": "XYZ",
             },
         }
@@ -357,8 +426,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "region": "XXXXXXXX",
-                "placeUuid": "10451635593657061871",
+                "placeUuid": "5277338226639835632",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -371,8 +439,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "region": "XXXXXXXX",
-                "placeUuid": "16514110523281904111",
+                "placeUuid": "10869587599689126384",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -385,7 +452,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "region": "XXXXXXXX",
+                "region": "US",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -402,15 +469,12 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "7888864077977555439",
-                "contactUuid": "6676570951220597231",
+                "placeUuid": "10869587599689126384",
+                "contactUuid": "16754529983121134064",
                 "email": "XXXXXXXX",
                 "region": "US",
-                # "firstName": "XXXXXXXX",
-                # "lastName": "XXXXXXXX",
-                # "corporationType": "XXXXXXXX",
-                # "corporationUuid": "10077997009953100271",
-                # "data": {},
+                "firstName": "XXXXXXXX",
+                "lastName": "XXXXXXXX",
                 "updatedBy": "XYZ",
             },
         }
@@ -426,8 +490,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "16514110523281904111",
-                "contactUuid": "7942627832711090671",
+                "placeUuid": "10869587599689126384",
+                "contactUuid": "4715411733862355440",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -442,8 +506,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "16514110523281904111",
-                "contactUuid": "12355966540142023151",
+                "placeUuid": "10869587599689126384",
+                "contactUuid": "16754529983121134064",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -458,8 +522,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "2182613588100714991",
-                "email": "bibo72@outlook.com",
+                "placeUuid": "10869587599689126384",
+                "email": "XXXXXXXX",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -468,86 +532,17 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_company_contact_profile(self):
+    def test_graphql_insert_update_contact_request(self):
         query = Utility.generate_graphql_operation(
-            "insertUpdateCompanyContactProfile", "Mutation", self.schema
+            "insertUpdateContactRequest", "Mutation", self.schema
         )
         logger.info(f"Query: {query}")
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "9687284472428368367",
-                "placeUuid": "11580716724379521519",
-                "email": "bibo72@outlook.com",
-                "data": {"product_name": "toy"},
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_company_contact_profile(self):
-        query = Utility.generate_graphql_operation(
-            "deleteCompanyContactProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "contactUuid": "12355966540142023151",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_company_contact_profile(self):
-        query = Utility.generate_graphql_operation(
-            "companyContactProfile", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "contactUuid": "136056295826461167",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_company_contact_profile_list(self):
-        query = Utility.generate_graphql_operation(
-            "companyContactProfileList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "email": "bibo72@yahoo.com",
-                "placeUuid": "11580716724379521519",
-                "endpointId": "openai",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_company_contact_request(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateCompanyContactRequest", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "contactUuid": "6676570951220597231",
-                # "requestUuid": "13024172026426298863",
+                "contactUuid": "16754529983121134064",
+                "requestUuid": "10080978926371672560",
+                "placeUuid": "10869587599689126384",
                 "requestTitle": "XXXXXXXX",
                 "requestDetail": "XXXXXXXX",
                 "updatedBy": "XYZ",
@@ -557,48 +552,47 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_company_contact_request(self):
+    def test_graphql_delete_contact_request(self):
         query = Utility.generate_graphql_operation(
-            "deleteCompanyContactRequest", "Mutation", self.schema
+            "deleteContactRequest", "Mutation", self.schema
         )
         logger.info(f"Query: {query}")
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "136056295826461167",
-                "requestUuid": "13024172026426298863",
+                "contactUuid": "16754529983121134064",
+                "requestUuid": "13138863480685007344",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_company_contact_request(self):
+    def test_graphql_contact_request(self):
         query = Utility.generate_graphql_operation(
-            "companyContactRequest", "Query", self.schema
+            "contactRequest", "Query", self.schema
         )
         logger.info(f"Query: {query}")
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "136056295826461167",
-                "requestUuid": "13024172026426298863",
+                "contactUuid": "16754529983121134064",
+                "requestUuid": "10080978926371672560",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_company_contact_request_list(self):
+    def test_graphql_contact_request_list(self):
         query = Utility.generate_graphql_operation(
-            "companyContactRequestList", "Query", self.schema
+            "contactRequestList", "Query", self.schema
         )
         logger.info(f"Query: {query}")
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "136056295826461167",
-                "endpointId": "openai",
+                "contactUuid": "16754529983121134064",
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -615,13 +609,12 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "corporationType": "XXXXXXXX",
-                # "corporationUuid": "10077997009953100271",
+                "corporationUuid": "11884466832473330160",
                 "externalId": "XXXXXXXX",
+                "corporationType": "XXXXXXXX",
                 "businessName": "XXXXXXXX",
                 "categories": ["XXXXXXXX"],
                 "address": {},
-                "data": {},
                 "updatedBy": "XYZ",
             },
         }
@@ -637,8 +630,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "corporationType": "XXXXXXXX",
-                "corporationUuid": "4188232447431807471",
+                "corporationUuid": "88364932402975216",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -653,8 +645,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "corporationType": "XXXXXXXX",
-                "corporationUuid": "4188232447431807471",
+                "corporationUuid": "8205577994827928048",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -678,211 +669,6 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_corporation_place(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateCorporationPlace", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "region": "US",
-                "corporationUuid": "7839731756645421551",
-                "placeUuid": "7888864077977555439",
-                "corporationType": "XXXXXXXX",
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_corporation_place(self):
-        query = Utility.generate_graphql_operation(
-            "deleteCorporationPlace", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "XXXXXXXX",
-                "placeUuid": "XXXXXXXXXXXXXXXXXXX",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_corporation_place(self):
-        query = Utility.generate_graphql_operation(
-            "corporationPlace", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "4188232447431807471",
-                "placeUuid": "16514110523281904111",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_corporation_place_list(self):
-        query = Utility.generate_graphql_operation(
-            "corporationPlaceList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "4188232447431807471",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_company_corporation_profile(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateCompanyCorporationProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "7839731756645421551",
-                "externalId": "XXXXXXXX",
-                "corporationType": "XXXXXXXX",
-                "data": {},
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_company_corporation_profile(self):
-        query = Utility.generate_graphql_operation(
-            "deleteCompanyCorporationProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "corporationUuid": "4188232447431807471",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_company_corporation_profile(self):
-        query = Utility.generate_graphql_operation(
-            "companyCorporationProfile", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "corporationUuid": "4188232447431807471",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_company_corporation_profile_list(self):
-        query = Utility.generate_graphql_operation(
-            "companyCorporationProfileList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_contact_chatbot_history(self):
-        query = Utility.generate_graphql_operation(
-            "insertContactChatbotHistory", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "timestamp": 1724514266,
-                "contactUuid": "6676570951220597231",
-                "placeUuid": "7888864077977555439",
-                "region": "US",
-                "assistantId": "XXXXXXXX",
-                "threadId": "XXXXXXXX",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_contact_chatbot_history(self):
-        query = Utility.generate_graphql_operation(
-            "deleteContactChatbotHistory", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "timestamp": 1724514266,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_contact_chatbot_history(self):
-        query = Utility.generate_graphql_operation(
-            "contactChatbotHistory", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "timestamp": 1724514266,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_contact_chatbot_history_list(self):
-        query = Utility.generate_graphql_operation(
-            "contactChatbotHistoryList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "endpointId": "openai",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         query = Utility.generate_graphql_operation(
             "insertUtmTagDataCollection", "Mutation", self.schema
@@ -891,10 +677,10 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
+                "collectionUuid": "4686129127874957808",
                 "tagName": "XXXXXXXX",
-                "contactUuid": "7888864077977555439",
-                "placeUuid": "7888864077977555439",
-                "region": "US",
+                "placeUuid": "10869587599689126384",
+                "contactUuid": "16754529983121134064",
                 "keyword": "XXXXXXXX",
                 "utmCampaign": "XXXXXXXX",
                 "utmContent": "XXXXXXXX",
@@ -915,8 +701,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "endpointId": "openai",
-                "collectionUuid": "359510789495853551",
+                "collectionUuid": "9202569066782986736",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -931,14 +716,13 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "endpointId": "openai",
-                "collectionUuid": "15513258872781541871",
+                "collectionUuid": "4686129127874957808",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_utm_tag_data_collection_list(self):
         query = Utility.generate_graphql_operation(
             "utmTagDataCollectionList", "Query", self.schema
@@ -947,7 +731,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "endpointId": "openai",
+                "tagName": "XXXXXXXX",
                 "pageNumber": 1,
                 "limit": 10,
             },

@@ -17,7 +17,6 @@ class ContactProfileType(ObjectType):
     email = String()
     first_name = String()
     last_name = String()
-    corporation_profile = JSON()
     updated_by = String()
     created_at = DateTime()
     updated_at = DateTime()

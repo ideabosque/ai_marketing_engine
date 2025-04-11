@@ -37,7 +37,7 @@ class RegionIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    place_uuid = UnicodeAttribute(hash_key=True)
+    endpoint_id = UnicodeAttribute(hash_key=True)
     region = UnicodeAttribute(range_key=True)
 
 
@@ -85,7 +85,6 @@ def get_place_count(endpoint_id: str, place_uuid: str) -> int:
 
 
 def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
-    place = place.__dict__["attribute_values"]
     try:
         corporation_profile = None
         if place.corporation_uuid:

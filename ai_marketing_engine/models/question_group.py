@@ -103,6 +103,8 @@ def resolve_question_group(
 )
 def resolve_question_group_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     endpoint_id = info.context["endpoint_id"]
+    question_name = kwargs.get("question_name")
+    question_description = kwargs.get("question_description")
     region = kwargs.get("region")
     question_criteria = kwargs.get("question_criteria")
 
@@ -114,6 +116,12 @@ def resolve_question_group_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> 
         inquiry_funct = QuestionGroupModel.query
 
     the_filters = None  # We can add filters for the query.
+    if question_name:
+        the_filters &= QuestionGroupModel.question_group_name.contains(question_name)
+    if question_description:
+        the_filters &= QuestionGroupModel.question_group_description.contains(
+            question_description
+        )
     if region:
         the_filters &= QuestionGroupModel.region == region
     if question_criteria:
@@ -172,12 +180,16 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     question_group_uuid = kwargs.get("question_group_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "region": kwargs["region"],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        for key in ["question_group", "weight"]:
+        for key in [
+            "question_group_name",
+            "question_group_description",
+            "region",
+            "weight",
+        ]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         QuestionGroupModel(endpoint_id, question_group_uuid, **cols).save()
@@ -191,6 +203,8 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 
     # Map of kwargs keys to QuestionGroupModel attributes
     field_map = {
+        "question_group_name": QuestionGroupModel.question_group_name,
+        "question_group_description": QuestionGroupModel.question_group_description,
         "region": QuestionGroupModel.region,
         "question_criteria": QuestionGroupModel.question_criteria,
         "weight": QuestionGroupModel.weight,

@@ -142,7 +142,7 @@ class Query(ObjectType):
         limit=Int(),
         wizard_uuid=String(),
         data_type=String(),
-        question_group_uuids=List(String),
+        question_group_uuid=String(),
         question=String(),
         attribute_name=String(),
         attribute_type=String(),
@@ -168,7 +168,7 @@ class Query(ObjectType):
     question_group = Field(
         QuestionGroupType,
         required=True,
-        question_group=String(required=True),
+        question_group_uuid=String(required=True),
     )
 
     question_group_list = Field(
@@ -182,7 +182,6 @@ class Query(ObjectType):
     place = Field(
         PlaceType,
         required=True,
-        region=String(required=True),
         place_uuid=String(required=True),
     )
 
@@ -236,7 +235,6 @@ class Query(ObjectType):
     corporation_profile = Field(
         CorporationProfileType,
         required=True,
-        corporation_type=String(required=True),
         corporation_uuid=String(required=True),
     )
 

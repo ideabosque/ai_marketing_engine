@@ -26,7 +26,6 @@ class InsertUpdateContactProfile(Mutation):
         endpoint_id = String(required=False)
         first_name = String(required=False)
         last_name = String(required=False)
-        corporation_uuid = String(required=False)
         updated_by = String(required=True)
 
     @staticmethod

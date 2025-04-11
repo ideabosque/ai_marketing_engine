@@ -34,10 +34,10 @@ from ..types.corporation_profile import (
 )
 
 
-class CorportationTypeIndex(LocalSecondaryIndex):
+class CorporationTypeIndex(LocalSecondaryIndex):
     class Meta:
         # index_name is optional, but can be provided to override the default name
-        index_name = "corportation_type-index"
+        index_name = "corporation_type-index"
         billing_mode = "PAY_PER_REQUEST"
         projection = AllProjection()
 
@@ -45,7 +45,7 @@ class CorportationTypeIndex(LocalSecondaryIndex):
     # Note that this attribute must also exist
     # in the model
     endpoint_id = UnicodeAttribute(hash_key=True)
-    corportation_type = UnicodeAttribute(range_key=True)
+    corporation_type = UnicodeAttribute(range_key=True)
 
 
 class ExternalIdIndex(LocalSecondaryIndex):
@@ -69,7 +69,7 @@ class CorporationProfileModel(BaseModel):
     endpoint_id = UnicodeAttribute(hash_key=True)
     corporation_uuid = UnicodeAttribute(range_key=True)
     external_id = UnicodeAttribute()
-    corportation_type = UnicodeAttribute()
+    corporation_type = UnicodeAttribute()
     business_name = UnicodeAttribute()
     categories = ListAttribute(of=UnicodeAttribute, null=True)
     address = MapAttribute()
@@ -77,7 +77,7 @@ class CorporationProfileModel(BaseModel):
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
     external_id_index = ExternalIdIndex()
-    corportation_type_index = CorportationTypeIndex()
+    corporation_type_index = CorporationTypeIndex()
 
 
 def create_corporation_profile_table(logger: logging.Logger) -> bool:
@@ -137,7 +137,7 @@ def resolve_corporation_profile(
         "endpoint_id",
         "corporation_uuid",
         "external_id",
-        "corportation_type",
+        "corporation_type",
     ],
     list_type_class=CorporationProfileListType,
     type_funct=get_corporation_profile_type,
@@ -147,7 +147,7 @@ def resolve_corporation_profile_list(
 ) -> Any:
     endpoint_id = info.context["endpoint_id"]
     external_id = kwargs.get("external_id")
-    corportation_type = kwargs.get("corportation_type")
+    corporation_type = kwargs.get("corporation_type")
     business_name = kwargs.get("business_name")
     category = kwargs.get("category")
     address = kwargs.get("address")
@@ -162,10 +162,10 @@ def resolve_corporation_profile_list(
             inquiry_funct = CorporationProfileModel.external_id_index.query
             args[1] = CorporationProfileModel.external_id == external_id
             count_funct = CorporationProfileModel.external_id_index.count
-        if corportation_type:
-            inquiry_funct = CorporationProfileModel.corportation_type_index.query
-            args[1] = CorporationProfileModel.corportation_type == corportation_type
-            count_funct = CorporationProfileModel.corportation_type_index.count
+        if corporation_type:
+            inquiry_funct = CorporationProfileModel.corporation_type_index.query
+            args[1] = CorporationProfileModel.corporation_type == corporation_type
+            count_funct = CorporationProfileModel.corporation_type_index.count
 
     the_filters = None  # We can add filters for the query.
     if business_name:
@@ -197,7 +197,7 @@ def insert_update_corporation_profile(
     if kwargs.get("entity") is None:
         cols = {
             "external_id": kwargs["external_id"],
-            "corportation_type": kwargs["corportation_type"],
+            "corporation_type": kwargs["corporation_type"],
             "business_name": kwargs["business_name"],
             "address": kwargs["address"],
             "updated_by": kwargs["updated_by"],
@@ -223,7 +223,7 @@ def insert_update_corporation_profile(
     # Map of kwargs keys to CorporationProfileModel attributes
     field_map = {
         "external_id": CorporationProfileModel.external_id,
-        "corportation_type": CorporationProfileModel.corportation_type,
+        "corporation_type": CorporationProfileModel.corporation_type,
         "business_name": CorporationProfileModel.business_name,
         "categories": CorporationProfileModel.categories,
         "address": CorporationProfileModel.address,

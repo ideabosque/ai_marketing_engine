@@ -29,6 +29,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.wizard import WizardListType, WizardType
+from .utils import _get_question_group
 
 
 class QuestionGroupUuidIndex(LocalSecondaryIndex):
@@ -48,7 +49,7 @@ class QuestionGroupUuidIndex(LocalSecondaryIndex):
 
 class WizardModel(BaseModel):
     class Meta(BaseModel.Meta):
-        table_name = "ame-question_wizards"
+        table_name = "ame-wizards"
 
     endpoint_id = UnicodeAttribute(hash_key=True)
     wizard_uuid = UnicodeAttribute(range_key=True)
@@ -89,7 +90,12 @@ def get_wizard_count(endpoint_id: str, wizard_uuid: str) -> int:
 
 def get_wizard_type(info: ResolveInfo, wizard: WizardModel) -> WizardType:
     try:
+        question_group = _get_question_group(
+            info.context["endpoint_id"], wizard.question_group_uuid
+        )
         wizard = wizard.__dict__["attribute_values"]
+        wizard["question_group"] = question_group
+        wizard.pop("question_group_uuid")
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -126,7 +132,7 @@ def resolve_wizard_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
         inquiry_funct = WizardModel.query
         if question_group_uuid:
             count_funct = WizardModel.question_group_uuid_index.count
-            args[1] = WizardModel.question_group_uuid_index == question_group_uuid
+            args[1] = WizardModel.question_group_uuid == question_group_uuid
             inquiry_funct = WizardModel.question_group_uuid_index.query
 
     the_filters = None  # We can add filters for the query.
