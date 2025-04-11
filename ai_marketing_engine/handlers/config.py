@@ -12,7 +12,6 @@ import boto3
 from silvaengine_utility import Utility
 
 from ..models import utils
-from .ai_coordination_utility import _get_class_object
 
 
 class Config:
@@ -23,7 +22,6 @@ class Config:
 
     aws_lambda = None
     aws_s3 = None
-    crm_connector = None
     schemas = {}
     module_bucket_name = None
     module_zip_path = None
@@ -41,7 +39,6 @@ class Config:
             cls._set_parameters(setting)
             cls._setup_function_paths(setting)
             cls._initialize_aws_services(setting)
-            cls._initialize_crm_connector(logger, setting)
             if setting.get("test_mode") == "local_for_all":
                 cls._initialize_tables(logger)
             logger.info("Configuration initialized successfully.")
@@ -95,18 +92,6 @@ class Config:
 
         cls.aws_lambda = boto3.client("lambda", **aws_credentials)
         cls.aws_s3 = boto3.client("s3", **aws_credentials)
-
-    @classmethod
-    def _initialize_crm_connector(
-        cls, logger: logging.Logger, setting: Dict[str, Any]
-    ) -> None:
-        if "crm_connector_config" in setting:
-            cls.crm_connector = _get_class_object(
-                logger,
-                setting["crm_connector_config"]["module_name"],
-                setting["crm_connector_config"]["class_name"],
-                **setting["crm_connector_config"]["setting"],
-            )
 
     # Fetches and caches GraphQL schema for a given function
     @classmethod

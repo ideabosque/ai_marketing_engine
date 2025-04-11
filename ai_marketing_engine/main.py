@@ -11,7 +11,7 @@ from graphene import Schema
 
 from silvaengine_dynamodb_base import SilvaEngineDynamoDBBase
 
-from .handlers import handlers_init
+from .handlers.config import Config
 from .schema import Mutations, Query, type_class
 
 
@@ -203,12 +203,13 @@ def deploy() -> List:
 
 class AIMarketingEngine(SilvaEngineDynamoDBBase):
     def __init__(self, logger: logging.Logger, **setting: Dict[str, Any]) -> None:
-        handlers_init(logger, **setting)
+        SilvaEngineDynamoDBBase.__init__(self, logger, **setting)
+
+        # Initialize configuration via the Config class
+        Config.initialize(logger, **setting)
 
         self.logger = logger
         self.setting = setting
-
-        SilvaEngineDynamoDBBase.__init__(self, logger, **setting)
 
     def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
         ## Test the waters 🧪 before diving in!
