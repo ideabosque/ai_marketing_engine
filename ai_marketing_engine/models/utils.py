@@ -51,8 +51,8 @@ def _get_questions(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
     from .question import QuestionModel
 
     results = QuestionModel.query(
-        endpoint_id,
-        None,
+        hash_key=endpoint_id,
+        range_key_condition=None,
         filter_condition=(QuestionModel.wizard_uuid == wizard_uuid),
     )
 
@@ -77,8 +77,8 @@ def _get_wizards(endpoint_id: str, question_group_uuid: str) -> Dict[str, Any]:
     from .wizard import WizardModel
 
     results = WizardModel.query(
-        endpoint_id,
-        None,
+        hash_key=endpoint_id,
+        range_key_condition=None,
         filter_condition=(WizardModel.question_group_uuid == question_group_uuid),
     )
 
