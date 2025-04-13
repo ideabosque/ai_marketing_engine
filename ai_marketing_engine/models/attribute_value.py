@@ -161,7 +161,7 @@ def resolve_attribute_value_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     inquiry_funct = AttributeValueModel.scan
     count_funct = AttributeValueModel.count
     if data_type_attribute_name:
-        args = [data_type_attribute_name]
+        args = [data_type_attribute_name, None]
         inquiry_funct = AttributeValueModel.query
         if data_identity:
             inquiry_funct = AttributeValueModel.data_identity_index.query
@@ -305,5 +305,21 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     model_funct=get_attribute_value,
 )
 def delete_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
+
+    if kwargs["entity"].status == "active":
+        results = AttributeValueModel.data_identity_index.query(
+            kwargs["entity"].data_type_attribute_name,
+            AttributeValueModel.data_identity == kwargs["entity"].data_identity,
+            filter_condition=(AttributeValueModel.status == "inactive"),
+        )
+        attribute_values = [result for result in results]
+        if len(attribute_values) > 0:
+            attribute_values = sorted(
+                attribute_values, key=lambda x: x.updated_at, reverse=True
+            )
+            last_updated_record = attribute_values[0]
+            last_updated_record.status = "active"
+            last_updated_record.save()
+
     kwargs["entity"].delete()
     return True

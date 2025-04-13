@@ -669,6 +669,74 @@ class AIMarketingEngineTest(unittest.TestCase):
         logger.info(response)
 
     @unittest.skip("demonstrating skipping")
+    def test_graphql_insert_update_attribute_value(self):
+        query = Utility.generate_graphql_operation(
+            "insertUpdateAttributeValue", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "dataTypeAttributeName": "contact-role_type",
+                # "valueVersionUuid": "13420102135434449392",
+                "dataIdentity": "16754529983121134064",
+                "value": "buyer",
+                "updatedBy": "XYZ",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_delete_attribute_value(self):
+        query = Utility.generate_graphql_operation(
+            "deleteAttributeValue", "Mutation", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "dataTypeAttributeName": "contact-role_type",
+                "valueVersionUuid": "13420102135434449392",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
+    def test_graphql_attribute_value(self):
+        query = Utility.generate_graphql_operation(
+            "attributeValue", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "dataTypeAttributeName": "contact-role_type",
+                "valueVersionUuid": "10517417074765599216",
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    # @unittest.skip("demonstrating skipping")
+    def test_graphql_attribute_value_list(self):
+        query = Utility.generate_graphql_operation(
+            "attributeValueList", "Query", self.schema
+        )
+        logger.info(f"Query: {query}")
+        payload = {
+            "query": query,
+            "variables": {
+                "dataTypeAttributeName": "contact-role_type",
+                "pageNumber": 1,
+                "limit": 10,
+            },
+        }
+        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
+        logger.info(response)
+
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_utm_tag_data_collection(self):
         query = Utility.generate_graphql_operation(
             "insertUtmTagDataCollection", "Mutation", self.schema
@@ -722,7 +790,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_utm_tag_data_collection_list(self):
         query = Utility.generate_graphql_operation(
             "utmTagDataCollectionList", "Query", self.schema
