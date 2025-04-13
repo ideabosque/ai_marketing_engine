@@ -29,7 +29,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.wizard import WizardListType, WizardType
-from .utils import _get_question_group
+from .utils import _get_question_group, _get_questions
 
 
 class QuestionGroupUuidIndex(LocalSecondaryIndex):
@@ -93,8 +93,10 @@ def get_wizard_type(info: ResolveInfo, wizard: WizardModel) -> WizardType:
         question_group = _get_question_group(
             info.context["endpoint_id"], wizard.question_group_uuid
         )
+        questions = _get_questions(info.context["endpoint_id"], wizard.wizard_uuid)
         wizard = wizard.__dict__["attribute_values"]
         wizard["question_group"] = question_group
+        wizard["questions"] = questions
         wizard.pop("question_group_uuid")
     except Exception as e:
         log = traceback.format_exc()
