@@ -47,6 +47,32 @@ def _get_question_group(endpoint_id: str, question_group_uuid: str) -> Dict[str,
     }
 
 
+def _get_questions(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
+    from .question import QuestionModel
+
+    results = QuestionModel.query(
+        endpoint_id,
+        None,
+        filter_condition=(QuestionModel.wizard_uuid == wizard_uuid),
+    )
+
+    questions = [
+        {
+            "question_uuid": result.question_uuid,
+            "data_type": result.data_type,
+            "question": result.question,
+            "priority": result.priority,
+            "attribute_name": result.attribute_name,
+            "attribute_type": result.attribute_type,
+            "option_values": result.option_values,
+            "condition": result.condition,
+        }
+        for result in results
+    ]
+
+    return questions
+
+
 def _get_wizard(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
     from .wizard import get_wizard
 

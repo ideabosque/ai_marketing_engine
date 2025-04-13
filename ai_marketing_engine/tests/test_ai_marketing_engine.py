@@ -278,14 +278,14 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_wizard(self):
         query = Utility.generate_graphql_operation("wizard", "Query", self.schema)
         logger.info(f"Query: {query}")
         payload = {
             "query": query,
             "variables": {
-                "wizardUuid": "8254212722722410992",
+                "wizardUuid": "1943415144959382000",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -719,7 +719,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_attribute_value_list(self):
         query = Utility.generate_graphql_operation(
             "attributeValueList", "Query", self.schema

@@ -14,6 +14,7 @@ class WizardType(ObjectType):
     endpoint_id = String()
     wizard_uuid = String()
     question_group = JSON()
+    questions = List(JSON)
     wizard_title = String()
     wizard_description = String()
     wizard_type = String()
