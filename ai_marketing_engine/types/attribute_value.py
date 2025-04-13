@@ -11,16 +11,15 @@ from silvaengine_utility import JSON
 
 
 class AttributeValueType(ObjectType):
-    data_type = String()
+    data_type_attribute_name = String()
     value_version_uuid = String()
-    attribute_name = String()
     data_identity = String()
     endpoint_id = String()
     value = String()
     status = String()
     updated_by = String()
     updated_at = DateTime()
-    created_by = String()
+    created_at = DateTime()
 
 
 class AttributeValueListType(ListObjectType):
