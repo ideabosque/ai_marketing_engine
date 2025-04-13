@@ -28,6 +28,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.question_group import QuestionGroupListType, QuestionGroupType
+from .utils import _get_wizards
 
 
 class QuestionGroupModel(BaseModel):
@@ -76,7 +77,11 @@ def get_question_group_type(
     info: ResolveInfo, question_group: QuestionGroupModel
 ) -> QuestionGroupType:
     try:
+        wizards = _get_wizards(
+            question_group.endpoint_id, question_group.question_group_uuid
+        )
         question_group = question_group.__dict__["attribute_values"]
+        question_group["wizards"] = wizards
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)

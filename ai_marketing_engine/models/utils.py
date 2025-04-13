@@ -73,6 +73,32 @@ def _get_questions(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
     return questions
 
 
+def _get_wizards(endpoint_id: str, question_group_uuid: str) -> Dict[str, Any]:
+    from .wizard import WizardModel
+
+    results = WizardModel.query(
+        endpoint_id,
+        None,
+        filter_condition=(WizardModel.question_group_uuid == question_group_uuid),
+    )
+
+    wizards = [
+        {
+            "wizard_uuid": result.wizard_uuid,
+            "wizard_title": result.wizard_title,
+            "wizard_description": result.wizard_description,
+            "wizard_type": result.wizard_type,
+            "form_schema": result.form_schema,
+            "embed_content": result.embed_content,
+            "priority": result.priority,
+            "questions": _get_questions(endpoint_id, result.wizard_uuid),
+        }
+        for result in results
+    ]
+
+    return wizards
+
+
 def _get_wizard(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
     from .wizard import get_wizard
 

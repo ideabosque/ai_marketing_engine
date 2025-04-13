@@ -18,6 +18,7 @@ class QuestionGroupType(ObjectType):
     region = String()
     question_criteria = JSON()
     weight = Int()
+    wizards = List(JSON)
     updated_by = String()
     updated_at = DateTime()
     created_at = DateTime()
