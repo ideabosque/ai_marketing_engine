@@ -84,7 +84,7 @@ class QuestionModel(BaseModel):
     question_group_uuid = UnicodeAttribute()
     wizard_uuid = UnicodeAttribute()
     data_type = UnicodeAttribute()
-    question = UnicodeAttribute()
+    question = UnicodeAttribute(null=True)
     priority = NumberAttribute()
     attribute_name = UnicodeAttribute()
     attribute_type = UnicodeAttribute(default="string")
@@ -211,14 +211,13 @@ def insert_update_question(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
             "question_group_uuid": kwargs["question_group_uuid"],
             "wizard_uuid": kwargs["wizard_uuid"],
             "data_type": kwargs["data_type"],
-            "question": kwargs["question"],
             "priority": kwargs["priority"],
             "attribute_name": kwargs["attribute_name"],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        for key in ["option_values", "condition", "attribute_type"]:
+        for key in ["question", "option_values", "condition", "attribute_type"]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         QuestionModel(
