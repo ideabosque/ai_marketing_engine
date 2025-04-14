@@ -13,7 +13,6 @@ from silvaengine_utility import JSON
 class WizardType(ObjectType):
     endpoint_id = String()
     wizard_uuid = String()
-    question_group = JSON()
     questions = List(JSON)
     wizard_title = String()
     wizard_description = String()

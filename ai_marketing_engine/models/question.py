@@ -30,7 +30,6 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.question import QuestionListType, QuestionType
-from .utils import _get_wizard
 
 
 class DataTypeIndex(LocalSecondaryIndex):
@@ -45,34 +44,6 @@ class DataTypeIndex(LocalSecondaryIndex):
     # in the model
     endpoint_id = UnicodeAttribute(hash_key=True)
     data_type = UnicodeAttribute(range_key=True)
-
-
-class WizardUuidIndex(LocalSecondaryIndex):
-    class Meta:
-        # index_name is optional, but can be provided to override the default name
-        index_name = "wizard_uuid-index"
-        billing_mode = "PAY_PER_REQUEST"
-        projection = AllProjection()
-
-    # This attribute is the hash key for the index
-    # Note that this attribute must also exist
-    # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
-    wizard_uuid = UnicodeAttribute(range_key=True)
-
-
-class QuestionGroupUuidIndex(LocalSecondaryIndex):
-    class Meta:
-        # index_name is optional, but can be provided to override the default name
-        index_name = "question_group_uuid-index"
-        billing_mode = "PAY_PER_REQUEST"
-        projection = AllProjection()
-
-    # This attribute is the hash key for the index
-    # Note that this attribute must also exist
-    # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
-    question_group_uuid = UnicodeAttribute(range_key=True)
 
 
 class QuestionModel(BaseModel):
@@ -93,8 +64,6 @@ class QuestionModel(BaseModel):
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
-    question_group_uuid_index = QuestionGroupUuidIndex()
-    wizard_uuid_index = WizardUuidIndex()
     data_type_index = DataTypeIndex()
 
 
@@ -124,14 +93,7 @@ def get_question_count(endpoint_id: str, question_uuid: str) -> int:
 
 def get_question_type(info: ResolveInfo, question: QuestionModel) -> QuestionType:
     try:
-        wizard = _get_wizard(question.endpoint_id, question.wizard_uuid)
         question = question.__dict__["attribute_values"]
-        question["priority"] = (
-            wizard["question_group"]["weight"] * 10 + question["priority"]
-        )
-        question["wizard"] = wizard
-        question.pop("wizard_uuid")
-        question.pop("question_group_uuid")
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -149,15 +111,13 @@ def resolve_question(info: ResolveInfo, **kwargs: Dict[str, Any]) -> QuestionTyp
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "question_uuid", "wizard_uuid", "data_type"],
+    attributes_to_get=["endpoint_id", "question_uuid", "data_type"],
     list_type_class=QuestionListType,
     type_funct=get_question_type,
 )
 def resolve_question_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     endpoint_id = info.context["endpoint_id"]
-    wizard_uuid = kwargs.get("wizard_uuid")
     data_type = kwargs.get("data_type")
-    question_group_uuid = kwargs.get("question_group_uuid")
     question = kwargs.get("question")
     attribute_name = kwargs.get("attribute_name")
     attribute_type = kwargs.get("attribute_type")
@@ -168,18 +128,12 @@ def resolve_question_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     if endpoint_id:
         args = [endpoint_id, None]
         inquiry_funct = QuestionModel.query
-        if wizard_uuid:
-            count_funct = QuestionModel.wizard_uuid_index.count
-            args[1] = QuestionModel.wizard_uuid_index == wizard_uuid
-            inquiry_funct = QuestionModel.wizard_uuid_index.query
         if data_type:
             count_funct = QuestionModel.data_type_index.count
             args[1] = QuestionModel.data_type_index == data_type
             inquiry_funct = QuestionModel.data_type_index.query
 
     the_filters = None  # We can add filters for the query.
-    if question_group_uuid:
-        the_filters &= QuestionModel.question_group_uuid == question_group_uuid
     if question:
         the_filters &= QuestionModel.question.contains(question)
     if attribute_name:
@@ -208,8 +162,6 @@ def insert_update_question(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     question_uuid = kwargs.get("question_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "question_group_uuid": kwargs["question_group_uuid"],
-            "wizard_uuid": kwargs["wizard_uuid"],
             "data_type": kwargs["data_type"],
             "priority": kwargs["priority"],
             "attribute_name": kwargs["attribute_name"],
@@ -235,8 +187,6 @@ def insert_update_question(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
 
     # Map of kwargs keys to QuestionModel attributes
     field_map = {
-        "question_group_uuid": QuestionModel.question_group_uuid,
-        "wizard_uuid": QuestionModel.wizard_uuid,
         "data_type": QuestionModel.data_type,
         "question": QuestionModel.question,
         "priority": QuestionModel.priority,

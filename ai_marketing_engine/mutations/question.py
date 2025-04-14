@@ -20,8 +20,6 @@ class InsertUpdateQuestion(Mutation):
 
     class Arguments:
         question_uuid = String(required=False)
-        question_group_uuid = String(required=False)
-        wizard_uuid = String(required=False)
         data_type = String(required=False)
         question = String(required=False)
         priority = Int(required=False)

@@ -11,6 +11,7 @@ from typing import Any, Dict
 import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import (
+    ListAttribute,
     MapAttribute,
     NumberAttribute,
     UnicodeAttribute,
@@ -42,6 +43,7 @@ class QuestionGroupModel(BaseModel):
     region = UnicodeAttribute()
     question_criteria = MapAttribute(default={})
     weight = NumberAttribute(default=0)
+    wizard_uuids = ListAttribute(of=UnicodeAttribute, null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
@@ -77,11 +79,10 @@ def get_question_group_type(
     info: ResolveInfo, question_group: QuestionGroupModel
 ) -> QuestionGroupType:
     try:
-        wizards = _get_wizards(
-            question_group.endpoint_id, question_group.question_group_uuid
-        )
+        wizards = _get_wizards(question_group.endpoint_id, question_group.wizard_uuids)
         question_group = question_group.__dict__["attribute_values"]
         question_group["wizards"] = wizards
+        question_group.pop("wizard_uuids")
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -185,6 +186,7 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     question_group_uuid = kwargs.get("question_group_uuid")
     if kwargs.get("entity") is None:
         cols = {
+            "wizard_uuid": [],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -194,6 +196,7 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
             "question_group_description",
             "region",
             "weight",
+            "wizard_uuid",
         ]:
             if key in kwargs:
                 cols[key] = kwargs[key]
@@ -213,6 +216,7 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
         "region": QuestionGroupModel.region,
         "question_criteria": QuestionGroupModel.question_criteria,
         "weight": QuestionGroupModel.weight,
+        "wizard_uuid": QuestionGroupModel.wizard_uuids,
     }
 
     # Add actions dynamically based on the presence of keys in kwargs

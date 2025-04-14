@@ -13,7 +13,6 @@ from silvaengine_utility import JSON
 class QuestionType(ObjectType):
     endpoint_id = String()
     question_uuid = String()
-    wizard = JSON()
     data_type = String()
     question = String()
     priority = Int()

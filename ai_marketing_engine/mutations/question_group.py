@@ -7,7 +7,7 @@ __author__ = "bibow"
 import traceback
 from typing import Any, Dict
 
-from graphene import Boolean, Field, Int, Mutation, String
+from graphene import Boolean, Field, Int, List, Mutation, String
 
 from silvaengine_utility import JSON
 
@@ -25,6 +25,7 @@ class InsertUpdateQuestionGroup(Mutation):
         region = String(required=False)
         question_criteria = JSON(required=False)
         weight = Int(required=False)
+        wizard_uuids = List(String, required=False)
         updated_by = String(required=True)
 
     @staticmethod

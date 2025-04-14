@@ -11,12 +11,12 @@ from typing import Any, Dict
 import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import (
+    ListAttribute,
     MapAttribute,
     NumberAttribute,
     UnicodeAttribute,
     UTCDateTimeAttribute,
 )
-from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from silvaengine_dynamodb_base import (
@@ -29,22 +29,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.wizard import WizardListType, WizardType
-from .utils import _get_question_group, _get_questions
-
-
-class QuestionGroupUuidIndex(LocalSecondaryIndex):
-    """
-    This class represents a local secondary index
-    """
-
-    class Meta:
-        billing_mode = "PAY_PER_REQUEST"
-        # All attributes are projected
-        projection = AllProjection()
-        index_name = "question_group_uuid-index"
-
-    endpoint_id = UnicodeAttribute(hash_key=True)
-    question_group_uuid = UnicodeAttribute(range_key=True)
+from .utils import _get_questions
 
 
 class WizardModel(BaseModel):
@@ -53,17 +38,16 @@ class WizardModel(BaseModel):
 
     endpoint_id = UnicodeAttribute(hash_key=True)
     wizard_uuid = UnicodeAttribute(range_key=True)
-    question_group_uuid = UnicodeAttribute()
     wizard_title = UnicodeAttribute()
     wizard_description = UnicodeAttribute(null=True)
     wizard_type = UnicodeAttribute()
-    form_schema = MapAttribute(null=True)
+    form_schema = UnicodeAttribute(null=True)
     embed_content = UnicodeAttribute(null=True)
     priority = NumberAttribute(default=0)
+    question_uuids = ListAttribute(of=UnicodeAttribute, null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
-    question_group_uuid_index = QuestionGroupUuidIndex()
 
 
 def create_wizard_table(logger: logging.Logger) -> bool:
@@ -90,14 +74,10 @@ def get_wizard_count(endpoint_id: str, wizard_uuid: str) -> int:
 
 def get_wizard_type(info: ResolveInfo, wizard: WizardModel) -> WizardType:
     try:
-        question_group = _get_question_group(
-            info.context["endpoint_id"], wizard.question_group_uuid
-        )
-        questions = _get_questions(info.context["endpoint_id"], wizard.wizard_uuid)
+        questions = _get_questions(info.context["endpoint_id"], wizard.question_uuids)
         wizard = wizard.__dict__["attribute_values"]
-        wizard["question_group"] = question_group
         wizard["questions"] = questions
-        wizard.pop("question_group_uuid")
+        wizard.pop("question_uuids")
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -114,13 +94,12 @@ def resolve_wizard(info: ResolveInfo, **kwargs: Dict[str, Any]) -> WizardType:
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "wizard_uuid", "question_group_uuid"],
+    attributes_to_get=["endpoint_id", "wizard_uuid"],
     list_type_class=WizardListType,
     type_funct=get_wizard_type,
 )
 def resolve_wizard_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     endpoint_id = info.context["endpoint_id"]
-    question_group_uuid = kwargs.get("question_group_uuid")
     wizard_title = kwargs.get("wizard_title")
     wizard_description = kwargs.get("wizard_description")
     priority = kwargs.get("priority")
@@ -132,10 +111,6 @@ def resolve_wizard_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     if endpoint_id:
         args = [endpoint_id, None]
         inquiry_funct = WizardModel.query
-        if question_group_uuid:
-            count_funct = WizardModel.question_group_uuid_index.count
-            args[1] = WizardModel.question_group_uuid == question_group_uuid
-            inquiry_funct = WizardModel.question_group_uuid_index.query
 
     the_filters = None  # We can add filters for the query.
     if wizard_title:
@@ -167,14 +142,20 @@ def insert_update_wizard(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     wizard_uuid = kwargs.get("wizard_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "question_group_uuid": kwargs["question_group_uuid"],
             "wizard_title": kwargs["wizard_title"],
             "wizard_type": kwargs["wizard_type"],
+            "question_uuids": [],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
-        for key in ["wizard_description", "form_schema", "embed_content", "priority"]:
+        for key in [
+            "wizard_description",
+            "form_schema",
+            "embed_content",
+            "priority",
+            "question_uuids",
+        ]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         WizardModel(endpoint_id, wizard_uuid, **cols).save()
@@ -188,13 +169,13 @@ def insert_update_wizard(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
 
     # Map of kwargs keys to WizardModel attributes
     field_map = {
-        "question_group_uuid": WizardModel.question_group_uuid,
         "wizard_title": WizardModel.wizard_title,
         "wizard_description": WizardModel.wizard_description,
         "wizard_type": WizardModel.wizard_type,
         "form_schema": WizardModel.form_schema,
         "embed_content": WizardModel.embed_content,
         "priority": WizardModel.priority,
+        "question_uuids": WizardModel.question_uuids,
     }
 
     # Add actions dynamically based on the presence of keys in kwargs
