@@ -24,7 +24,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
-from .utils import _get_attribute_values, _get_place, _insert_update_attribute_values
+from .utils import _get_data, _get_place, _insert_update_attribute_values
 
 
 class EmailIndex(LocalSecondaryIndex):
@@ -86,7 +86,7 @@ def get_contact_profile_type(
 ) -> ContactProfileType:
     try:
         place = _get_place(contact_profile.endpoint_id, contact_profile.place_uuid)
-        data = _get_attribute_values(
+        data = _get_data(
             contact_profile.endpoint_id, contact_profile.contact_uuid, "contact"
         )
         contact_profile = contact_profile.__dict__["attribute_values"]
