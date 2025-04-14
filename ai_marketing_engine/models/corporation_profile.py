@@ -32,6 +32,7 @@ from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
 )
+from .utils import _get_attribute_values, _insert_update_attribute_values
 
 
 class CorporationTypeIndex(LocalSecondaryIndex):
@@ -110,7 +111,13 @@ def get_corporation_profile_type(
     info: ResolveInfo, corporation_profile: CorporationProfileModel
 ) -> CorporationProfileType:
     try:
+        data = _get_attribute_values(
+            corporation_profile.endpoint_id,
+            corporation_profile.corporation_uuid,
+            "corporation",
+        )
         corporation_profile = corporation_profile.__dict__["attribute_values"]
+        corporation_profile["data"] = data
     except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
@@ -235,6 +242,16 @@ def insert_update_corporation_profile(
             actions.append(field.set(None if kwargs[key] == "null" else kwargs[key]))
 
     corporation_profile.update(actions=actions)
+
+    data = _insert_update_attribute_values(
+        info,
+        "corporation",
+        corporation_uuid,
+        kwargs["updated_by"],
+        kwargs.get("data", {}),
+    )
+    info.context["logger"].info(f"Corporation profile data: {data} has been updated.")
+
     return
 
 

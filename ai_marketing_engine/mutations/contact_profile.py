@@ -9,6 +9,8 @@ from typing import Any, Dict
 
 from graphene import Boolean, Field, Mutation, String
 
+from silvaengine_utility import JSON
+
 from ..models.contact_profile import (
     delete_contact_profile,
     insert_update_contact_profile,
@@ -26,6 +28,7 @@ class InsertUpdateContactProfile(Mutation):
         endpoint_id = String(required=False)
         first_name = String(required=False)
         last_name = String(required=False)
+        data = JSON(required=False)
         updated_by = String(required=True)
 
     @staticmethod

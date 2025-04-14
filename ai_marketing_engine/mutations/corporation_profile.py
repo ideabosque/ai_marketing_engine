@@ -28,6 +28,7 @@ class InsertUpdateCorporationProfile(Mutation):
         business_name = String(required=False)
         categories = List(String, required=False)
         address = JSON(required=False)
+        data = JSON(required=False)
         updated_by = String(required=True)
 
     @staticmethod

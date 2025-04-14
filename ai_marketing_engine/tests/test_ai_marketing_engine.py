@@ -201,7 +201,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_question_group(self):
         query = Utility.generate_graphql_operation(
             "questionGroup", "Query", self.schema
@@ -460,7 +460,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateContactProfile", "Mutation", self.schema
@@ -475,6 +475,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "region": "US",
                 "firstName": "XXXXXXXX",
                 "lastName": "XXXXXXXX",
+                "data": {"role_type": "seller"},
                 "updatedBy": "XYZ",
             },
         }

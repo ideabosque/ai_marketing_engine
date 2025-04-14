@@ -11,7 +11,7 @@ from typing import Any, Dict
 import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import UnicodeAttribute, UTCDateTimeAttribute
-from pynamodb.indexes import AllProjection, LocalSecondaryIndex
+from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, LocalSecondaryIndex
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from silvaengine_dynamodb_base import (
@@ -24,6 +24,20 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.attribute_value import AttributeValueListType, AttributeValueType
+
+
+class DataIdentityDataTypeAttributeNameIndex(GlobalSecondaryIndex):
+    class Meta:
+        # index_name is optional, but can be provided to override the default name
+        index_name = "data_identity-data_type_attribute_name-index"
+        billing_mode = "PAY_PER_REQUEST"
+        projection = AllProjection()
+
+    # This attribute is the hash key for the index
+    # Note that this attribute must also exist
+    # in the model
+    data_identity = UnicodeAttribute(hash_key=True)
+    data_type_attribute_name = UnicodeAttribute(range_key=True)
 
 
 class DataIdentityIndex(LocalSecondaryIndex):
@@ -54,6 +68,9 @@ class AttributeValueModel(BaseModel):
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
     data_identity_index = DataIdentityIndex()
+    data_identity_data_type_attribute_name_index = (
+        DataIdentityDataTypeAttributeNameIndex()
+    )
 
 
 def create_attribute_value_table(logger: logging.Logger) -> bool:
