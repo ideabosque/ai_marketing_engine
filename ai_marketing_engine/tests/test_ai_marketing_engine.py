@@ -201,7 +201,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_question_group(self):
         query = Utility.generate_graphql_operation(
             "questionGroup", "Query", self.schema
@@ -249,14 +249,14 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "wizardUuid": "1943415144959382000",
-                "questionGroupUuid": "15006769565442904560",
-                "wizardTitle": "XXXXXXXX",
-                "wizardDescription": "XXXXXXXX",
+                "wizardUuid": "13153351839939695088",
+                "wizardTitle": "Book Appointment",
+                "wizardDescription": "To complete the process, we need to set up an appointment with a sales rep to verify your account.",
                 "wizardType": "page",
                 # "formSchema": None,
                 # "embedContent": None,
-                # "priority": 0,
+                "questionUuids": [],
+                "priority": 2,
                 "updatedBy": "XYZ",
             },
         }
@@ -285,7 +285,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "wizardUuid": "1943415144959382000",
+                "wizardUuid": "9035264907940336112",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -315,31 +315,21 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "questionUuid": "115703653371220464",
+                # "questionUuid": "115703653371220464",
                 "questionGroupUuid": "15006769565442904560",
                 "wizardUuid": "1943415144959382000",
                 "dataType": "contact",
-                "question": "Can you provide your sales certification?",
-                "priority": 6,
-                "attributeName": "sales_certification",
-                "attributeType": "file",
-                # "optionValues": [
-                #     "white",
-                #     "black",
-                #     "gray",
-                #     "red",
-                #     "blue",
-                #     "green",
-                #     "yellow",
-                #     "orange",
-                #     "purple",
-                #     "pink",
-                #     "brown",
-                #     "beige",
-                #     "gold",
-                #     "silver",
-                #     "other",
-                # ],
+                # "question": "Can you provide your sales certification?",
+                "priority": 4,
+                "attributeName": "company_size",
+                # "attributeType": "file",
+                "optionValues": [
+                    {"name": "1–10 employees", "value": "1-10"},
+                    {"name": "11-50 employees", "value": "11-50"},
+                    {"name": "51-200 employees", "value": "51-200"},
+                    {"name": "201-500 employees", "value": "201-500"},
+                    {"name": "501+ employees", "value": "501+"},
+                ],
                 # "condition": [
                 #     {"attribute": "product_name", "value": ["clothes"]},
                 # ],
@@ -460,7 +450,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateContactProfile", "Mutation", self.schema

@@ -35,88 +35,54 @@ def _initialize_tables(logger: logging.Logger) -> None:
     return
 
 
-def _get_question_group(endpoint_id: str, question_group_uuid: str) -> Dict[str, Any]:
-    from .question_group import get_question_group
+def _get_questions(endpoint_id: str, question_uuids: List[str]) -> Dict[str, Any]:
+    from .question import get_question
 
-    question_group = get_question_group(endpoint_id, question_group_uuid)
-    return {
-        "question_group_uuid": question_group.question_group_uuid,
-        "question_group_name": question_group.question_group_name,
-        "question_group_description": question_group.question_group_description,
-        "region": question_group.region,
-        "question_criteria": question_group.question_criteria,
-        "weight": question_group.weight,
-    }
-
-
-def _get_questions(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
-    from .question import QuestionModel
-
-    results = QuestionModel.query(
-        hash_key=endpoint_id,
-        range_key_condition=None,
-        filter_condition=(QuestionModel.wizard_uuid == wizard_uuid),
-    )
+    _questions = []
+    for question_uuid in question_uuids:
+        _question = get_question(endpoint_id, question_uuid)
+        _questions.append(_question)
 
     questions = [
         {
-            "question_uuid": result.question_uuid,
-            "data_type": result.data_type,
-            "question": result.question,
-            "priority": result.priority,
-            "attribute_name": result.attribute_name,
-            "attribute_type": result.attribute_type,
-            "option_values": result.option_values,
-            "condition": result.condition,
+            "question_uuid": question.question_uuid,
+            "data_type": question.data_type,
+            "question": question.question,
+            "priority": question.priority,
+            "attribute_name": question.attribute_name,
+            "attribute_type": question.attribute_type,
+            "option_values": question.option_values,
+            "condition": question.condition,
         }
-        for result in results
+        for question in _questions
     ]
 
     return questions
 
 
-def _get_wizards(endpoint_id: str, question_group_uuid: str) -> Dict[str, Any]:
-    from .wizard import WizardModel
+def _get_wizards(endpoint_id: str, wizard_uuids: List[str]) -> Dict[str, Any]:
+    from .wizard import get_wizard
 
-    results = WizardModel.query(
-        hash_key=endpoint_id,
-        range_key_condition=None,
-        filter_condition=(WizardModel.question_group_uuid == question_group_uuid),
-    )
+    _wizards = []
+    for wizard_uuid in wizard_uuids:
+        _wizard = get_wizard(endpoint_id, wizard_uuid)
+        _wizards.append(_wizard)
 
     wizards = [
         {
-            "wizard_uuid": result.wizard_uuid,
-            "wizard_title": result.wizard_title,
-            "wizard_description": result.wizard_description,
-            "wizard_type": result.wizard_type,
-            "form_schema": result.form_schema,
-            "embed_content": result.embed_content,
-            "priority": result.priority,
-            "questions": _get_questions(endpoint_id, result.wizard_uuid),
+            "wizard_uuid": _wizard.wizard_uuid,
+            "wizard_title": _wizard.wizard_title,
+            "wizard_description": _wizard.wizard_description,
+            "wizard_type": _wizard.wizard_type,
+            "form_schema": _wizard.form_schema,
+            "embed_content": _wizard.embed_content,
+            "priority": _wizard.priority,
+            "questions": _get_questions(endpoint_id, _wizard.question_uuids),
         }
-        for result in results
+        for _wizard in _wizards
     ]
 
     return wizards
-
-
-def _get_wizard(endpoint_id: str, wizard_uuid: str) -> Dict[str, Any]:
-    from .wizard import get_wizard
-
-    wizard = get_wizard(endpoint_id, wizard_uuid)
-    return {
-        "wizard_uuid": wizard.wizard_uuid,
-        "question_group": _get_question_group(
-            wizard.endpoint_id, wizard.question_group_uuid
-        ),
-        "wizard_title": wizard.wizard_title,
-        "wizard_description": wizard.wizard_description,
-        "wizard_type": wizard.wizard_type,
-        "form_schema": wizard.form_schema,
-        "embed_content": wizard.embed_content,
-        "priority": wizard.priority,
-    }
 
 
 def _get_place(region: str, place_uuid: str) -> Dict[str, Any]:

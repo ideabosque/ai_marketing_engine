@@ -7,7 +7,7 @@ __author__ = "bibow"
 import traceback
 from typing import Any, Dict
 
-from graphene import Boolean, Field, Int, Mutation, String
+from graphene import Boolean, Field, Int, List, Mutation, String
 
 from silvaengine_utility import JSON
 
@@ -24,9 +24,10 @@ class InsertUpdateWizard(Mutation):
         wizard_title = String(required=False)
         wizard_description = String(required=False)
         wizard_type = String(required=False)
-        form_schema = JSON(required=False)
+        form_schema = String(required=False)
         embed_content = String(required=False)
         priority = Int(required=False)
+        question_uuids = List(String, required=False)
         updated_by = String(required=True)
 
     @staticmethod
