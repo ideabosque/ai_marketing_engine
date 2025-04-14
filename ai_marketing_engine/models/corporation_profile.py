@@ -32,7 +32,7 @@ from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
 )
-from .utils import _get_attribute_values, _insert_update_attribute_values
+from .utils import _get_data, _insert_update_attribute_values
 
 
 class CorporationTypeIndex(LocalSecondaryIndex):
@@ -111,7 +111,7 @@ def get_corporation_profile_type(
     info: ResolveInfo, corporation_profile: CorporationProfileModel
 ) -> CorporationProfileType:
     try:
-        data = _get_attribute_values(
+        data = _get_data(
             corporation_profile.endpoint_id,
             corporation_profile.corporation_uuid,
             "corporation",

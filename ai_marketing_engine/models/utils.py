@@ -195,7 +195,7 @@ def _insert_update_attribute_values(
     }
 
 
-def _get_attribute_values(
+def _get_data(
     endpoint_id: str,
     data_identity: str,
     data_type: str,
