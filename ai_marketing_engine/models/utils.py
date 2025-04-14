@@ -6,6 +6,8 @@ __author__ = "bibow"
 import logging
 from typing import Any, Dict, List
 
+from graphene import ResolveInfo
+
 
 def _initialize_tables(logger: logging.Logger) -> None:
     from .activity_history import create_activity_history_table
@@ -163,4 +165,55 @@ def _get_contact_profile(place_uuid: str, contact_uuid: str) -> Dict[str, Any]:
         "email": contact_profile.email,
         "first_name": contact_profile.first_name,
         "last_name": contact_profile.last_name,
+    }
+
+
+def _insert_update_attribute_values(
+    info: ResolveInfo,
+    data_type: str,
+    data_identity: str,
+    updated_by: str,
+    data: Dict[str, Any] = {},
+) -> Dict[str, Any]:
+    from .attribute_value import insert_update_attribute_value
+
+    # Insert/update attribute values
+    attribute_values = []
+    for attribute_name, value in data.items():
+        attribute_value = insert_update_attribute_value(
+            info,
+            data_type_attribute_name=f"{data_type}-{attribute_name}",
+            data_identity=data_identity,
+            value=value,
+            updated_by=updated_by,
+        )
+        attribute_values.append(attribute_value)
+
+    return {
+        attribute_value.data_type_attribute_name.split("-")[1]: attribute_value.value
+        for attribute_value in attribute_values
+    }
+
+
+def _get_attribute_values(
+    endpoint_id: str,
+    data_identity: str,
+    data_type: str,
+) -> Dict[str, Any]:
+    from .attribute_value import AttributeValueModel
+
+    results = AttributeValueModel.data_identity_data_type_attribute_name_index.query(
+        hash_key=data_identity,
+        range_key_condition=AttributeValueModel.data_type_attribute_name.startswith(
+            data_type
+        ),
+        filter_condition=(
+            (AttributeValueModel.status == "active")
+            & (AttributeValueModel.endpoint_id == endpoint_id)
+        ),
+    )
+
+    return {
+        result.data_type_attribute_name.split("-")[1]: result.value
+        for result in results
     }

@@ -24,7 +24,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
-from .utils import _get_place
+from .utils import _get_attribute_values, _get_place, _insert_update_attribute_values
 
 
 class EmailIndex(LocalSecondaryIndex):
@@ -86,9 +86,13 @@ def get_contact_profile_type(
 ) -> ContactProfileType:
     try:
         place = _get_place(contact_profile.endpoint_id, contact_profile.place_uuid)
+        data = _get_attribute_values(
+            contact_profile.endpoint_id, contact_profile.contact_uuid, "contact"
+        )
         contact_profile = contact_profile.__dict__["attribute_values"]
         contact_profile["place"] = place
         contact_profile.pop("place_uuid")
+        contact_profile["data"] = data
 
     except Exception as e:
         log = traceback.format_exc()
@@ -195,6 +199,12 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
 
     # Update the contact profile
     contact_profile.update(actions=actions)
+
+    data = _insert_update_attribute_values(
+        info, "contact", contact_uuid, kwargs["updated_by"], kwargs.get("data", {})
+    )
+    info.context["logger"].info(f"Contact profile data: {data} has been updated.")
+
     return
 
 
