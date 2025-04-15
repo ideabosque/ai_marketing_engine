@@ -141,11 +141,21 @@ def _insert_update_attribute_values(
     updated_by: str,
     data: Dict[str, Any] = {},
 ) -> Dict[str, Any]:
-    from .attribute_value import insert_update_attribute_value
+    from .attribute_value import (
+        _get_active_attribute_value,
+        insert_update_attribute_value,
+    )
 
     # Insert/update attribute values
     attribute_values = []
     for attribute_name, value in data.items():
+        active_attribute_value = _get_active_attribute_value(
+            f"{data_type}-{attribute_name}", data_identity
+        )
+        if active_attribute_value and active_attribute_value.value == value:
+            attribute_values.append(active_attribute_value)
+            continue
+
         attribute_value = insert_update_attribute_value(
             info,
             data_type_attribute_name=f"{data_type}-{attribute_name}",
