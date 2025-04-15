@@ -201,7 +201,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_question_group(self):
         query = Utility.generate_graphql_operation(
             "questionGroup", "Query", self.schema
@@ -216,7 +216,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_question_group_list(self):
         query = Utility.generate_graphql_operation(
             "questionGroupList", "Query", self.schema
@@ -225,14 +225,15 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "region": "US",
-                "questionCriteria": {
-                    # "place_types": ["abc", "xyz"],
-                    # "corporation_type": "XXXXXXXX",
-                    # "corporation_categories": ["XXXXXXXX"],
-                    # "utm_tag_name": "XXXXXXXX",
-                    # "corporation_uuid": "4188232447431807471",
-                },
+                "placeUuid": "10869587599689126384",
+                # "region": "US",
+                # "questionCriteria": {
+                #     "place_types": ["abc", "xyz"],
+                #     "corporation_type": "XXXXXXXX",
+                #     "corporation_categories": ["XXXXXXXX"],
+                #     "utm_tag_name": "XXXXXXXX",
+                #     "corporation_uuid": "4188232447431807471",
+                # },
                 "pageNumber": 1,
                 "limit": 10,
             },
@@ -462,7 +463,6 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "placeUuid": "10869587599689126384",
                 "contactUuid": "16754529983121134064",
                 "email": "XXXXXXXX",
-                "region": "US",
                 "firstName": "XXXXXXXX",
                 "lastName": "XXXXXXXX",
                 "data": {"role_type": "seller"},

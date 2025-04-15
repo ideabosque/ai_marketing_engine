@@ -172,6 +172,8 @@ class Query(ObjectType):
         QuestionGroupListType,
         page_number=Int(),
         limit=Int(),
+        place_uuid=String(),
+        utm_tag_name=String(),
         region=String(),
         question_criteria=JSON(),
     )
