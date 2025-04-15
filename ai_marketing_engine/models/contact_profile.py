@@ -177,6 +177,12 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
             contact_uuid,
             **cols,
         ).save()
+
+        data = _insert_update_attribute_values(
+            info, "contact", contact_uuid, kwargs["updated_by"], kwargs.get("data", {})
+        )
+        info.context["logger"].info(f"Contact profile data: {data} has been updated.")
+
         return
 
     contact_profile = kwargs.get("entity")

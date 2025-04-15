@@ -6,7 +6,7 @@ __author__ = "bibow"
 
 import logging
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pendulum
 from graphene import ResolveInfo
@@ -29,6 +29,8 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.question_group import QuestionGroupListType, QuestionGroupType
+from .corporation_profile import get_corporation_profile
+from .place import get_place
 from .utils import _get_wizards
 
 
@@ -113,6 +115,26 @@ def resolve_question_group_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> 
     question_description = kwargs.get("question_description")
     region = kwargs.get("region")
     question_criteria = kwargs.get("question_criteria")
+
+    if kwargs.get("place_uuid"):
+        place = get_place(endpoint_id, kwargs.get("place_uuid"))
+        # corporation_profile = get_corporation_profile(
+        #     endpoint_id, place.corporation_uuid
+        # )
+        region = place.region
+        # question_criteria = {
+        #     "place_types": place.types,
+        #     "corporation_uuid": place.corporation_uuid,
+        # }
+        # if corporation_profile:
+        #     question_criteria.update(
+        #         {
+        #             "corporation_type": corporation_profile.corporation_type,
+        #             "corporation_categories": corporation_profile.categories,
+        #         }
+        #     )
+        # if kwargs.get("utm_tag_name"):
+        #     question_criteria.update({"utm_tag_name": kwargs["utm_tag_name"]})
 
     args = []
     inquiry_funct = QuestionGroupModel.scan
