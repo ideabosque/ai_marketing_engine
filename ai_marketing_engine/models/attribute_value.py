@@ -252,10 +252,6 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
                 data_type_attribute_name, kwargs["data_identity"]
             )
 
-        if active_attribute_value:
-            if active_attribute_value.value == kwargs.get("value"):
-                return
-
             excluded_fields = {
                 "data_type_attribute_name",
                 "value_version_uuid",
