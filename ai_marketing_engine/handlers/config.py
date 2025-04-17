@@ -91,7 +91,11 @@ class Config:
             aws_credentials = {}
 
         cls.aws_lambda = boto3.client("lambda", **aws_credentials)
-        cls.aws_s3 = boto3.client("s3", **aws_credentials)
+        cls.aws_s3 = boto3.client(
+            "s3",
+            **aws_credentials,
+            config=boto3.session.Config(signature_version="s3v4")
+        )
 
     # Fetches and caches GraphQL schema for a given function
     @classmethod
