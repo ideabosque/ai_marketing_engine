@@ -158,10 +158,12 @@ def _insert_update_attribute_values(
 
         attribute_value = insert_update_attribute_value(
             info,
-            data_type_attribute_name=f"{data_type}-{attribute_name}",
-            data_identity=data_identity,
-            value=value,
-            updated_by=updated_by,
+            **{
+                "data_type_attribute_name": f"{data_type}-{attribute_name}",
+                "data_identity": data_identity,
+                "value": value,
+                "updated_by": updated_by,
+            },
         )
         attribute_values.append(attribute_value)
 
