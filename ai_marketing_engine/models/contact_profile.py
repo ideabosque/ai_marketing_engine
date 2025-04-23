@@ -105,6 +105,12 @@ def get_contact_profile_type(
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactProfileType:
+    count = get_contact_profile_count(
+        kwargs.get("place_uuid"), kwargs.get("contact_uuid")
+    )
+    if count == 0:
+        return None
+
     return get_contact_profile_type(
         info,
         get_contact_profile(kwargs.get("place_uuid"), kwargs.get("contact_uuid")),

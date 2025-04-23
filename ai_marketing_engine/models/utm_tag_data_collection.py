@@ -116,6 +116,12 @@ def get_utm_tag_data_collection_type(
 def resolve_utm_tag_data_collection(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> UtmTagDataCollectionType:
+    count = get_utm_tag_data_collection_count(
+        info.context["endpoint_id"], kwargs.get("collection_uuid")
+    )
+    if count == 0:
+        return None
+
     return get_utm_tag_data_collection_type(
         info,
         get_utm_tag_data_collection(
