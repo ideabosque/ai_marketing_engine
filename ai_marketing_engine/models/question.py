@@ -103,6 +103,10 @@ def get_question_type(info: ResolveInfo, question: QuestionModel) -> QuestionTyp
 
 
 def resolve_question(info: ResolveInfo, **kwargs: Dict[str, Any]) -> QuestionType:
+    count = get_question_count(info.context["endpoint_id"], kwargs.get("question_uuid"))
+    if count == 0:
+        return None
+
     return get_question_type(
         info,
         get_question(info.context["endpoint_id"], kwargs.get("question_uuid")),

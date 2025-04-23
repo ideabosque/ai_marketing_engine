@@ -102,6 +102,12 @@ def get_contact_request_type(
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestType:
+    count = get_contact_request_count(
+        kwargs.get("contact_uuid"), kwargs.get("request_uuid")
+    )
+    if count == 0:
+        return None
+
     return get_contact_request_type(
         info,
         get_contact_request(kwargs.get("contact_uuid"), kwargs.get("request_uuid")),

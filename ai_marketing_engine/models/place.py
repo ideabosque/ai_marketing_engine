@@ -106,6 +106,10 @@ def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
+    count = get_place_count(info.context["endpoint_id"], kwargs.get("place_uuid"))
+    if count == 0:
+        return None
+
     return get_place_type(
         info,
         get_place(info.context["endpoint_id"], kwargs.get("place_uuid")),

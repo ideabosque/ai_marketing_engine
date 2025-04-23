@@ -95,6 +95,12 @@ def get_question_group_type(
 def resolve_question_group(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> QuestionGroupType:
+    count = get_question_group_count(
+        info.context["endpoint_id"], kwargs.get("question_group_uuid")
+    )
+    if count == 0:
+        return None
+
     return get_question_group_type(
         info,
         get_question_group(
