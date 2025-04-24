@@ -211,13 +211,13 @@ def data_sync_decorator(original_function):
         )
 
         # Send the message to the target system
-        put_message_to_target(
-            args[0].context.get("logger"),
-            endpoint_id,
-            data_type,
-            message,
-            setting=args[0].context.get("setting"),
-        )
+        # put_message_to_target(
+        #     args[0].context.get("logger"),
+        #     endpoint_id,
+        #     data_type,
+        #     message,
+        #     setting=args[0].context.get("setting"),
+        # )
 
         # Return the original function's result
         return result
