@@ -52,7 +52,7 @@ class ActivityHistoryModel(BaseModel):
     id = UnicodeAttribute(hash_key=True)
     timestamp = NumberAttribute(range_key=True)
     log = UnicodeAttribute()
-    data_diff = MapAttribute(default={})
+    data_diff = MapAttribute()
     type = UnicodeAttribute()
     updated_by = UnicodeAttribute(null=True)
     updated_at = UTCDateTimeAttribute()
