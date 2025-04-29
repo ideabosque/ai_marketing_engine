@@ -24,10 +24,20 @@ setting = {
             "module_name": "ai_marketing_engine",
             "class_name": "AIMarketingEngine",
         },
+        "datawald_interface_graphql": {
+            "module_name": "datawald_interface_engine",
+            "class_name": "DataWaldInterfaceEngine",
+        }
     },
     "aws_s3_bucket": os.getenv("aws_s3_bucket"),
     "endpoint_id": os.getenv("endpoint_id"),
     "test_mode": os.getenv("test_mode"),
+    "data_mapping": {
+        "ContactProfileType": "contact"
+    },
+    "target": "hubspot",
+    "task_queue_name":"silvaengine_task_queue.fifo",
+    "input_queue_name": "datawald_input_queue.fifo"
 }
 
 sys.path.insert(0, f"{os.getenv('BASE_DIR')}/ai_marketing_engine")
