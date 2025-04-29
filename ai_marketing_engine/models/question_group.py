@@ -43,7 +43,7 @@ class QuestionGroupModel(BaseModel):
     question_group_name = UnicodeAttribute()
     question_group_description = UnicodeAttribute(null=True)
     region = UnicodeAttribute()
-    question_criteria = MapAttribute(default={})
+    question_criteria = MapAttribute()
     weight = NumberAttribute(default=0)
     wizard_uuids = ListAttribute(of=UnicodeAttribute, null=True)
     updated_by = UnicodeAttribute()
@@ -214,12 +214,14 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     question_group_uuid = kwargs.get("question_group_uuid")
     if kwargs.get("entity") is None:
         cols = {
+            "question_criteria": {},
             "wizard_uuid": [],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
         for key in [
+            "question_criteria",
             "question_group_name",
             "question_group_description",
             "region",
