@@ -171,16 +171,19 @@ def put_message_to_target(
         "target": target,
         "messages": [message],
     }
-
+    
+    schema = Config.fetch_graphql_schema(
+        logger, endpoint_id, "datawald_interface_graphql", setting=setting
+    )
     # Execute GraphQL mutation and return the result
     return Utility.execute_graphql_query(
         logger,
         endpoint_id,
         "datawald_interface_graphql",
-        "putMessages",
-        "Mutation",
+        Utility.generate_graphql_operation("putMessages", "Mutation", schema),
         variables,
         setting=setting,
+        aws_lambda=Config.aws_lambda
     )
 
 
