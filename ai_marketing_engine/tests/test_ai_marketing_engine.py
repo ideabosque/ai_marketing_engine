@@ -35,6 +35,7 @@ setting = {
     "data_mapping": {
         "ContactProfileType": "contact"
     },
+    "dw_endpoint": "dw",
     "target": "hubspot",
     "task_queue_name":"silvaengine_task_queue.fifo",
     "input_queue_name": "datawald_input_queue.fifo"
