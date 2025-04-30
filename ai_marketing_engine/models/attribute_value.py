@@ -149,6 +149,12 @@ def resolve_attribute_value(
             ),
         )
 
+    count = get_attribute_value_count(
+        kwargs["data_type_attribute_name"], kwargs["value_version_uuid"]
+    )
+    if count == 0:
+        return None
+
     return get_attribute_value_type(
         info,
         get_attribute_value(

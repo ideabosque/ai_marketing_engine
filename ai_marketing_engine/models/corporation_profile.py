@@ -130,6 +130,12 @@ def get_corporation_profile_type(
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileType:
+    count = get_corporation_profile_count(
+        info.context["endpoint_id"], kwargs.get("corporation_uuid")
+    )
+    if count:
+        return None
+
     return get_corporation_profile_type(
         info,
         get_corporation_profile(

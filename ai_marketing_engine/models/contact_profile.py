@@ -23,6 +23,7 @@ from silvaengine_dynamodb_base import (
 )
 from silvaengine_utility import Utility
 
+from ..handlers.ai_marketing_utility import data_sync_decorator
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
 from .utils import _get_data, _get_place, _insert_update_attribute_values
 
@@ -105,6 +106,12 @@ def get_contact_profile_type(
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactProfileType:
+    count = get_contact_profile_count(
+        kwargs.get("place_uuid"), kwargs.get("contact_uuid")
+    )
+    if count == 0:
+        return None
+
     return get_contact_profile_type(
         info,
         get_contact_profile(kwargs.get("place_uuid"), kwargs.get("contact_uuid")),
@@ -145,6 +152,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     return inquiry_funct, count_funct, args
 
 
+@data_sync_decorator
 @insert_update_decorator(
     keys={
         "hash_key": "place_uuid",

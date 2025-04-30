@@ -86,6 +86,10 @@ def get_wizard_type(info: ResolveInfo, wizard: WizardModel) -> WizardType:
 
 
 def resolve_wizard(info: ResolveInfo, **kwargs: Dict[str, Any]) -> WizardType:
+    count = get_wizard_count(info.context["endpoint_id"], kwargs.get("wizard_uuid"))
+    if count == 0:
+        return None
+
     return get_wizard_type(
         info,
         get_wizard(info.context["endpoint_id"], kwargs.get("wizard_uuid")),

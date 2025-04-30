@@ -24,10 +24,21 @@ setting = {
             "module_name": "ai_marketing_engine",
             "class_name": "AIMarketingEngine",
         },
+        "datawald_interface_graphql": {
+            "module_name": "datawald_interface_engine",
+            "class_name": "DataWaldInterfaceEngine",
+        }
     },
     "aws_s3_bucket": os.getenv("aws_s3_bucket"),
     "endpoint_id": os.getenv("endpoint_id"),
     "test_mode": os.getenv("test_mode"),
+    "data_mapping": {
+        "ContactProfileType": "contact"
+    },
+    "dw_endpoint": "dw",
+    "target": "hubspot",
+    "task_queue_name":"silvaengine_task_queue.fifo",
+    "input_queue_name": "datawald_input_queue.fifo"
 }
 
 sys.path.insert(0, f"{os.getenv('BASE_DIR')}/ai_marketing_engine")
@@ -216,7 +227,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_question_group_list(self):
         query = Utility.generate_graphql_operation(
             "questionGroupList", "Query", self.schema
@@ -451,7 +462,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateContactProfile", "Mutation", self.schema
@@ -460,12 +471,17 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "10869587599689126384",
-                "contactUuid": "16754529983121134064",
-                "email": "XXXXXXXX",
-                "firstName": "XXXXXXXX",
-                "lastName": "XXXXXXXX",
-                "data": {"role_type": "seller"},
+                "placeUuid": "528361109185171952",
+                "contactUuid": "5060220547621523952",
+                "email": "bibo72@outlook.com",
+                "firstName": "Bibo",
+                "lastName": "Wang",
+                "data": {
+                    "company_size": "501+",
+                    "phone": "xxx-xxx-xxxx",
+                    "reseller_certificate": "reseller_certificate/50ee45b4-2e61-493d-85af-9f3fcccd6166_Untitled_Artwork.png",
+                    "sales_rep": "Joe X.",
+                },
                 "updatedBy": "XYZ",
             },
         }
@@ -497,8 +513,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "10869587599689126384",
-                "contactUuid": "16754529983121134064",
+                "placeUuid": "528361109185171952",
+                "contactUuid": "5060220547621523952",
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
