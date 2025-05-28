@@ -171,7 +171,7 @@ def put_message_to_target(
         "target": target,
         "messages": [message],
     }
-    
+
     schema = Config.fetch_graphql_schema(
         logger, endpoint_id, "datawald_interface_graphql", setting=setting
     )
@@ -183,7 +183,7 @@ def put_message_to_target(
         Utility.generate_graphql_operation("putMessages", "Mutation", schema),
         variables,
         setting=setting,
-        aws_lambda=Config.aws_lambda
+        aws_lambda=Config.aws_lambda,
     )
 
 
@@ -228,7 +228,7 @@ def data_sync_decorator(original_function):
         # Send the message to the target system
         put_message_to_target(
             args[0].context.get("logger"),
-            args[0].context.get("setting",{}).get("dw_endpoint"),
+            args[0].context.get("setting", {}).get("dw_endpoint"),
             data_type,
             message,
             setting=args[0].context.get("setting"),
@@ -305,7 +305,9 @@ def resolve_presigned_upload_url(
     """
     bucket_name = info.context["setting"].get("aws_s3_bucket")
     object_key = kwargs.get("object_key")
-    expiration = info.context["setting"].get("expiration", 3600)  # Default to 1 hour
+    expiration = int(
+        info.context["setting"].get("expiration", 3600)
+    )  # Default to 1 hour
 
     # Generate the presigned URL for put_object
     try:
