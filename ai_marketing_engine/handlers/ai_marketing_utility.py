@@ -17,7 +17,7 @@ from graphene import ResolveInfo
 from silvaengine_utility import Utility
 
 from ..models.place import get_place
-from ..types.ai_marketing import CrmUserListType, PresignedUploadUrlType
+from ..types.ai_marketing import CrmUserListType, CrmUserType, PresignedUploadUrlType
 from .config import Config
 
 
@@ -204,7 +204,19 @@ def data_sync_decorator(original_function):
         # TODO: add the logic to sync data to other data sources
         data_type = type(result).__name__
         message = result.__dict__ if hasattr(result, "__dict__") else result
-
+        
+        if len(args[0].context.get("setting",{}).get("file_attributes", [])) > 0:
+            for file_attribute in args[0].context.get("setting",{}).get("file_attributes", []):
+                if file_attribute in message.get("data", {}) and message.get("data", {}).get(file_attribute) is not None:
+                    try:
+                        download_url = generate_download_url(args[0], **{"object_key": message.get("data", {}).get(file_attribute)})
+                        message["data"][file_attribute] = {
+                            "url": download_url
+                        }
+                    except Exception as e:
+                        args[0].context.get("logger").error(e)
+                        pass
+        
         # Log information about the function execution
         args[0].context.get("logger").info(
             f"Function {original_function.__name__} returned data of type: {data_type}"
@@ -227,6 +239,34 @@ def data_sync_decorator(original_function):
 
     return wrapper_function
 
+def generate_download_url(
+    info: ResolveInfo, **kwargs: Dict[str, Any]
+) -> str:
+    # bucket_name, object_key, expiration=3600):
+    """
+    Generate a download URL to download a file from an S3 bucket.
+
+    :param object_key: Name of the file to be uploaded (object key).
+    :param expiration: Time in seconds for the presigned URL to remain valid.
+    :return: Download URL as a string.
+    """
+    bucket_name = info.context["setting"].get("aws_s3_bucket")
+    object_key = kwargs.get("object_key")
+    expiration = info.context["setting"].get("expiration", 3600)  # Default to 1 hour
+
+    # Generate the presigned URL for put_object
+    try:
+        response = Config.aws_s3.generate_presigned_url(
+            ClientMethod="get_object",
+            Params={"Bucket": bucket_name, "Key": object_key},
+            ExpiresIn=expiration
+        )
+
+        return response
+    except Exception as e:
+        log = traceback.format_exc()
+        info.context.get("logger").error(log)
+        raise e
 
 def resolve_crm_user_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
