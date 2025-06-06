@@ -17,7 +17,7 @@ from graphene import ResolveInfo
 from silvaengine_utility import Utility
 
 from ..models.place import get_place
-from ..types.ai_marketing import CrmUserListType, PresignedUploadUrlType
+from ..types.ai_marketing import CrmUserListType, CrmUserType, PresignedUploadUrlType
 from .config import Config
 
 
