@@ -29,9 +29,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.question_group import QuestionGroupListType, QuestionGroupType
-from .corporation_profile import get_corporation_profile
 from .place import get_place
-from .utils import _get_wizards
 
 
 class QuestionGroupModel(BaseModel):
@@ -45,7 +43,7 @@ class QuestionGroupModel(BaseModel):
     region = UnicodeAttribute()
     question_criteria = MapAttribute()
     weight = NumberAttribute(default=0)
-    wizard_uuids = ListAttribute(of=UnicodeAttribute, null=True)
+    wizard_group_uuid = UnicodeAttribute(null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
@@ -80,15 +78,7 @@ def get_question_group_count(endpoint_id: str, question_group_uuid: str) -> int:
 def get_question_group_type(
     info: ResolveInfo, question_group: QuestionGroupModel
 ) -> QuestionGroupType:
-    try:
-        wizards = _get_wizards(question_group.endpoint_id, question_group.wizard_uuids)
-        question_group = question_group.__dict__["attribute_values"]
-        question_group["wizards"] = wizards
-        question_group.pop("wizard_uuids")
-    except Exception as e:
-        log = traceback.format_exc()
-        info.context.get("logger").exception(log)
-        raise e
+    question_group = question_group.__dict__["attribute_values"]
     return QuestionGroupType(**Utility.json_loads(Utility.json_dumps(question_group)))
 
 
@@ -215,7 +205,6 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     if kwargs.get("entity") is None:
         cols = {
             "question_criteria": {},
-            "wizard_uuid": [],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -226,7 +215,7 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
             "question_group_description",
             "region",
             "weight",
-            "wizard_uuid",
+            "wizard_group_uuid",
         ]:
             if key in kwargs:
                 cols[key] = kwargs[key]
@@ -246,7 +235,7 @@ def insert_update_question_group(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
         "region": QuestionGroupModel.region,
         "question_criteria": QuestionGroupModel.question_criteria,
         "weight": QuestionGroupModel.weight,
-        "wizard_uuid": QuestionGroupModel.wizard_uuids,
+        "wizard_group_uuid": QuestionGroupModel.wizard_group_uuid,
     }
 
     # Add actions dynamically based on the presence of keys in kwargs

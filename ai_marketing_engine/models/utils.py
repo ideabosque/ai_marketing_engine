@@ -16,14 +16,10 @@ def _initialize_tables(logger: logging.Logger) -> None:
     from .contact_request import create_contact_request_table
     from .corporation_profile import create_corporation_profile_table
     from .place import create_place_table
-    from .question import create_question_table
     from .question_group import create_question_group_table
     from .utm_tag_data_collection import create_utm_tag_data_collection_table
-    from .wizard import create_wizard_table
 
     create_question_group_table(logger)
-    create_question_table(logger)
-    create_wizard_table(logger)
     create_place_table(logger)
     create_contact_profile_table(logger)
     create_contact_request_table(logger)
@@ -33,56 +29,6 @@ def _initialize_tables(logger: logging.Logger) -> None:
     create_utm_tag_data_collection_table(logger)
 
     return
-
-
-def _get_questions(endpoint_id: str, question_uuids: List[str]) -> Dict[str, Any]:
-    from .question import get_question
-
-    _questions = []
-    for question_uuid in question_uuids:
-        _question = get_question(endpoint_id, question_uuid)
-        _questions.append(_question)
-
-    questions = [
-        {
-            "question_uuid": question.question_uuid,
-            "data_type": question.data_type,
-            "question": question.question,
-            "priority": question.priority,
-            "attribute_name": question.attribute_name,
-            "attribute_type": question.attribute_type,
-            "option_values": question.option_values,
-            "condition": question.condition,
-        }
-        for question in _questions
-    ]
-
-    return questions
-
-
-def _get_wizards(endpoint_id: str, wizard_uuids: List[str]) -> Dict[str, Any]:
-    from .wizard import get_wizard
-
-    _wizards = []
-    for wizard_uuid in wizard_uuids:
-        _wizard = get_wizard(endpoint_id, wizard_uuid)
-        _wizards.append(_wizard)
-
-    wizards = [
-        {
-            "wizard_uuid": _wizard.wizard_uuid,
-            "wizard_title": _wizard.wizard_title,
-            "wizard_description": _wizard.wizard_description,
-            "wizard_type": _wizard.wizard_type,
-            "form_schema": _wizard.form_schema,
-            "embed_content": _wizard.embed_content,
-            "priority": _wizard.priority,
-            "questions": _get_questions(endpoint_id, _wizard.question_uuids),
-        }
-        for _wizard in _wizards
-    ]
-
-    return wizards
 
 
 def _get_place(region: str, place_uuid: str) -> Dict[str, Any]:
