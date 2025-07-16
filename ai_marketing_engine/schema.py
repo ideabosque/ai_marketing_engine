@@ -20,13 +20,11 @@ from .mutations.corporation_profile import (
     InsertUpdateCorporationProfile,
 )
 from .mutations.place import DeletePlace, InsertUpdatePlace
-from .mutations.question import DeleteQuestion, InsertUpdateQuestion
 from .mutations.question_group import DeleteQuestionGroup, InsertUpdateQuestionGroup
 from .mutations.utm_tag_data_collection import (
     DeleteUtmTagDataCollection,
     InsertUtmTagDataCollection,
 )
-from .mutations.wizard import DeleteWizard, InsertUpdateWizard
 from .queries.activity_history import (
     resolve_activity_history,
     resolve_activity_history_list,
@@ -49,13 +47,11 @@ from .queries.corporation_profile import (
     resolve_corporation_profile_list,
 )
 from .queries.place import resolve_place, resolve_place_list
-from .queries.question import resolve_question, resolve_question_list
 from .queries.question_group import resolve_question_group, resolve_question_group_list
 from .queries.utm_tag_data_collection import (
     resolve_utm_tag_data_collection,
     resolve_utm_tag_data_collection_list,
 )
-from .queries.wizard import resolve_wizard, resolve_wizard_list
 from .types.activity_history import ActivityHistoryListType, ActivityHistoryType
 from .types.ai_marketing import CrmUserListType, PresignedUploadUrlType
 from .types.attribute_value import AttributeValueListType, AttributeValueType
@@ -66,13 +62,11 @@ from .types.corporation_profile import (
     CorporationProfileType,
 )
 from .types.place import PlaceListType, PlaceType
-from .types.question import QuestionListType, QuestionType
 from .types.question_group import QuestionGroupListType, QuestionGroupType
 from .types.utm_tag_data_collection import (
     UtmTagDataCollectionListType,
     UtmTagDataCollectionType,
 )
-from .types.wizard import WizardListType, WizardType
 
 
 def type_class():
@@ -91,14 +85,10 @@ def type_class():
         PlaceType,
         QuestionGroupListType,
         QuestionGroupType,
-        QuestionListType,
-        QuestionType,
         UtmTagDataCollectionListType,
         UtmTagDataCollectionType,
         ContactRequestType,
         ContactRequestListType,
-        WizardListType,
-        WizardType,
         PresignedUploadUrlType,
         CrmUserListType,
     ]
@@ -128,38 +118,6 @@ class Query(ObjectType):
         activity_type=String(),
         activity_types=List(String),
         log=String(),
-    )
-
-    question = Field(
-        QuestionType,
-        required=True,
-        question_uuid=String(required=True),
-    )
-
-    question_list = Field(
-        QuestionListType,
-        page_number=Int(),
-        limit=Int(),
-        data_type=String(),
-        question=String(),
-        attribute_name=String(),
-        attribute_type=String(),
-    )
-
-    wizard = Field(
-        WizardType,
-        required=True,
-        wizard_uuid=String(required=True),
-    )
-
-    wizard_list = Field(
-        WizardListType,
-        page_number=Int(),
-        limit=Int(),
-        wizard_title=String(),
-        wizard_description=String(),
-        priority=Int(),
-        wizard_types=List(String),
     )
 
     question_group = Field(
@@ -306,24 +264,6 @@ class Query(ObjectType):
     ) -> ActivityHistoryListType:
         return resolve_activity_history_list(info, **kwargs)
 
-    def resolve_question(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> QuestionType:
-        return resolve_question(info, **kwargs)
-
-    def resolve_question_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> QuestionListType:
-        return resolve_question_list(info, **kwargs)
-
-    def resolve_wizard(self, info: ResolveInfo, **kwargs: Dict[str, Any]) -> WizardType:
-        return resolve_wizard(info, **kwargs)
-
-    def resolve_wizard_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> WizardListType:
-        return resolve_wizard_list(info, **kwargs)
-
     def resolve_question_group(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> QuestionGroupType:
@@ -403,10 +343,6 @@ class Mutations(ObjectType):
     delete_activity_history = DeleteActivityHistory.Field()
     insert_update_question_group = InsertUpdateQuestionGroup.Field()
     delete_question_group = DeleteQuestionGroup.Field()
-    insert_update_wizard = InsertUpdateWizard.Field()
-    delete_wizard = DeleteWizard.Field()
-    insert_update_question = InsertUpdateQuestion.Field()
-    delete_question = DeleteQuestion.Field()
     insert_update_place = InsertUpdatePlace.Field()
     delete_place = DeletePlace.Field()
     insert_update_corporation_profile = InsertUpdateCorporationProfile.Field()
