@@ -129,6 +129,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     email = kwargs.get("email")
     first_name = kwargs.get("first_name")
     last_name = kwargs.get("last_name")
+    endpoint_id = info.context.get("endpoint_id", None)
 
     args = []
     inquiry_funct = ContactProfileModel.scan
@@ -146,6 +147,8 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
         the_filters &= ContactProfileModel.first_name.contains(first_name)
     if last_name:
         the_filters &= ContactProfileModel.last_name.contains(last_name)
+    if endpoint_id:
+        the_filters &= ContactProfileModel.endpoint_id == endpoint_id
     if the_filters is not None:
         args.append(the_filters)
 
