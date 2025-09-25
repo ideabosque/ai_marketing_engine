@@ -120,7 +120,7 @@ def _get_class_object(
 
         return _class(
             logger,
-            **Utility.json_loads(Utility.json_dumps(setting)),
+            **Utility.json_normalize(setting),
         )
     except Exception as e:
         log = traceback.format_exc()

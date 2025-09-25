@@ -100,7 +100,7 @@ def get_contact_profile_type(
         info.context.get("logger").exception(log)
         raise e
 
-    return ContactProfileType(**Utility.json_loads(Utility.json_dumps(contact_profile)))
+    return ContactProfileType(**Utility.json_normalize(contact_profile))
 
 
 def resolve_contact_profile(

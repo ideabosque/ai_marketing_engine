@@ -96,7 +96,7 @@ def get_contact_request_type(
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    return ContactRequestType(**Utility.json_loads(Utility.json_dumps(contact_request)))
+    return ContactRequestType(**Utility.json_normalize(contact_request))
 
 
 def resolve_contact_request(

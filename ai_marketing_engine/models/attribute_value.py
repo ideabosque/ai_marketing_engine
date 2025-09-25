@@ -135,7 +135,7 @@ def get_attribute_value_type(
         info.context.get("logger").exception(log)
         raise e
 
-    return AttributeValueType(**Utility.json_loads(Utility.json_dumps(attribute_value)))
+    return AttributeValueType(**Utility.json_normalize(attribute_value))
 
 
 def resolve_attribute_value(

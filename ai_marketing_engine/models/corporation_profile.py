@@ -123,7 +123,7 @@ def get_corporation_profile_type(
         info.context.get("logger").exception(log)
         raise e
     return CorporationProfileType(
-        **Utility.json_loads(Utility.json_dumps(corporation_profile))
+        **Utility.json_normalize(corporation_profile)
     )
 
 

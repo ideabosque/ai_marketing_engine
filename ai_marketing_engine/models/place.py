@@ -102,7 +102,7 @@ def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
         info.context.get("logger").exception(log)
         raise e
 
-    return PlaceType(**Utility.json_loads(Utility.json_dumps(place)))
+    return PlaceType(**Utility.json_normalize(place))
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
