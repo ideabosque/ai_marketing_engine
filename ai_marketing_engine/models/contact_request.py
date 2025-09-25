@@ -37,24 +37,39 @@ class PlaceUuidIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    contact_uuid = UnicodeAttribute(hash_key=True)
+    endpoint_id = UnicodeAttribute(hash_key=True)
     place_uuid = UnicodeAttribute(range_key=True)
+
+
+class ContactUuidIndex(LocalSecondaryIndex):
+    class Meta:
+        # index_name is optional, but can be provided to override the default name
+        index_name = "contact_uuid-index"
+        billing_mode = "PAY_PER_REQUEST"
+        projection = AllProjection()
+
+    # This attribute is the hash key for the index
+    # Note that this attribute must also exist
+    # in the model
+    endpoint_id = UnicodeAttribute(hash_key=True)
+    contact_uuid = UnicodeAttribute(range_key=True)
 
 
 class ContactRequestModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-contact_requests"
 
-    contact_uuid = UnicodeAttribute(hash_key=True)
+    endpoint_id = UnicodeAttribute(hash_key=True)
     request_uuid = UnicodeAttribute(range_key=True)
+    contact_uuid = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
-    endpoint_id = UnicodeAttribute()
     request_title = UnicodeAttribute()
     request_detail = UnicodeAttribute()
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
     place_uuid_index = PlaceUuidIndex()
+    contact_uuid_index = ContactUuidIndex()
 
 
 def create_contact_request_table(logger: logging.Logger) -> bool:
@@ -71,13 +86,13 @@ def create_contact_request_table(logger: logging.Logger) -> bool:
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_contact_request(contact_uuid: str, request_uuid: str) -> ContactRequestModel:
-    return ContactRequestModel.get(contact_uuid, request_uuid)
+def get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestModel:
+    return ContactRequestModel.get(endpoint_id, request_uuid)
 
 
-def get_contact_request_count(contact_uuid: str, request_uuid: str) -> int:
+def get_contact_request_count(endpoint_id: str, request_uuid: str) -> int:
     return ContactRequestModel.count(
-        contact_uuid, ContactRequestModel.request_uuid == request_uuid
+        endpoint_id, ContactRequestModel.request_uuid == request_uuid
     )
 
 
@@ -102,27 +117,26 @@ def get_contact_request_type(
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestType:
-    count = get_contact_request_count(
-        kwargs.get("contact_uuid"), kwargs.get("request_uuid")
-    )
+    endpoint_id = info.context["endpoint_id"]
+    count = get_contact_request_count(endpoint_id, kwargs.get("request_uuid"))
     if count == 0:
         return None
 
     return get_contact_request_type(
         info,
-        get_contact_request(kwargs.get("contact_uuid"), kwargs.get("request_uuid")),
+        get_contact_request(endpoint_id, kwargs.get("request_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["contact_uuid", "request_uuid", "place_uuid"],
+    attributes_to_get=["endpoint_id", "contact_uuid", "request_uuid", "place_uuid"],
     list_type_class=ContactRequestListType,
     type_funct=get_contact_request_type,
 )
 def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    contact_uuid = kwargs.get("contact_uuid")
     endpoint_id = info.context["endpoint_id"]
+    contact_uuid = kwargs.get("contact_uuid")
     request_title = kwargs.get("request_title")
     request_detail = kwargs.get("request_detail")
     place_uuid = kwargs.get("place_uuid")
@@ -130,21 +144,32 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     args = []
     inquiry_funct = ContactRequestModel.scan
     count_funct = ContactRequestModel.count
-    if contact_uuid and place_uuid:
-        args = [contact_uuid]
+
+    # Use place_uuid_index if both endpoint_id and place_uuid are provided
+    if endpoint_id and place_uuid:
+        args = [endpoint_id, ContactRequestModel.place_uuid == place_uuid]
         inquiry_funct = ContactRequestModel.place_uuid_index.query
-        if place_uuid:
-            count_funct = ContactRequestModel.place_uuid_index.count
-            args[1] = ContactRequestModel.place_uuid == place_uuid
-            inquiry_funct = ContactRequestModel.place_uuid_index.query
+        count_funct = ContactRequestModel.place_uuid_index.count
+    # Use contact_uuid_index if both endpoint_id and contact_uuid are provided
+    elif endpoint_id and contact_uuid:
+        args = [endpoint_id, ContactRequestModel.contact_uuid == contact_uuid]
+        inquiry_funct = ContactRequestModel.contact_uuid_index.query
+        count_funct = ContactRequestModel.contact_uuid_index.count
 
     the_filters = None
     if request_title:
-        the_filters &= ContactRequestModel.request_title.contains(request_title)
+        the_filters = (
+            ContactRequestModel.request_title.contains(request_title)
+            if the_filters is None
+            else the_filters & ContactRequestModel.request_title.contains(request_title)
+        )
     if request_detail:
-        the_filters &= ContactRequestModel.request_detail.contains(request_detail)
-    if endpoint_id:
-        the_filters &= ContactRequestModel.endpoint_id == endpoint_id
+        the_filters = (
+            ContactRequestModel.request_detail.contains(request_detail)
+            if the_filters is None
+            else the_filters
+            & ContactRequestModel.request_detail.contains(request_detail)
+        )
     if the_filters is not None:
         args.append(the_filters)
 
@@ -153,7 +178,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 
 @insert_update_decorator(
     keys={
-        "hash_key": "contact_uuid",
+        "hash_key": "endpoint_id",
         "range_key": "request_uuid",
     },
     model_funct=get_contact_request,
@@ -161,20 +186,20 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     type_funct=get_contact_request_type,
 )
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    contact_uuid = kwargs.get("contact_uuid")
+    endpoint_id = info.context["endpoint_id"]
     request_uuid = kwargs.get("request_uuid")
     if kwargs.get("entity") is None:
         cols = {
-            "endpoint_id": info.context["endpoint_id"],
+            "contact_uuid": kwargs["contact_uuid"],
+            "place_uuid": kwargs["place_uuid"],
             "request_title": kwargs["request_title"],
             "request_detail": kwargs["request_detail"],
-            "place_uuid": kwargs["place_uuid"],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
         }
         ContactRequestModel(
-            contact_uuid,
+            endpoint_id,
             request_uuid,
             **cols,
         ).save()
@@ -198,7 +223,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
 
 @delete_decorator(
     keys={
-        "hash_key": "contact_uuid",
+        "hash_key": "endpoint_id",
         "range_key": "request_uuid",
     },
     model_funct=get_contact_request,

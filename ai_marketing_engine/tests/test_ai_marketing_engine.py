@@ -502,7 +502,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "contactProfile", "Query", self.schema
@@ -547,9 +547,9 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "16754529983121134064",
-                "requestUuid": "10080978926371672560",
-                "placeUuid": "10869587599689126384",
+                "requestUuid": "22909397008554934400",
+                "contactUuid": "10724211477991751659",
+                "placeUuid": "21077264490052699216",
                 "requestTitle": "XXXXXXXX",
                 "requestDetail": "XXXXXXXX",
                 "updatedBy": "XYZ",
@@ -590,7 +590,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_contact_request_list(self):
         query = Utility.generate_graphql_operation(
             "contactRequestList", "Query", self.schema
@@ -599,7 +599,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "16754529983121134064",
+                # "contactUuid": "16754529983121134064",
                 "pageNumber": 1,
                 "limit": 10,
             },
