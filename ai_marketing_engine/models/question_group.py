@@ -79,7 +79,7 @@ def get_question_group_type(
     info: ResolveInfo, question_group: QuestionGroupModel
 ) -> QuestionGroupType:
     question_group = question_group.__dict__["attribute_values"]
-    return QuestionGroupType(**Utility.json_loads(Utility.json_dumps(question_group)))
+    return QuestionGroupType(**Utility.json_normalize(question_group))
 
 
 def resolve_question_group(

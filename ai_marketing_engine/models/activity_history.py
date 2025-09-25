@@ -82,7 +82,7 @@ def get_activity_history_type(
 ) -> ActivityHistoryType:
     activity_history = activity_history.__dict__["attribute_values"]
     return ActivityHistoryType(
-        **Utility.json_loads(Utility.json_dumps(activity_history))
+        **Utility.json_normalize(activity_history)
     )
 
 
@@ -154,10 +154,8 @@ def insert_activity_history(
     )
 
     return ActivityHistoryType(
-        **Utility.json_loads(
-            Utility.json_dumps(
-                get_activity_history(id, timestamp).__dict__["attribute_values"]
-            )
+        **Utility.json_normalize(
+            get_activity_history(id, timestamp).__dict__["attribute_values"]
         )
     )
 

@@ -109,7 +109,7 @@ def get_utm_tag_data_collection_type(
         raise e
 
     return UtmTagDataCollectionType(
-        **Utility.json_loads(Utility.json_dumps(utm_tag_data_collection))
+        **Utility.json_normalize(utm_tag_data_collection)
     )
 
 
