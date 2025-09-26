@@ -146,30 +146,25 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     count_funct = ContactRequestModel.count
 
     # Use place_uuid_index if both endpoint_id and place_uuid are provided
-    if endpoint_id and place_uuid:
-        args = [endpoint_id, ContactRequestModel.place_uuid == place_uuid]
-        inquiry_funct = ContactRequestModel.place_uuid_index.query
-        count_funct = ContactRequestModel.place_uuid_index.count
-    # Use contact_uuid_index if both endpoint_id and contact_uuid are provided
-    elif endpoint_id and contact_uuid:
-        args = [endpoint_id, ContactRequestModel.contact_uuid == contact_uuid]
-        inquiry_funct = ContactRequestModel.contact_uuid_index.query
-        count_funct = ContactRequestModel.contact_uuid_index.count
+    if endpoint_id:
+        args = [endpoint_id, None]
+        inquiry_funct = ContactRequestModel.query
+        if place_uuid:
+            inquiry_funct = ContactRequestModel.place_uuid_index.query
+            args[1] = ContactRequestModel.place_uuid == place_uuid
+            count_funct = ContactRequestModel.place_uuid_index.count
+        if contact_uuid:
+            inquiry_funct = ContactRequestModel.contact_uuid_index.query
+            args[1] = ContactRequestModel.contact_uuid == contact_uuid
+            count_funct = ContactRequestModel.contact_uuid_index.count
 
     the_filters = None
+    if place_uuid and contact_uuid:
+        the_filters &= ContactRequestModel.place_uuid == place_uuid
     if request_title:
-        the_filters = (
-            ContactRequestModel.request_title.contains(request_title)
-            if the_filters is None
-            else the_filters & ContactRequestModel.request_title.contains(request_title)
-        )
+        the_filters &= ContactRequestModel.request_title.contains(request_title)
     if request_detail:
-        the_filters = (
-            ContactRequestModel.request_detail.contains(request_detail)
-            if the_filters is None
-            else the_filters
-            & ContactRequestModel.request_detail.contains(request_detail)
-        )
+        the_filters &= ContactRequestModel.request_detail.contains(request_detail)
     if the_filters is not None:
         args.append(the_filters)
 
