@@ -24,6 +24,7 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.contact_request import ContactRequestListType, ContactRequestType
+from .contact_profile import get_contact_profile_count
 from .utils import _get_contact_profile
 
 
@@ -183,6 +184,14 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     endpoint_id = info.context["endpoint_id"]
     request_uuid = kwargs.get("request_uuid")
+
+    assert (
+        get_contact_profile_count(
+            place_uuid=kwargs["place_uuid"], contact_uuid=kwargs["contact_uuid"]
+        )
+        == 1
+    ), "Contact profile not found."
+
     if kwargs.get("entity") is None:
         cols = {
             "contact_uuid": kwargs["contact_uuid"],
