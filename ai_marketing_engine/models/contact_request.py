@@ -12,8 +12,6 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -22,6 +20,7 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..types.contact_request import ContactRequestListType, ContactRequestType
 from .contact_profile import get_contact_profile_count
@@ -102,7 +101,7 @@ def get_contact_request_type(
 ) -> ContactRequestType:
     try:
         contact_profile = _get_contact_profile(
-            contact_request.place_uuid, contact_request.contact_uuid
+            contact_request.endpoint_id, contact_request.contact_uuid
         )
         contact_request = contact_request.__dict__["attribute_values"]
         contact_request["contact_profile"] = contact_profile
@@ -166,6 +165,9 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
         the_filters &= ContactRequestModel.request_title.contains(request_title)
     if request_detail:
         the_filters &= ContactRequestModel.request_detail.contains(request_detail)
+    if place_uuid and contact_uuid:
+        # If both place_uuid and contact_uuid are specified, add place_uuid as a filter
+        the_filters &= ContactRequestModel.place_uuid == place_uuid
     if the_filters is not None:
         args.append(the_filters)
 
@@ -182,12 +184,12 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     type_funct=get_contact_request_type,
 )
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    endpoint_id = info.context["endpoint_id"]
+    endpoint_id = kwargs.get("endpoint_id")
     request_uuid = kwargs.get("request_uuid")
 
     assert (
         get_contact_profile_count(
-            place_uuid=kwargs["place_uuid"], contact_uuid=kwargs["contact_uuid"]
+            endpoint_id=endpoint_id, contact_uuid=kwargs["contact_uuid"]
         )
         == 1
     ), "Contact profile not found."
