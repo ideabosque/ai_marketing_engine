@@ -68,7 +68,15 @@ def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[st
 
 
 def _get_contact_profile(place_uuid: str, contact_uuid: str) -> Dict[str, Any]:
-    from .contact_profile import get_contact_profile
+    from .contact_profile import get_contact_profile, get_contact_profile_count
+
+    try:
+        assert (
+            get_contact_profile_count(place_uuid=place_uuid, contact_uuid=contact_uuid)
+            == 1
+        ), "Contact profile not found."
+    except AssertionError as e:
+        return {}
 
     contact_profile = get_contact_profile(place_uuid, contact_uuid)
     return {
