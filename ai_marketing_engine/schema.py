@@ -158,7 +158,6 @@ class Query(ObjectType):
     contact_profile = Field(
         ContactProfileType,
         required=True,
-        place_uuid=String(required=True),
         contact_uuid=String(required=True),
     )
 
