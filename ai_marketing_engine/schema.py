@@ -158,7 +158,8 @@ class Query(ObjectType):
     contact_profile = Field(
         ContactProfileType,
         required=True,
-        contact_uuid=String(required=True),
+        email=String(required=False),
+        contact_uuid=String(required=False),
     )
 
     contact_profile_list = Field(

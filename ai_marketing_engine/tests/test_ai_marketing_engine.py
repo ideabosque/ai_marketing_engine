@@ -469,9 +469,9 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "contactUuid": "21353804796738420864",
+                "contactUuid": "23675571397687525504",
                 "email": "bibo72@outlook.com",
-                "placeUuid": "05325855880933032064",
+                "placeUuid": "08407287791103262848",
                 "firstName": "Bibo",
                 "lastName": "Wang",
                 "data": {
@@ -502,7 +502,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "contactProfile", "Query", self.schema
@@ -513,8 +513,9 @@ class AIMarketingEngineTest(unittest.TestCase):
             "variables": {
                 # "placeUuid": "528361109185171952",
                 # "contactUuid": "5060220547621523952",
-                "placeUuid": "03307593607672859418",
-                "contactUuid": "31601309259040743166",
+                # "placeUuid": "03307593607672859418",
+                # "contactUuid": "31601309259040743166",
+                "email": "bibo72@outlook.com"
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -538,7 +539,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_insert_update_contact_request(self):
         query = Utility.generate_graphql_operation(
             "insertUpdateContactRequest", "Mutation", self.schema
