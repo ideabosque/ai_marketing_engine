@@ -18,8 +18,6 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
 )
 from pynamodb.indexes import AllProjection, GlobalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -27,6 +25,7 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..types.activity_history import ActivityHistoryListType, ActivityHistoryType
 
@@ -81,9 +80,7 @@ def get_activity_history_type(
     info: ResolveInfo, activity_history: ActivityHistoryModel
 ) -> ActivityHistoryType:
     activity_history = activity_history.__dict__["attribute_values"]
-    return ActivityHistoryType(
-        **Utility.json_normalize(activity_history)
-    )
+    return ActivityHistoryType(**Utility.json_normalize(activity_history))
 
 
 def resolve_activity_history(
@@ -116,7 +113,7 @@ def resolve_activity_history_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     if id:
         args = [id, None]
         inquiry_funct = ActivityHistoryModel.query
-    if activity_type and not id:
+    if activity_type:
         args = [activity_type, None]
         inquiry_funct = ActivityHistoryModel.type_id_index.query
         count_funct = ActivityHistoryModel.type_id_index.count
@@ -126,6 +123,9 @@ def resolve_activity_history_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -
         the_filters &= ActivityHistoryModel.log.contains(log)
     if activity_types:
         the_filters &= ActivityHistoryModel.type.is_in(*activity_types)
+    if activity_type and id:
+        # If both place_uuid and email are specified, add place_uuid as a filter
+        the_filters &= ActivityHistoryModel.id == id
     if the_filters is not None:
         args.append(the_filters)
 

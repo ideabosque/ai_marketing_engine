@@ -38,24 +38,39 @@ class EmailIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    place_uuid = UnicodeAttribute(hash_key=True)
+    endpoint_id = UnicodeAttribute(hash_key=True)
     email = UnicodeAttribute(range_key=True)
+
+
+class PlaceUuidIndex(LocalSecondaryIndex):
+    class Meta:
+        # index_name is optional, but can be provided to override the default name
+        index_name = "place_uuid-index"
+        billing_mode = "PAY_PER_REQUEST"
+        projection = AllProjection()
+
+    # This attribute is the hash key for the index
+    # Note that this attribute must also exist
+    # in the model
+    endpoint_id = UnicodeAttribute(hash_key=True)
+    place_uuid = UnicodeAttribute(range_key=True)
 
 
 class ContactProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-contact_profiles"
 
-    place_uuid = UnicodeAttribute(hash_key=True)
+    endpoint_id = UnicodeAttribute(hash_key=True)
     contact_uuid = UnicodeAttribute(range_key=True)
     email = UnicodeAttribute()
-    endpoint_id = UnicodeAttribute()
+    place_uuid = UnicodeAttribute()
     first_name = UnicodeAttribute(null=True)
     last_name = UnicodeAttribute(null=True)
     updated_by = UnicodeAttribute()
     created_at = UTCDateTimeAttribute()
     updated_at = UTCDateTimeAttribute()
     email_index = EmailIndex()
+    place_uuid_index = PlaceUuidIndex()
 
 
 def create_contact_profile_table(logger: logging.Logger) -> bool:
@@ -72,13 +87,13 @@ def create_contact_profile_table(logger: logging.Logger) -> bool:
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def get_contact_profile(place_uuid: str, contact_uuid: str) -> ContactProfileModel:
-    return ContactProfileModel.get(place_uuid, contact_uuid)
+def get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileModel:
+    return ContactProfileModel.get(endpoint_id, contact_uuid)
 
 
-def get_contact_profile_count(place_uuid: str, contact_uuid: str) -> int:
+def get_contact_profile_count(endpoint_id: str, contact_uuid: str) -> int:
     return ContactProfileModel.count(
-        place_uuid, ContactProfileModel.contact_uuid == contact_uuid
+        endpoint_id, ContactProfileModel.contact_uuid == contact_uuid
     )
 
 
@@ -106,21 +121,29 @@ def get_contact_profile_type(
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactProfileType:
-    count = get_contact_profile_count(
-        kwargs.get("place_uuid"), kwargs.get("contact_uuid")
-    )
+    endpoint_id = info.context.get("endpoint_id")
+    if kwargs.get("email"):
+        existing_profiles = list(
+            ContactProfileModel.email_index.query(
+                endpoint_id, ContactProfileModel.email == kwargs["email"], limit=1
+            )
+        )
+        if existing_profiles:
+            return get_contact_profile_type(info, existing_profiles[0])
+
+    count = get_contact_profile_count(endpoint_id, kwargs.get("contact_uuid"))
     if count == 0:
         return None
 
     return get_contact_profile_type(
         info,
-        get_contact_profile(kwargs.get("place_uuid"), kwargs.get("contact_uuid")),
+        get_contact_profile(endpoint_id, kwargs.get("contact_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["place_uuid", "contact_uuid", "email"],
+    attributes_to_get=["endpoint_id", "contact_uuid", "email", "place_uuid"],
     list_type_class=ContactProfileListType,
     type_funct=get_contact_profile_type,
 )
@@ -134,21 +157,30 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     args = []
     inquiry_funct = ContactProfileModel.scan
     count_funct = ContactProfileModel.count
-    if place_uuid:
-        args = [place_uuid, None]
+
+    if endpoint_id:
+        args = [endpoint_id, None]
         inquiry_funct = ContactProfileModel.query
+
+        if place_uuid:
+            # Use place_uuid_index to query by place_uuid
+            inquiry_funct = ContactProfileModel.place_uuid_index.query
+            args[1] = ContactProfileModel.place_uuid == place_uuid
+            count_funct = ContactProfileModel.place_uuid_index.count
         if email:
-            count_funct = ContactProfileModel.email_index.count
-            args[1] = ContactProfileModel.email == email
+            # Use email_index to query by email
             inquiry_funct = ContactProfileModel.email_index.query
+            args[1] = ContactProfileModel.email == email
+            count_funct = ContactProfileModel.email_index.count
 
     the_filters = None  # We can add filters for the query.
     if first_name:
         the_filters &= ContactProfileModel.first_name.contains(first_name)
     if last_name:
         the_filters &= ContactProfileModel.last_name.contains(last_name)
-    if endpoint_id:
-        the_filters &= ContactProfileModel.endpoint_id == endpoint_id
+    if place_uuid and email:
+        # If both place_uuid and email are specified, add place_uuid as a filter
+        the_filters &= ContactProfileModel.place_uuid == place_uuid
     if the_filters is not None:
         args.append(the_filters)
 
@@ -158,7 +190,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 @data_sync_decorator
 @insert_update_decorator(
     keys={
-        "hash_key": "place_uuid",
+        "hash_key": "endpoint_id",
         "range_key": "contact_uuid",
     },
     model_funct=get_contact_profile,
@@ -166,12 +198,25 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     type_funct=get_contact_profile_type,
 )
 def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    place_uuid = kwargs.get("place_uuid")
+    endpoint_id = kwargs.get("endpoint_id")
     contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
+        # Check if email already exists
+        email = kwargs["email"]
+        existing_profiles = list(
+            ContactProfileModel.email_index.query(
+                endpoint_id, ContactProfileModel.email == email, limit=1
+            )
+        )
+        if existing_profiles:
+            raise ValueError(
+                f"Contact profile with email '{email}' already exists for contact_uuid: "
+                f"{existing_profiles[0].contact_uuid}"
+            )
+
         cols = {
-            "email": kwargs["email"],
-            "endpoint_id": info.context["endpoint_id"],
+            "email": email,
+            "place_uuid": kwargs["place_uuid"],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -179,12 +224,11 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
         for key in [
             "first_name",
             "last_name",
-            "corporation_uuid",
         ]:
             if key in kwargs:
                 cols[key] = kwargs[key]
         ContactProfileModel(
-            place_uuid,
+            endpoint_id,
             contact_uuid,
             **cols,
         ).save()
@@ -205,6 +249,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     # Map of kwargs keys to ContactProfileModel attributes
     field_map = {
         "email": ContactProfileModel.email,
+        "place_uuid": ContactProfileModel.place_uuid,
         "first_name": ContactProfileModel.first_name,
         "last_name": ContactProfileModel.last_name,
     }
@@ -227,7 +272,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
 
 @delete_decorator(
     keys={
-        "hash_key": "place_uuid",
+        "hash_key": "endpoint_id",
         "range_key": "contact_uuid",
     },
     model_funct=get_contact_profile,
