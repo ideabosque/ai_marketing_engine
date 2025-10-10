@@ -12,6 +12,8 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -20,7 +22,6 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.ai_marketing_utility import data_sync_decorator
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
@@ -121,6 +122,15 @@ def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactProfileType:
     endpoint_id = info.context.get("endpoint_id")
+    if kwargs.get("email"):
+        existing_profiles = list(
+            ContactProfileModel.email_index.query(
+                endpoint_id, ContactProfileModel.email == kwargs["email"], limit=1
+            )
+        )
+        if existing_profiles:
+            return get_contact_profile_type(info, existing_profiles[0])
+
     count = get_contact_profile_count(endpoint_id, kwargs.get("contact_uuid"))
     if count == 0:
         return None
@@ -191,8 +201,21 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     endpoint_id = kwargs.get("endpoint_id")
     contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
+        # Check if email already exists
+        email = kwargs["email"]
+        existing_profiles = list(
+            ContactProfileModel.email_index.query(
+                endpoint_id, ContactProfileModel.email == email, limit=1
+            )
+        )
+        if existing_profiles:
+            raise ValueError(
+                f"Contact profile with email '{email}' already exists for contact_uuid: "
+                f"{existing_profiles[0].contact_uuid}"
+            )
+
         cols = {
-            "email": kwargs["email"],
+            "email": email,
             "place_uuid": kwargs["place_uuid"],
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
