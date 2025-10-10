@@ -31,10 +31,18 @@ def _initialize_tables(logger: logging.Logger) -> None:
     return
 
 
-def _get_place(region: str, place_uuid: str) -> Dict[str, Any]:
-    from .place import get_place
+def _get_place(endpoint_id: str, place_uuid: str) -> Dict[str, Any]:
+    from .place import get_place, get_place_count
 
-    place = get_place(region, place_uuid)
+    try:
+        assert (
+            place_uuid is not None
+            and get_place_count(endpoint_id=endpoint_id, place_uuid=place_uuid) == 1
+        ), "Place not found."
+    except AssertionError as e:
+        return {}
+
+    place = get_place(endpoint_id, place_uuid)
     return {
         "region": place.region,
         "place_uuid": place.place_uuid,
@@ -54,7 +62,21 @@ def _get_place(region: str, place_uuid: str) -> Dict[str, Any]:
 
 
 def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[str, Any]:
-    from .corporation_profile import get_corporation_profile
+    from .corporation_profile import (
+        get_corporation_profile,
+        get_corporation_profile_count,
+    )
+
+    try:
+        assert (
+            corporation_uuid is not None
+            and get_corporation_profile_count(
+                endpoint_id=endpoint_id, corporation_uuid=corporation_uuid
+            )
+            == 1
+        ), "Corporation profile not found."
+    except AssertionError as e:
+        return {}
 
     corporation_profile = get_corporation_profile(endpoint_id, corporation_uuid)
     return {
@@ -67,20 +89,22 @@ def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[st
     }
 
 
-def _get_contact_profile(place_uuid: str, contact_uuid: str) -> Dict[str, Any]:
+def _get_contact_profile(endpoint_id: str, contact_uuid: str) -> Dict[str, Any]:
     from .contact_profile import get_contact_profile, get_contact_profile_count
 
     try:
         assert (
-            get_contact_profile_count(place_uuid=place_uuid, contact_uuid=contact_uuid)
+            contact_uuid is not None
+            and get_contact_profile_count(
+                endpoint_id=endpoint_id, contact_uuid=contact_uuid
+            )
             == 1
         ), "Contact profile not found."
     except AssertionError as e:
         return {}
 
-    contact_profile = get_contact_profile(place_uuid, contact_uuid)
+    contact_profile = get_contact_profile(endpoint_id, contact_uuid)
     return {
-        "contact_uuid": contact_profile.contact_uuid,
         "place": _get_place(contact_profile.endpoint_id, contact_profile.place_uuid),
         "email": contact_profile.email,
         "first_name": contact_profile.first_name,

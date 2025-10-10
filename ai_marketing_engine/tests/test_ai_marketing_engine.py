@@ -33,8 +33,8 @@ setting = {
     "endpoint_id": os.getenv("endpoint_id"),
     "test_mode": os.getenv("test_mode"),
     "data_mapping": {"ContactProfileType": "contact"},
-    "dw_endpoint": "dw",
-    "target": "hubspot",
+    # "dw_endpoint": "dw",
+    # "target": "hubspot",
     "task_queue_name": "silvaengine_task_queue.fifo",
     "input_queue_name": "datawald_input_queue.fifo",
 }
@@ -401,7 +401,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "10869587599689126384",
+                "placeUuid": "05325855880933032064",
                 "region": "US",
                 "latitude": "XXXXXXXX",
                 "longitude": "XXXXXXXX",
@@ -410,7 +410,7 @@ class AIMarketingEngineTest(unittest.TestCase):
                 "phoneNumber": "XXXXXXXX",
                 "website": "XXXXXXXX",
                 "types": ["abc", "xyz"],
-                "corporationUuid": "11884466832473330160",
+                # "corporationUuid": "11884466832473330160",
                 "updatedBy": "XYZ",
             },
         }
@@ -469,9 +469,9 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "placeUuid": "528361109185171952",
-                "contactUuid": "5060220547621523952",
+                "contactUuid": "23675571397687525504",
                 "email": "bibo72@outlook.com",
+                "placeUuid": "08407287791103262848",
                 "firstName": "Bibo",
                 "lastName": "Wang",
                 "data": {
@@ -502,7 +502,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    @unittest.skip("demonstrating skipping")
+    # @unittest.skip("demonstrating skipping")
     def test_graphql_contact_profile(self):
         query = Utility.generate_graphql_operation(
             "contactProfile", "Query", self.schema
@@ -513,8 +513,9 @@ class AIMarketingEngineTest(unittest.TestCase):
             "variables": {
                 # "placeUuid": "528361109185171952",
                 # "contactUuid": "5060220547621523952",
-                "placeUuid": "03307593607672859418",
-                "contactUuid": "31601309259040743166",
+                # "placeUuid": "03307593607672859418",
+                # "contactUuid": "31601309259040743166",
+                "email": "bibo72@outlook.com"
             },
         }
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
@@ -547,8 +548,8 @@ class AIMarketingEngineTest(unittest.TestCase):
         payload = {
             "query": query,
             "variables": {
-                "requestUuid": "22909397008554934400",
-                "contactUuid": "10724211477991751659",
+                # "requestUuid": "05325855880933032064",
+                "contactUuid": "21353804796738420864",
                 "placeUuid": "21077264490052699216",
                 "requestTitle": "XXXXXXXX",
                 "requestDetail": "XXXXXXXX",
@@ -590,7 +591,7 @@ class AIMarketingEngineTest(unittest.TestCase):
         response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
         logger.info(response)
 
-    # @unittest.skip("demonstrating skipping")
+    @unittest.skip("demonstrating skipping")
     def test_graphql_contact_request_list(self):
         query = Utility.generate_graphql_operation(
             "contactRequestList", "Query", self.schema

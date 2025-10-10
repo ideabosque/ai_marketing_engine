@@ -49,7 +49,6 @@ class DeleteContactProfile(Mutation):
     ok = Boolean()
 
     class Arguments:
-        place_uuid = String(required=True)
         contact_uuid = String(required=True)
 
     @staticmethod

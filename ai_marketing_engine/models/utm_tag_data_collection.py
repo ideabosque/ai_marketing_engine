@@ -97,7 +97,7 @@ def get_utm_tag_data_collection_type(
 ) -> UtmTagDataCollectionType:
     try:
         contact_profile = _get_contact_profile(
-            utm_tag_data_collection.place_uuid, utm_tag_data_collection.contact_uuid
+            utm_tag_data_collection.endpoint_id, utm_tag_data_collection.contact_uuid
         )
         utm_tag_data_collection = utm_tag_data_collection.__dict__["attribute_values"]
         utm_tag_data_collection["contact_profile"] = contact_profile
