@@ -39,7 +39,7 @@ class Config:
             cls._set_parameters(setting)
             cls._setup_function_paths(setting)
             cls._initialize_aws_services(setting)
-            if setting.get("test_mode") == "local_for_all":
+            if setting.get("initialize_tables"):
                 cls._initialize_tables(logger)
             logger.info("Configuration initialized successfully.")
         except Exception as e:
