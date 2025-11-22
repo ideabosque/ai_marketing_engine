@@ -163,3 +163,5 @@ cython_debug/
 
 .vscode/
 tests/
+.claude/
+test_data.json
