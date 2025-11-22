@@ -32,7 +32,7 @@ from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
 )
-from .utils import _get_data, _insert_update_attribute_values
+from .utils import _insert_update_attribute_values
 
 
 class CorporationTypeIndex(LocalSecondaryIndex):
@@ -110,21 +110,19 @@ def get_corporation_profile_count(endpoint_id: str, corporation_uuid: str) -> in
 def get_corporation_profile_type(
     info: ResolveInfo, corporation_profile: CorporationProfileModel
 ) -> CorporationProfileType:
+    """
+    Nested resolver approach: return minimal corporation_profile data.
+    - Do NOT embed 'data' here anymore.
+    'data' is resolved lazily by CorporationProfileType.resolve_data.
+    """
     try:
-        data = _get_data(
-            corporation_profile.endpoint_id,
-            corporation_profile.corporation_uuid,
-            "corporation",
-        )
-        corporation_profile = corporation_profile.__dict__["attribute_values"]
-        corporation_profile["data"] = data
-    except Exception as e:
+        corp_dict = corporation_profile.__dict__["attribute_values"]
+    except Exception:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
-        raise e
-    return CorporationProfileType(
-        **Utility.json_normalize(corporation_profile)
-    )
+        raise
+
+    return CorporationProfileType(**Utility.json_normalize(corp_dict))
 
 
 def resolve_corporation_profile(

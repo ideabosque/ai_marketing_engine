@@ -4,10 +4,12 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
-from graphene import DateTime, List, ObjectType, String
+from graphene import DateTime, Field, List, ObjectType, String
 
 from silvaengine_dynamodb_base import ListObjectType
-from silvaengine_utility import JSON
+
+from ..models.utils import _get_corporation_profile
+from .corporation_profile import CorporationProfileType
 
 
 class PlaceType(ObjectType):
@@ -21,10 +23,42 @@ class PlaceType(ObjectType):
     phone_number = String()
     website = String()
     types = List(String)
-    corporation_profile = JSON()
+
+    # Nested resolver: strongly-typed nested relationship
+    corporation_uuid = String()  # keep raw id
+    corporation_profile = Field(lambda: CorporationProfileType)
+
     updated_by = String()
     updated_at = DateTime()
     created_at = DateTime()
+
+    # ------- Nested resolvers -------
+
+    def resolve_corporation_profile(parent, info):
+        """
+        Resolve nested corporation profile.
+
+        Works in two cases:
+        1) Place came from get_place_type -> has corporation_uuid
+        2) Place came from _get_place -> already has corporation_profile dict
+        """
+        # Case 2: already embedded (e.g., via _get_place)
+        existing = getattr(parent, "corporation_profile", None)
+        if isinstance(existing, dict):
+            return CorporationProfileType(**existing)
+        if isinstance(existing, CorporationProfileType):
+            return existing
+
+        # Case 1: need to fetch by endpoint_id + corporation_uuid
+        endpoint_id = getattr(parent, "endpoint_id", None)
+        corporation_uuid = getattr(parent, "corporation_uuid", None)
+        if not endpoint_id or not corporation_uuid:
+            return None
+
+        corp_dict = _get_corporation_profile(endpoint_id, corporation_uuid)
+        if not corp_dict:
+            return None
+        return CorporationProfileType(**corp_dict)
 
 
 class PlaceListType(ListObjectType):

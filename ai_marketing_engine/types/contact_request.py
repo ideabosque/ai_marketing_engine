@@ -4,21 +4,56 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
-from graphene import DateTime, List, ObjectType, String
+from graphene import DateTime, Field, List, ObjectType, String
 
 from silvaengine_dynamodb_base import ListObjectType
-from silvaengine_utility import JSON
+
+from ..models.utils import _get_contact_profile
+from .contact_profile import ContactProfileType
 
 
 class ContactRequestType(ObjectType):
-    contact_profile = JSON()
     endpoint_id = String()
     request_uuid = String()
     request_title = String()
     request_detail = String()
+
+    # Nested resolver: strongly-typed nested relationship
+    contact_uuid = String()  # keep raw id
+    place_uuid = String()     # keep raw id
+    contact_profile = Field(lambda: ContactProfileType)
+
     updated_by = String()
     created_at = DateTime()
     updated_at = DateTime()
+
+    # ------- Nested resolvers -------
+
+    def resolve_contact_profile(parent, info):
+        """
+        Resolve nested contact profile.
+
+        Works in two cases:
+        1) ContactRequest came from get_contact_request_type -> has contact_uuid
+        2) ContactRequest came from elsewhere -> already has contact_profile dict
+        """
+        # Case 2: already embedded
+        existing = getattr(parent, "contact_profile", None)
+        if isinstance(existing, dict):
+            return ContactProfileType(**existing)
+        if isinstance(existing, ContactProfileType):
+            return existing
+
+        # Case 1: need to fetch by endpoint_id + contact_uuid
+        endpoint_id = getattr(parent, "endpoint_id", None)
+        contact_uuid = getattr(parent, "contact_uuid", None)
+        if not endpoint_id or not contact_uuid:
+            return None
+
+        contact_dict = _get_contact_profile(endpoint_id, contact_uuid)
+        if not contact_dict:
+            return None
+        return ContactProfileType(**contact_dict)
 
 
 class ContactRequestListType(ListObjectType):

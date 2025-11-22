@@ -24,7 +24,6 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..types.contact_request import ContactRequestListType, ContactRequestType
 from .contact_profile import get_contact_profile_count
-from .utils import _get_contact_profile
 
 
 class PlaceUuidIndex(LocalSecondaryIndex):
@@ -99,19 +98,19 @@ def get_contact_request_count(endpoint_id: str, request_uuid: str) -> int:
 def get_contact_request_type(
     info: ResolveInfo, contact_request: ContactRequestModel
 ) -> ContactRequestType:
+    """
+    Nested resolver approach: return minimal contact_request data.
+    - Do NOT embed 'contact_profile'
+    That is resolved lazily by ContactRequestType.resolve_contact_profile.
+    """
     try:
-        contact_profile = _get_contact_profile(
-            contact_request.endpoint_id, contact_request.contact_uuid
-        )
-        contact_request = contact_request.__dict__["attribute_values"]
-        contact_request["contact_profile"] = contact_profile
-        contact_request.pop("place_uuid")
-        contact_request.pop("contact_uuid")
-    except Exception as e:
+        cr_dict = contact_request.__dict__["attribute_values"]
+    except Exception:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
-        raise e
-    return ContactRequestType(**Utility.json_normalize(contact_request))
+        raise
+
+    return ContactRequestType(**Utility.json_normalize(cr_dict))
 
 
 def resolve_contact_request(

@@ -25,7 +25,7 @@ from silvaengine_utility import Utility
 
 from ..handlers.ai_marketing_utility import data_sync_decorator
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
-from .utils import _get_data, _get_place, _insert_update_attribute_values
+from .utils import _insert_update_attribute_values
 
 
 class EmailIndex(LocalSecondaryIndex):
@@ -100,22 +100,20 @@ def get_contact_profile_count(endpoint_id: str, contact_uuid: str) -> int:
 def get_contact_profile_type(
     info: ResolveInfo, contact_profile: ContactProfileModel
 ) -> ContactProfileType:
+    """
+    Nested resolver approach: return minimal contact_profile data.
+    - Do NOT embed 'place'
+    - Do NOT embed 'data'
+    Those are resolved lazily by ContactProfileType resolvers.
+    """
     try:
-        place = _get_place(contact_profile.endpoint_id, contact_profile.place_uuid)
-        data = _get_data(
-            contact_profile.endpoint_id, contact_profile.contact_uuid, "contact"
-        )
-        contact_profile = contact_profile.__dict__["attribute_values"]
-        contact_profile["place"] = place
-        contact_profile.pop("place_uuid")
-        contact_profile["data"] = data
-
-    except Exception as e:
+        cp_dict = contact_profile.__dict__["attribute_values"]
+    except Exception:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
-        raise e
+        raise
 
-    return ContactProfileType(**Utility.json_normalize(contact_profile))
+    return ContactProfileType(**Utility.json_normalize(cp_dict))
 
 
 def resolve_contact_profile(

@@ -24,7 +24,6 @@ from silvaengine_dynamodb_base import (
 from silvaengine_utility import Utility
 
 from ..types.place import PlaceListType, PlaceType
-from .utils import _get_corporation_profile
 
 
 class RegionIndex(LocalSecondaryIndex):
@@ -85,24 +84,18 @@ def get_place_count(endpoint_id: str, place_uuid: str) -> int:
 
 
 def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
+    """
+    Nested resolver approach: return a minimal PlaceType, without embedding corporation_profile.
+    Nested corporation_profile is resolved by PlaceType.resolve_corporation_profile.
+    """
     try:
-        corporation_profile = None
-        if place.corporation_uuid:
-            corporation_profile = _get_corporation_profile(
-                place.endpoint_id,
-                place.corporation_uuid,
-            )
-        place = place.__dict__["attribute_values"]
-        if corporation_profile:
-            place["corporation_profile"] = corporation_profile
-            place.pop("corporation_uuid")
-
-    except Exception as e:
+        place_dict = place.__dict__["attribute_values"]
+    except Exception:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
-        raise e
+        raise
 
-    return PlaceType(**Utility.json_normalize(place))
+    return PlaceType(**Utility.json_normalize(place_dict))
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
