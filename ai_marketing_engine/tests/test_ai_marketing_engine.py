@@ -635,3 +635,32 @@ def test_lazy_loading_performance(ai_marketing_engine, schema):
 
     # Minimal query should be faster (not a strict assertion, just informative)
     # In real scenarios with more data, the difference would be more significant
+
+
+# ============================================================================
+# MAIN ENTRY POINT FOR DIRECT EXECUTION
+# ============================================================================
+
+if __name__ == "__main__":
+    """
+    Run tests directly with Python for debugging and development.
+
+    Usage:
+        python test_ai_marketing_engine.py              # Run all tests
+        python test_ai_marketing_engine.py -v           # Verbose output
+        python test_ai_marketing_engine.py -k test_init # Run specific test
+        python test_ai_marketing_engine.py -m unit      # Run unit tests only
+        python test_ai_marketing_engine.py -m integration # Run integration tests
+        python test_ai_marketing_engine.py -s           # Show print statements
+        python test_ai_marketing_engine.py --pdb        # Drop into debugger on failure
+
+    Examples:
+        python test_ai_marketing_engine.py -m unit -v
+        python test_ai_marketing_engine.py -k "test_initialization" -s
+        python test_ai_marketing_engine.py -m nested_resolvers --pdb
+    """
+    import sys
+
+    # Run pytest with this file
+    # The plugins parameter ensures pytest hooks from this module are registered
+    sys.exit(pytest.main([__file__, "-v"] + sys.argv[1:], plugins=[sys.modules[__name__]]))
