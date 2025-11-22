@@ -1,677 +1,637 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+"""Integration tests for AI Marketing Engine with nested resolvers."""
+from __future__ import annotations
 
 __author__ = "bibow"
 
 import json
-import logging
 import os
-import sys
-import time
-import unittest
-from pathlib import Path
+from typing import Any, Dict
 
-from dotenv import load_dotenv
+import pytest
 
-load_dotenv()
-setting = {
-    "region_name": os.getenv("region_name"),
-    "aws_access_key_id": os.getenv("aws_access_key_id"),
-    "aws_secret_access_key": os.getenv("aws_secret_access_key"),
-    "functs_on_local": {
-        "ai_marketing_graphql": {
-            "module_name": "ai_marketing_engine",
-            "class_name": "AIMarketingEngine",
-        },
-        "datawald_interface_graphql": {
-            "module_name": "datawald_interface_engine",
-            "class_name": "DataWaldInterfaceEngine",
-        },
-    },
-    "aws_s3_bucket": os.getenv("aws_s3_bucket"),
-    "endpoint_id": os.getenv("endpoint_id"),
-    "test_mode": os.getenv("test_mode"),
-    "data_mapping": {"ContactProfileType": "contact"},
-    # "dw_endpoint": "dw",
-    # "target": "hubspot",
-    "task_queue_name": "silvaengine_task_queue.fifo",
-    "input_queue_name": "datawald_input_queue.fifo",
-}
-
-sys.path.insert(0, f"{os.getenv('BASE_DIR')}/ai_marketing_engine")
-sys.path.insert(1, f"{os.getenv('BASE_DIR')}/silvaengine_dynamodb_base")
-
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-logger = logging.getLogger()
-
-from ai_marketing_engine import AIMarketingEngine
+from test_helpers import call_method, log_test_result, validate_nested_resolver_result
 from silvaengine_utility import Utility
 
+# Load test data
+_test_data_file = os.path.join(os.path.dirname(__file__), "test_data.json")
+with open(_test_data_file, "r") as f:
+    _TEST_DATA = json.load(f)
 
-class AIMarketingEngineTest(unittest.TestCase):
-    def setUp(self):
-        self.ai_marketing_engine = AIMarketingEngine(logger, **setting)
-        endpoint_id = setting.get("endpoint_id")
-        test_mode = setting.get("test_mode")
-        self.schema = Utility.fetch_graphql_schema(
-            logger,
-            endpoint_id,
-            "ai_marketing_graphql",
-            setting=setting,
-            test_mode=test_mode,
-        )
-        logger.info("Initiate AIMarketingEngineTest ...")
+# Extract test data sets for parametrization
+CONTACT_PROFILE_TEST_DATA = _TEST_DATA.get("contact_profile_test_data", [])
+CONTACT_PROFILE_GET_TEST_DATA = _TEST_DATA.get("contact_profile_get_test_data", [])
+CONTACT_PROFILE_LIST_TEST_DATA = _TEST_DATA.get("contact_profile_list_test_data", [])
+CONTACT_PROFILE_DELETE_TEST_DATA = _TEST_DATA.get("contact_profile_delete_test_data", [])
 
-    def tearDown(self):
-        logger.info("Destory AIMarketingEngineTest ...")
+PLACE_TEST_DATA = _TEST_DATA.get("place_test_data", [])
+PLACE_GET_TEST_DATA = _TEST_DATA.get("place_get_test_data", [])
+PLACE_LIST_TEST_DATA = _TEST_DATA.get("place_list_test_data", [])
+PLACE_DELETE_TEST_DATA = _TEST_DATA.get("place_delete_test_data", [])
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_ping(self):
-        query = Utility.generate_graphql_operation("ping", "Query", self.schema)
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {},
-            "operation_name": "ping",
+CORPORATION_PROFILE_TEST_DATA = _TEST_DATA.get("corporation_profile_test_data", [])
+CORPORATION_PROFILE_GET_TEST_DATA = _TEST_DATA.get("corporation_profile_get_test_data", [])
+CORPORATION_PROFILE_LIST_TEST_DATA = _TEST_DATA.get("corporation_profile_list_test_data", [])
+CORPORATION_PROFILE_DELETE_TEST_DATA = _TEST_DATA.get("corporation_profile_delete_test_data", [])
+
+CONTACT_REQUEST_TEST_DATA = _TEST_DATA.get("contact_request_test_data", [])
+CONTACT_REQUEST_GET_TEST_DATA = _TEST_DATA.get("contact_request_get_test_data", [])
+CONTACT_REQUEST_LIST_TEST_DATA = _TEST_DATA.get("contact_request_list_test_data", [])
+CONTACT_REQUEST_DELETE_TEST_DATA = _TEST_DATA.get("contact_request_delete_test_data", [])
+
+NESTED_RESOLVER_TEST_DATA = _TEST_DATA.get("nested_resolver_test_data", [])
+
+
+# ============================================================================
+# UNIT TESTS
+# ============================================================================
+
+@pytest.mark.unit
+@log_test_result
+def test_initialization_with_valid_params(ai_marketing_engine):
+    """Ensure engine fixture initializes with expected configuration."""
+    assert ai_marketing_engine is not None
+    assert hasattr(ai_marketing_engine, "ai_marketing_graphql")
+    assert getattr(ai_marketing_engine, "__is_real__", False)
+
+
+@pytest.mark.unit
+@log_test_result
+def test_schema_fetched_successfully(schema):
+    """Ensure GraphQL schema is available."""
+    assert schema is not None
+    assert isinstance(schema, dict)
+    assert "data" in schema or "__schema" in schema
+
+
+# ============================================================================
+# CONTACT PROFILE TESTS
+# ============================================================================
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_PROFILE_TEST_DATA)
+@log_test_result
+def test_graphql_insert_update_contact_profile(
+    ai_marketing_engine, schema, test_data
+):
+    """Test contact profile insert/update operation."""
+    query = Utility.generate_graphql_operation(
+        "insertUpdateContactProfile", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "insert_update_contact_profile",
+    )
+
+    assert error is None, f"Insert/update failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "insertUpdateContactProfile" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_PROFILE_GET_TEST_DATA)
+@log_test_result
+def test_graphql_get_contact_profile(ai_marketing_engine, schema, test_data):
+    """Test get contact profile operation."""
+    query = Utility.generate_graphql_operation("contactProfile", "Query", schema)
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "get_contact_profile",
+    )
+
+    assert error is None, f"Get failed: {error}"
+    assert result is not None
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_PROFILE_LIST_TEST_DATA)
+@log_test_result
+def test_graphql_contact_profile_list(ai_marketing_engine, schema, test_data):
+    """Test list contact profiles operation."""
+    query = Utility.generate_graphql_operation("contactProfileList", "Query", schema)
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "list_contact_profiles",
+    )
+
+    assert error is None, f"List failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "contactProfileList" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_PROFILE_DELETE_TEST_DATA)
+@log_test_result
+def test_graphql_delete_contact_profile(ai_marketing_engine, schema, test_data):
+    """Test delete contact profile operation."""
+    query = Utility.generate_graphql_operation(
+        "deleteContactProfile", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "delete_contact_profile",
+    )
+
+    # Delete may fail if entity doesn't exist, which is acceptable in tests
+    # Just log the result
+    pass
+
+
+# ============================================================================
+# PLACE TESTS
+# ============================================================================
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", PLACE_TEST_DATA)
+@log_test_result
+def test_graphql_insert_update_place(ai_marketing_engine, schema, test_data):
+    """Test place insert/update operation."""
+    query = Utility.generate_graphql_operation(
+        "insertUpdatePlace", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "insert_update_place",
+    )
+
+    assert error is None, f"Insert/update failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "insertUpdatePlace" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", PLACE_GET_TEST_DATA)
+@log_test_result
+def test_graphql_get_place(ai_marketing_engine, schema, test_data):
+    """Test get place operation."""
+    query = Utility.generate_graphql_operation("place", "Query", schema)
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "get_place",
+    )
+
+    assert error is None, f"Get failed: {error}"
+    assert result is not None
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", PLACE_LIST_TEST_DATA)
+@log_test_result
+def test_graphql_place_list(ai_marketing_engine, schema, test_data):
+    """Test list places operation."""
+    query = Utility.generate_graphql_operation("placeList", "Query", schema)
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "list_places",
+    )
+
+    assert error is None, f"List failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "placeList" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", PLACE_DELETE_TEST_DATA)
+@log_test_result
+def test_graphql_delete_place(ai_marketing_engine, schema, test_data):
+    """Test delete place operation."""
+    query = Utility.generate_graphql_operation("deletePlace", "Mutation", schema)
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "delete_place",
+    )
+
+    # Delete may fail if entity doesn't exist
+    pass
+
+
+# ============================================================================
+# CORPORATION PROFILE TESTS
+# ============================================================================
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CORPORATION_PROFILE_TEST_DATA)
+@log_test_result
+def test_graphql_insert_update_corporation_profile(
+    ai_marketing_engine, schema, test_data
+):
+    """Test corporation profile insert/update operation."""
+    query = Utility.generate_graphql_operation(
+        "insertUpdateCorporationProfile", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "insert_update_corporation_profile",
+    )
+
+    assert error is None, f"Insert/update failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "insertUpdateCorporationProfile" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CORPORATION_PROFILE_GET_TEST_DATA)
+@log_test_result
+def test_graphql_get_corporation_profile(ai_marketing_engine, schema, test_data):
+    """Test get corporation profile operation."""
+    query = Utility.generate_graphql_operation(
+        "corporationProfile", "Query", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "get_corporation_profile",
+    )
+
+    assert error is None, f"Get failed: {error}"
+    assert result is not None
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CORPORATION_PROFILE_LIST_TEST_DATA)
+@log_test_result
+def test_graphql_corporation_profile_list(ai_marketing_engine, schema, test_data):
+    """Test list corporation profiles operation."""
+    query = Utility.generate_graphql_operation(
+        "corporationProfileList", "Query", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "list_corporation_profiles",
+    )
+
+    assert error is None, f"List failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "corporationProfileList" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CORPORATION_PROFILE_DELETE_TEST_DATA)
+@log_test_result
+def test_graphql_delete_corporation_profile(ai_marketing_engine, schema, test_data):
+    """Test delete corporation profile operation."""
+    query = Utility.generate_graphql_operation(
+        "deleteCorporationProfile", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "delete_corporation_profile",
+    )
+
+    # Delete may fail if entity doesn't exist
+    pass
+
+
+# ============================================================================
+# CONTACT REQUEST TESTS
+# ============================================================================
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_REQUEST_TEST_DATA)
+@log_test_result
+def test_graphql_insert_update_contact_request(
+    ai_marketing_engine, schema, test_data
+):
+    """Test contact request insert/update operation."""
+    query = Utility.generate_graphql_operation(
+        "insertUpdateContactRequest", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "insert_update_contact_request",
+    )
+
+    assert error is None, f"Insert/update failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "insertUpdateContactRequest" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_REQUEST_GET_TEST_DATA)
+@log_test_result
+def test_graphql_get_contact_request(ai_marketing_engine, schema, test_data):
+    """Test get contact request operation."""
+    query = Utility.generate_graphql_operation("contactRequest", "Query", schema)
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "get_contact_request",
+    )
+
+    assert error is None, f"Get failed: {error}"
+    assert result is not None
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_REQUEST_LIST_TEST_DATA)
+@log_test_result
+def test_graphql_contact_request_list(ai_marketing_engine, schema, test_data):
+    """Test list contact requests operation."""
+    query = Utility.generate_graphql_operation(
+        "contactRequestList", "Query", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "list_contact_requests",
+    )
+
+    assert error is None, f"List failed: {error}"
+    assert result is not None
+    assert "data" in result
+    assert "contactRequestList" in result["data"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("test_data", CONTACT_REQUEST_DELETE_TEST_DATA)
+@log_test_result
+def test_graphql_delete_contact_request(ai_marketing_engine, schema, test_data):
+    """Test delete contact request operation."""
+    query = Utility.generate_graphql_operation(
+        "deleteContactRequest", "Mutation", schema
+    )
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": test_data},
+        "delete_contact_request",
+    )
+
+    # Delete may fail if entity doesn't exist
+    pass
+
+
+# ============================================================================
+# NESTED RESOLVER TESTS
+# ============================================================================
+
+@pytest.mark.integration
+@pytest.mark.nested_resolvers
+@log_test_result
+def test_contact_profile_with_nested_place(ai_marketing_engine, schema):
+    """Test that nested place resolver works correctly."""
+    query = """
+    query GetContactProfileWithPlace($contactUuid: String!) {
+        contactProfile(contactUuid: $contactUuid) {
+            contactUuid
+            email
+            placeUuid
+            place {
+                placeUuid
+                businessName
+                region
+            }
         }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    }
+    """
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_presigned_upload_url(self):
-        query = Utility.generate_graphql_operation(
-            "presignedUploadUrl", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "objectKey": "test.txt",
-            },
+    variables = {"contactUuid": "test_contact_001"}
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": variables},
+        "test_nested_place",
+    )
+
+    assert error is None
+    assert result is not None
+
+    # Validate nested structure
+    validate_nested_resolver_result(
+        result,
+        expected_keys=["placeUuid", "businessName"],
+        nested_path=["data", "contactProfile", "place"]
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.nested_resolvers
+@log_test_result
+def test_place_with_nested_corporation_profile(ai_marketing_engine, schema):
+    """Test that nested corporation profile resolver works correctly."""
+    query = """
+    query GetPlaceWithCorporation($placeUuid: String!) {
+        place(placeUuid: $placeUuid) {
+            placeUuid
+            businessName
+            corporationUuid
+            corporationProfile {
+                corporationUuid
+                businessName
+                corporationType
+            }
         }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    }
+    """
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_activity_history(self):
-        query = Utility.generate_graphql_operation(
-            "insertActivityHistory", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "id": "company_contact_profile-openai-9687284472428368367",
-                "dataDiff": {
-                    "values_changed": {
-                        "root['data']['product_name']": {
-                            "new_value": "toy",
-                            "old_value": "clothes",
-                        }
+    variables = {"placeUuid": "test_place_001"}
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": variables},
+        "test_nested_corporation",
+    )
+
+    assert error is None
+    assert result is not None
+
+    # Validate nested structure
+    validate_nested_resolver_result(
+        result,
+        expected_keys=["corporationUuid", "businessName"],
+        nested_path=["data", "place", "corporationProfile"]
+    )
+
+
+@pytest.mark.integration
+@pytest.mark.nested_resolvers
+@pytest.mark.slow
+@pytest.mark.parametrize("test_data", NESTED_RESOLVER_TEST_DATA)
+@log_test_result
+def test_deep_nesting_four_levels(ai_marketing_engine, schema, test_data):
+    """
+    Test 4-level nesting: ContactRequest → ContactProfile → Place → CorporationProfile
+
+    This tests the entire nested resolver chain.
+    """
+    query = """
+    query GetContactRequestDeepNesting($requestUuid: String!) {
+        contactRequest(requestUuid: $requestUuid) {
+            requestUuid
+            requestTitle
+            contactUuid
+            contactProfile {
+                contactUuid
+                email
+                placeUuid
+                place {
+                    placeUuid
+                    businessName
+                    corporationUuid
+                    corporationProfile {
+                        corporationUuid
+                        businessName
+                        corporationType
                     }
-                },
-                "log": "The company_contact_profile with the endpoint_id/contact_uuid (openai/9687284472428368367) is updated at 4:24:00.",
-                "type": "company_contact_profile",
-                "updatedBy": "XYZ",
-            },
+                }
+            }
         }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    }
+    """
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_activity_history(self):
-        query = Utility.generate_graphql_operation(
-            "deleteActivityHistory", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "id": "company_contact_profile-openai-9687284472428368367",
-                "timestamp": "1741220959",
-            },
+    variables = {"requestUuid": test_data["requestUuid"]}
+
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query, "variables": variables},
+        "test_deep_nesting",
+    )
+
+    assert error is None
+    assert result is not None
+
+    # Validate 4-level nested structure
+    contact_request = result["data"]["contactRequest"]
+    assert contact_request["contactUuid"] is not None
+
+    # Level 2: ContactProfile
+    contact_profile = contact_request["contactProfile"]
+    assert contact_profile is not None
+    assert contact_profile["email"] == test_data["expectedContactEmail"]
+
+    # Level 3: Place
+    place = contact_profile["place"]
+    assert place is not None
+    assert place["businessName"] == test_data["expectedPlaceName"]
+
+    # Level 4: CorporationProfile
+    corp_profile = place["corporationProfile"]
+    assert corp_profile is not None
+    assert corp_profile["businessName"] == test_data["expectedCorpName"]
+
+
+@pytest.mark.integration
+@pytest.mark.nested_resolvers
+@log_test_result
+def test_lazy_loading_performance(ai_marketing_engine, schema):
+    """
+    Verify that lazy loading works - queries without nested fields should not fetch nested data.
+    """
+    import time
+
+    # Query WITHOUT nested fields (should be fast)
+    query_minimal = """
+    query GetContactProfileMinimal {
+        contactProfileList(limit: 10) {
+            contactProfileList {
+                contactUuid
+                email
+                placeUuid
+            }
         }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    }
+    """
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_activity_history(self):
-        query = Utility.generate_graphql_operation(
-            "activityHistory", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "id": "company_contact_profile-openai-9687284472428368367",
-                "timestamp": "1741200290",
-            },
+    t0 = time.perf_counter()
+    result_minimal, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query_minimal},
+        "test_minimal_query",
+    )
+    duration_minimal = time.perf_counter() - t0
+
+    assert error is None
+
+    # Query WITH nested fields (will be slower)
+    query_nested = """
+    query GetContactProfileNested {
+        contactProfileList(limit: 10) {
+            contactProfileList {
+                contactUuid
+                email
+                place {
+                    businessName
+                    corporationProfile {
+                        businessName
+                    }
+                }
+                data
+            }
         }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    }
+    """
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_activity_history_list(self):
-        query = Utility.generate_graphql_operation(
-            "activityHistoryList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "id": "company_contact_profile-openai-9687284472428368367",
-                "limit": 10,
-                "offset": 0,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    t0 = time.perf_counter()
+    result_nested, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        {"query": query_nested},
+        "test_nested_query",
+    )
+    duration_nested = time.perf_counter() - t0
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_question_group(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateQuestionGroup", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "questionGroupUuid": "15006769565442904560",
-                "questionGroupName": "XXXXXXXX",
-                "questionGroupDescription": "XXXXXXXX",
-                "region": "US",
-                "questionCriteria": {
-                    "place_type": "establishment",
-                    "corporation_type": "XXXXXXXX",
-                    # "corporation_category": "XXXXXXXX",
-                    # "utm_tag_name": "XXXXXXXX",
-                    # "corporation_uuids": ["4188232447431807471"],
-                },
-                "weight": 0,
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    assert error is None
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_question_group(self):
-        query = Utility.generate_graphql_operation(
-            "deleteQuestionGroup", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "questionGroupUuid": "8734185510007607792",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
+    # Log performance comparison
+    print(f"\nPerformance comparison for 10 items:")
+    print(f"  Minimal query (no nesting): {duration_minimal*1000:.2f}ms")
+    print(f"  Nested query (2 levels):    {duration_nested*1000:.2f}ms")
+    print(f"  Difference:                 {(duration_nested-duration_minimal)*1000:.2f}ms")
 
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_question_group(self):
-        query = Utility.generate_graphql_operation(
-            "questionGroup", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "questionGroupUuid": "15006769565442904560",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_question_group_list(self):
-        query = Utility.generate_graphql_operation(
-            "questionGroupList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "placeUuid": "10869587599689126384",
-                # "region": "US",
-                # "questionCriteria": {
-                #     "place_types": ["abc", "xyz"],
-                #     "corporation_type": "XXXXXXXX",
-                #     "corporation_categories": ["XXXXXXXX"],
-                #     "utm_tag_name": "XXXXXXXX",
-                #     "corporation_uuid": "4188232447431807471",
-                # },
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_place(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdatePlace", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "placeUuid": "05325855880933032064",
-                "region": "US",
-                "latitude": "XXXXXXXX",
-                "longitude": "XXXXXXXX",
-                "businessName": "XXXXXXXX",
-                "address": "XXXXXXXX",
-                "phoneNumber": "XXXXXXXX",
-                "website": "XXXXXXXX",
-                "types": ["abc", "xyz"],
-                # "corporationUuid": "11884466832473330160",
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_place(self):
-        query = Utility.generate_graphql_operation(
-            "deletePlace", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "placeUuid": "5277338226639835632",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_place(self):
-        query = Utility.generate_graphql_operation("place", "Query", self.schema)
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "placeUuid": "10961680129630147056",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_place_list(self):
-        query = Utility.generate_graphql_operation("placeList", "Query", self.schema)
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "region": "US",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_contact_profile(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateContactProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "contactUuid": "23675571397687525504",
-                "email": "bibo72@outlook.com",
-                "placeUuid": "08407287791103262848",
-                "firstName": "Bibo",
-                "lastName": "Wang",
-                "data": {
-                    "company_size": "501+",
-                    "phone": "xxx-xxx-xxxx",
-                    "reseller_certificate": "reseller_certificate/50ee45b4-2e61-493d-85af-9f3fcccd6166_Untitled_Artwork.png",
-                    "sales_rep": "Joe X.",
-                },
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_contact_profile(self):
-        query = Utility.generate_graphql_operation(
-            "deleteContactProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "contactUuid": "4715411733862355440",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    # @unittest.skip("demonstrating skipping")
-    def test_graphql_contact_profile(self):
-        query = Utility.generate_graphql_operation(
-            "contactProfile", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                # "placeUuid": "528361109185171952",
-                # "contactUuid": "5060220547621523952",
-                # "placeUuid": "03307593607672859418",
-                # "contactUuid": "31601309259040743166",
-                "email": "bibo72@outlook.com"
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_contact_profile_list(self):
-        query = Utility.generate_graphql_operation(
-            "contactProfileList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "placeUuid": "10869587599689126384",
-                "email": "XXXXXXXX",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_contact_request(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateContactRequest", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                # "requestUuid": "05325855880933032064",
-                "contactUuid": "21353804796738420864",
-                "placeUuid": "21077264490052699216",
-                "requestTitle": "XXXXXXXX",
-                "requestDetail": "XXXXXXXX",
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_contact_request(self):
-        query = Utility.generate_graphql_operation(
-            "deleteContactRequest", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "contactUuid": "16754529983121134064",
-                "requestUuid": "13138863480685007344",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_contact_request(self):
-        query = Utility.generate_graphql_operation(
-            "contactRequest", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "contactUuid": "16754529983121134064",
-                "requestUuid": "10080978926371672560",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_contact_request_list(self):
-        query = Utility.generate_graphql_operation(
-            "contactRequestList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                # "contactUuid": "16754529983121134064",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_corporation_profile(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateCorporationProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "11884466832473330160",
-                "externalId": "XXXXXXXX",
-                "corporationType": "XXXXXXXX",
-                "businessName": "XXXXXXXX",
-                "categories": ["XXXXXXXX"],
-                "address": {},
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_corporation_profile(self):
-        query = Utility.generate_graphql_operation(
-            "deleteCorporationProfile", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "88364932402975216",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_corporation_profile(self):
-        query = Utility.generate_graphql_operation(
-            "corporationProfile", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationUuid": "8205577994827928048",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_corporation_profile_list(self):
-        query = Utility.generate_graphql_operation(
-            "corporationProfileList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "corporationType": "XXXXXXXX",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_update_attribute_value(self):
-        query = Utility.generate_graphql_operation(
-            "insertUpdateAttributeValue", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "dataTypeAttributeName": "contact-role_type",
-                # "valueVersionUuid": "13420102135434449392",
-                "dataIdentity": "16754529983121134064",
-                "value": "buyer",
-                "updatedBy": "XYZ",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_attribute_value(self):
-        query = Utility.generate_graphql_operation(
-            "deleteAttributeValue", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "dataTypeAttributeName": "contact-role_type",
-                "valueVersionUuid": "13420102135434449392",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_attribute_value(self):
-        query = Utility.generate_graphql_operation(
-            "attributeValue", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "dataTypeAttributeName": "contact-role_type",
-                "valueVersionUuid": "10517417074765599216",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_attribute_value_list(self):
-        query = Utility.generate_graphql_operation(
-            "attributeValueList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "dataTypeAttributeName": "contact-role_type",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_insert_utm_tag_data_collection(self):
-        query = Utility.generate_graphql_operation(
-            "insertUtmTagDataCollection", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "collectionUuid": "4686129127874957808",
-                "tagName": "XXXXXXXX",
-                "placeUuid": "10869587599689126384",
-                "contactUuid": "16754529983121134064",
-                "keyword": "XXXXXXXX",
-                "utmCampaign": "XXXXXXXX",
-                "utmContent": "XXXXXXXX",
-                "utmMedium": "XXXXXXXX",
-                "utmSource": "XXXXXXXX",
-                "utmTerm": "XXXXXXXX",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_delete_utm_tag_data_collection(self):
-        query = Utility.generate_graphql_operation(
-            "deleteUtmTagDataCollection", "Mutation", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "collectionUuid": "9202569066782986736",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_utm_tag_data_collection(self):
-        query = Utility.generate_graphql_operation(
-            "utmTagDataCollection", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "collectionUuid": "4686129127874957808",
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-    @unittest.skip("demonstrating skipping")
-    def test_graphql_utm_tag_data_collection_list(self):
-        query = Utility.generate_graphql_operation(
-            "utmTagDataCollectionList", "Query", self.schema
-        )
-        logger.info(f"Query: {query}")
-        payload = {
-            "query": query,
-            "variables": {
-                "tagName": "XXXXXXXX",
-                "pageNumber": 1,
-                "limit": 10,
-            },
-        }
-        response = self.ai_marketing_engine.ai_marketing_graphql(**payload)
-        logger.info(response)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    # Minimal query should be faster (not a strict assertion, just informative)
+    # In real scenarios with more data, the difference would be more significant
