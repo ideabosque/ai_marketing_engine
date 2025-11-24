@@ -43,9 +43,9 @@ def call_method(
         method = getattr(engine, method_name)
     except AttributeError as exc:
         elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
-        logger.error(
+        logger.info(
             f"Method response: cid={cid} op={op} elapsed_ms={elapsed_ms} "
-            f"success=False error=AttributeError: {str(exc)}"
+            f"success=False error={str(exc)}"
         )
         return None, exc
 
@@ -54,7 +54,7 @@ def call_method(
         elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
         logger.info(
             f"Method response: cid={cid} op={op} elapsed_ms={elapsed_ms} "
-            f"success=True result_type={type(result).__name__}"
+            f"success=True result={result}"
         )
         return result, None
     except Exception as exc:
@@ -75,6 +75,7 @@ def log_test_result(func):
         def test_something():
             pass
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         test_name = func.__name__
@@ -103,7 +104,7 @@ def log_test_result(func):
 def validate_nested_resolver_result(
     result: Dict[str, Any],
     expected_keys: list[str],
-    nested_path: Optional[list[str]] = None
+    nested_path: Optional[list[str]] = None,
 ) -> None:
     """
     Validate that nested resolver returned expected structure.

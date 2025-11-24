@@ -16,17 +16,13 @@ def _initialize_tables(logger: logging.Logger) -> None:
     from .contact_request import create_contact_request_table
     from .corporation_profile import create_corporation_profile_table
     from .place import create_place_table
-    from .question_group import create_question_group_table
-    from .utm_tag_data_collection import create_utm_tag_data_collection_table
 
-    create_question_group_table(logger)
     create_place_table(logger)
     create_contact_profile_table(logger)
     create_contact_request_table(logger)
     create_corporation_profile_table(logger)
     create_attribute_value_table(logger)
     create_activity_history_table(logger)
-    create_utm_tag_data_collection_table(logger)
 
     return
 
@@ -34,12 +30,8 @@ def _initialize_tables(logger: logging.Logger) -> None:
 def _get_place(endpoint_id: str, place_uuid: str) -> Dict[str, Any]:
     from .place import get_place, get_place_count
 
-    try:
-        assert (
-            place_uuid is not None
-            and get_place_count(endpoint_id=endpoint_id, place_uuid=place_uuid) == 1
-        ), "Place not found."
-    except AssertionError as e:
+    count = get_place_count(endpoint_id=endpoint_id, place_uuid=place_uuid)
+    if count == 0:
         return {}
 
     place = get_place(endpoint_id, place_uuid)
@@ -67,15 +59,10 @@ def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[st
         get_corporation_profile_count,
     )
 
-    try:
-        assert (
-            corporation_uuid is not None
-            and get_corporation_profile_count(
-                endpoint_id=endpoint_id, corporation_uuid=corporation_uuid
-            )
-            == 1
-        ), "Corporation profile not found."
-    except AssertionError as e:
+    count = get_corporation_profile_count(
+        endpoint_id=endpoint_id, corporation_uuid=corporation_uuid
+    )
+    if count == 0:
         return {}
 
     corporation_profile = get_corporation_profile(endpoint_id, corporation_uuid)
@@ -92,23 +79,25 @@ def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[st
 def _get_contact_profile(endpoint_id: str, contact_uuid: str) -> Dict[str, Any]:
     from .contact_profile import get_contact_profile, get_contact_profile_count
 
-    try:
-        assert (
-            contact_uuid is not None
-            and get_contact_profile_count(
-                endpoint_id=endpoint_id, contact_uuid=contact_uuid
-            )
-            == 1
-        ), "Contact profile not found."
-    except AssertionError as e:
+    count = get_contact_profile_count(
+        endpoint_id=endpoint_id, contact_uuid=contact_uuid
+    )
+    if count == 0:
         return {}
 
     contact_profile = get_contact_profile(endpoint_id, contact_uuid)
     return {
-        "place": _get_place(contact_profile.endpoint_id, contact_profile.place_uuid),
+        "endpoint_id": contact_profile.endpoint_id,
+        "contact_uuid": contact_profile.contact_uuid,
         "email": contact_profile.email,
         "first_name": contact_profile.first_name,
         "last_name": contact_profile.last_name,
+        "place_uuid": contact_profile.place_uuid,
+        "place": _get_place(contact_profile.endpoint_id, contact_profile.place_uuid),
+        "data": getattr(contact_profile, "data", None),  # data is optional
+        "updated_by": contact_profile.updated_by,
+        "created_at": contact_profile.created_at,
+        "updated_at": contact_profile.updated_at,
     }
 
 
