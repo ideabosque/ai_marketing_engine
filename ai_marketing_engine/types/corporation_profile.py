@@ -9,7 +9,7 @@ from graphene import DateTime, List, ObjectType, String
 from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSON
 
-from ..models.utils import _get_data
+from ..models.batch_loaders import get_loaders
 
 
 class CorporationProfileType(ObjectType):
@@ -35,12 +35,17 @@ class CorporationProfileType(ObjectType):
         Resolve dynamic attributes for corporation profiles on demand.
         Uses AttributeValueModel via _get_data(..., "corporation").
         """
+        existing_data = getattr(parent, "data", None)
+        if isinstance(existing_data, dict):
+            return existing_data
+
         endpoint_id = getattr(parent, "endpoint_id", None)
         corporation_uuid = getattr(parent, "corporation_uuid", None)
         if not endpoint_id or not corporation_uuid:
             return None
 
-        return _get_data(endpoint_id, corporation_uuid, "corporation")
+        loaders = get_loaders(info.context)
+        return loaders.corporation_data_loader.load((endpoint_id, corporation_uuid))
 
 
 class CorporationProfileListType(ListObjectType):

@@ -8,7 +8,7 @@ from graphene import DateTime, Field, List, ObjectType, String
 
 from silvaengine_dynamodb_base import ListObjectType
 
-from ..models.utils import _get_contact_profile
+from ..models.batch_loaders import get_loaders
 from .contact_profile import ContactProfileType
 
 
@@ -50,10 +50,12 @@ class ContactRequestType(ObjectType):
         if not endpoint_id or not contact_uuid:
             return None
 
-        contact_dict = _get_contact_profile(endpoint_id, contact_uuid)
-        if not contact_dict:
-            return None
-        return ContactProfileType(**contact_dict)
+        loaders = get_loaders(info.context)
+        return loaders.contact_profile_loader.load((endpoint_id, contact_uuid)).then(
+            lambda contact_dict: ContactProfileType(**contact_dict)
+            if contact_dict
+            else None
+        )
 
 
 class ContactRequestListType(ListObjectType):

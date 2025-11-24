@@ -8,7 +8,7 @@ from graphene import DateTime, Field, List, ObjectType, String
 
 from silvaengine_dynamodb_base import ListObjectType
 
-from ..models.utils import _get_corporation_profile
+from ..models.batch_loaders import get_loaders
 from .corporation_profile import CorporationProfileType
 
 
@@ -55,10 +55,12 @@ class PlaceType(ObjectType):
         if not endpoint_id or not corporation_uuid:
             return None
 
-        corp_dict = _get_corporation_profile(endpoint_id, corporation_uuid)
-        if not corp_dict:
-            return None
-        return CorporationProfileType(**corp_dict)
+        loaders = get_loaders(info.context)
+        return loaders.corporation_loader.load((endpoint_id, corporation_uuid)).then(
+            lambda corp_dict: CorporationProfileType(**corp_dict)
+            if corp_dict
+            else None
+        )
 
 
 class PlaceListType(ListObjectType):

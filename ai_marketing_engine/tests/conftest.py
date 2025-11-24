@@ -26,11 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger("test_ai_marketing_engine")
 
 # Make package importable
-base_dir = os.getenv("base_dir", os.getcwd())
-sys.path.insert(0, base_dir)
-sys.path.insert(0, os.path.join(base_dir, "silvaengine_utility"))
-sys.path.insert(1, os.path.join(base_dir, "silvaengine_dynamodb_base"))
-sys.path.insert(2, os.path.join(base_dir, "ai_marketing_engine"))
+# Use absolute path relative to this conftest file to ensure imports work
+# regardless of where pytest is run from
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from ai_marketing_engine import AIMarketingEngine
 from silvaengine_utility import Utility
