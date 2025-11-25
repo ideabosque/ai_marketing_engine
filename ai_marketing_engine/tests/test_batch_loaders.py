@@ -7,6 +7,7 @@ __author__ = "bibow"
 
 import sys
 import os
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -29,7 +30,7 @@ from ai_marketing_engine.models.batch_loaders import (
 # ============================================================================
 
 
-def _mock_model(endpoint_id: str, range_attr: str, range_value: str, **extra):
+def _mock_model(endpoint_id: str, range_attr: str, range_value: str, **extra: Any) -> Any:
     """Build a lightweight mock Pynamo model with attribute_values."""
 
     # Use a simple class instead of MagicMock to avoid __dict__ issues
@@ -53,7 +54,7 @@ def _mock_model(endpoint_id: str, range_attr: str, range_value: str, **extra):
 
 
 @pytest.mark.unit
-def test_batch_loaders_cached_per_context():
+def test_batch_loaders_cached_per_context() -> None:
     """Test that loaders are cached per context and can be cleared."""
     context = {}
     first = get_loaders(context)
@@ -65,7 +66,7 @@ def test_batch_loaders_cached_per_context():
 
 
 @pytest.mark.unit
-def test_place_loader_batches_requests():
+def test_place_loader_batches_requests() -> None:
     """Test that PlaceLoader successfully loads multiple places and deduplicates requests."""
     from ai_marketing_engine.models.batch_loaders import PlaceLoader
 
@@ -113,7 +114,7 @@ def test_place_loader_batches_requests():
 
 
 @pytest.mark.unit
-def test_corporation_loader_batches_requests():
+def test_corporation_loader_batches_requests() -> None:
     """Test that CorporationProfileLoader successfully loads multiple corporations."""
     from ai_marketing_engine.models.batch_loaders import CorporationProfileLoader
 
@@ -143,7 +144,7 @@ def test_corporation_loader_batches_requests():
 
 
 @pytest.mark.unit
-def test_attribute_loader_deduplicates_keys():
+def test_attribute_loader_deduplicates_keys() -> None:
     """Test that attribute loaders deduplicate identical keys."""
     context = {"logger": MagicMock()}
     loaders = RequestLoaders(context)

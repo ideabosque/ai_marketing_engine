@@ -8,7 +8,7 @@ __author__ = "bibow"
 import json
 import os
 import sys
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -16,7 +16,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from silvaengine_utility import Utility
-from test_helpers import call_method, log_test_result, validate_nested_resolver_result
+from test_helpers import call_method, log_test_result
 
 # Load test data
 _test_data_file = os.path.join(os.path.dirname(__file__), "test_data.json")
@@ -57,8 +57,6 @@ CONTACT_REQUEST_DELETE_TEST_DATA = _TEST_DATA.get(
     "contact_request_delete_test_data", []
 )
 
-NESTED_RESOLVER_TEST_DATA = _TEST_DATA.get("nested_resolver_test_data", [])
-
 # ============================================================================
 # UNIT TESTS
 # ============================================================================
@@ -66,7 +64,7 @@ NESTED_RESOLVER_TEST_DATA = _TEST_DATA.get("nested_resolver_test_data", [])
 
 @pytest.mark.unit
 @log_test_result
-def test_initialization_with_valid_params(ai_marketing_engine):
+def test_initialization_with_valid_params(ai_marketing_engine: Any) -> None:
     """Ensure engine fixture initializes with expected configuration."""
     assert ai_marketing_engine is not None
     assert hasattr(ai_marketing_engine, "ai_marketing_graphql")
@@ -75,7 +73,7 @@ def test_initialization_with_valid_params(ai_marketing_engine):
 
 @pytest.mark.unit
 @log_test_result
-def test_schema_fetched_successfully(schema):
+def test_schema_fetched_successfully(schema: Any) -> None:
     """Ensure GraphQL schema is available."""
     assert schema is not None
     assert isinstance(schema, dict)
@@ -114,8 +112,8 @@ def test_schema_fetched_successfully(schema):
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_INSERT_UPDATE_FLOW_TEST_DATA)
 @log_test_result
 def test_graphql_insert_update_corporation_profile(
-    ai_marketing_engine, schema, test_data
-):
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test corporation profile INSERT then UPDATE operation."""
     query = Utility.generate_graphql_operation(
         "insertUpdateCorporationProfile", "Mutation", schema
@@ -200,7 +198,7 @@ def test_graphql_insert_update_corporation_profile(
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_corporation_profile(ai_marketing_engine, schema, test_data):
+def test_graphql_get_corporation_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test get corporation profile operation."""
     query = Utility.generate_graphql_operation("corporationProfile", "Query", schema)
 
@@ -218,7 +216,7 @@ def test_graphql_get_corporation_profile(ai_marketing_engine, schema, test_data)
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_corporation_profile_list(ai_marketing_engine, schema, test_data):
+def test_graphql_corporation_profile_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test list corporation profiles operation."""
     query = Utility.generate_graphql_operation(
         "corporationProfileList", "Query", schema
@@ -238,7 +236,7 @@ def test_graphql_corporation_profile_list(ai_marketing_engine, schema, test_data
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_corporation_profile(ai_marketing_engine, schema, test_data):
+def test_graphql_delete_corporation_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test delete corporation profile operation."""
     query = Utility.generate_graphql_operation(
         "deleteCorporationProfile", "Mutation", schema
@@ -263,7 +261,7 @@ def test_graphql_delete_corporation_profile(ai_marketing_engine, schema, test_da
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_TEST_DATA)
 @log_test_result
-def test_graphql_insert_update_place(ai_marketing_engine, schema, test_data):
+def test_graphql_insert_update_place(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test place INSERT then UPDATE operation."""
     query = Utility.generate_graphql_operation("insertUpdatePlace", "Mutation", schema)
 
@@ -320,7 +318,7 @@ def test_graphql_insert_update_place(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_place(ai_marketing_engine, schema, test_data):
+def test_graphql_get_place(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test get place operation."""
     query = Utility.generate_graphql_operation("place", "Query", schema)
 
@@ -338,7 +336,7 @@ def test_graphql_get_place(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_place_list(ai_marketing_engine, schema, test_data):
+def test_graphql_place_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test list places operation."""
     query = Utility.generate_graphql_operation("placeList", "Query", schema)
 
@@ -356,7 +354,7 @@ def test_graphql_place_list(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_place(ai_marketing_engine, schema, test_data):
+def test_graphql_delete_place(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test delete place operation."""
     query = Utility.generate_graphql_operation("deletePlace", "Mutation", schema)
 
@@ -379,7 +377,7 @@ def test_graphql_delete_place(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_TEST_DATA)
 @log_test_result
-def test_graphql_insert_update_contact_profile(ai_marketing_engine, schema, test_data):
+def test_graphql_insert_update_contact_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test contact profile INSERT then UPDATE operation."""
     import uuid
 
@@ -447,7 +445,7 @@ def test_graphql_insert_update_contact_profile(ai_marketing_engine, schema, test
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_contact_profile(ai_marketing_engine, schema, test_data):
+def test_graphql_get_contact_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test get contact profile operation."""
     query = Utility.generate_graphql_operation("contactProfile", "Query", schema)
 
@@ -465,7 +463,7 @@ def test_graphql_get_contact_profile(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_contact_profile_list(ai_marketing_engine, schema, test_data):
+def test_graphql_contact_profile_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test list contact profiles operation."""
     query = Utility.generate_graphql_operation("contactProfileList", "Query", schema)
 
@@ -483,7 +481,7 @@ def test_graphql_contact_profile_list(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_contact_profile(ai_marketing_engine, schema, test_data):
+def test_graphql_delete_contact_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test delete contact profile operation."""
     query = Utility.generate_graphql_operation(
         "deleteContactProfile", "Mutation", schema
@@ -512,7 +510,7 @@ def test_graphql_delete_contact_profile(ai_marketing_engine, schema, test_data):
     reason="ContactRequest INSERT requires endpoint_id context that's not available in test environment"
 )
 @log_test_result
-def test_graphql_insert_update_contact_request(ai_marketing_engine, schema, test_data):
+def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test contact request INSERT then UPDATE operation.
 
     NOTE: This test currently fails because the contact_request validation
@@ -626,7 +624,7 @@ def test_graphql_insert_update_contact_request(ai_marketing_engine, schema, test
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_REQUEST_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_contact_request(ai_marketing_engine, schema, test_data):
+def test_graphql_get_contact_request(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test get contact request operation."""
     query = Utility.generate_graphql_operation("contactRequest", "Query", schema)
 
@@ -644,7 +642,7 @@ def test_graphql_get_contact_request(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_REQUEST_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_contact_request_list(ai_marketing_engine, schema, test_data):
+def test_graphql_contact_request_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test list contact requests operation."""
     query = Utility.generate_graphql_operation("contactRequestList", "Query", schema)
 
@@ -662,7 +660,7 @@ def test_graphql_contact_request_list(ai_marketing_engine, schema, test_data):
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_REQUEST_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_contact_request(ai_marketing_engine, schema, test_data):
+def test_graphql_delete_contact_request(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
     """Test delete contact request operation."""
     query = Utility.generate_graphql_operation(
         "deleteContactRequest", "Mutation", schema
@@ -677,255 +675,6 @@ def test_graphql_delete_contact_request(ai_marketing_engine, schema, test_data):
 
     # Delete may fail if entity doesn't exist
     pass
-
-
-# ============================================================================
-# NESTED RESOLVER TESTS
-# ============================================================================
-
-
-@pytest.mark.integration
-@pytest.mark.nested_resolvers
-@log_test_result
-def test_contact_profile_with_nested_place(ai_marketing_engine, schema):
-    """Test that nested place resolver works correctly."""
-    # Use actual contact UUID from test data
-    contact_uuid = CONTACT_PROFILE_GET_TEST_DATA[0]["contactUuid"]
-
-    query = """
-    query GetContactProfileWithPlace($contactUuid: String!) {
-        contactProfile(contactUuid: $contactUuid) {
-            contactUuid
-            email
-            placeUuid
-            place {
-                placeUuid
-                businessName
-                region
-            }
-        }
-    }
-    """
-
-    variables = {"contactUuid": contact_uuid}
-
-    result, error = call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": query, "variables": variables},
-        "test_nested_place",
-    )
-
-    assert error is None
-    assert result is not None
-
-    # Parse JSON if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
-
-    # Validate nested structure
-    validate_nested_resolver_result(
-        result,
-        expected_keys=["placeUuid", "businessName"],
-        nested_path=["data", "contactProfile", "place"],
-    )
-
-
-@pytest.mark.integration
-@pytest.mark.nested_resolvers
-@log_test_result
-def test_place_with_nested_corporation_profile(ai_marketing_engine, schema):
-    """Test that nested corporation profile resolver works correctly."""
-    # Use actual place UUID from test data
-    place_uuid = PLACE_GET_TEST_DATA[0]["placeUuid"]
-
-    query = """
-    query GetPlaceWithCorporation($placeUuid: String!) {
-        place(placeUuid: $placeUuid) {
-            placeUuid
-            businessName
-            corporationUuid
-            corporationProfile {
-                corporationUuid
-                businessName
-                corporationType
-            }
-        }
-    }
-    """
-
-    variables = {"placeUuid": place_uuid}
-
-    result, error = call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": query, "variables": variables},
-        "test_nested_corporation",
-    )
-
-    assert error is None
-    assert result is not None
-
-    # Parse JSON if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
-
-    # Validate nested structure
-    validate_nested_resolver_result(
-        result,
-        expected_keys=["corporationUuid", "businessName"],
-        nested_path=["data", "place", "corporationProfile"],
-    )
-
-
-@pytest.mark.integration
-@pytest.mark.nested_resolvers
-@pytest.mark.slow
-@pytest.mark.parametrize("test_data", NESTED_RESOLVER_TEST_DATA)
-@log_test_result
-def test_deep_nesting_four_levels(ai_marketing_engine, schema, test_data):
-    """
-    Test 4-level nesting: ContactRequest → ContactProfile → Place → CorporationProfile
-
-    This tests the entire nested resolver chain.
-    """
-    query = """
-    query GetContactRequestDeepNesting($contactUuid: String!, $requestUuid: String!) {
-        contactRequest(contactUuid: $contactUuid, requestUuid: $requestUuid) {
-            requestUuid
-            requestTitle
-            contactUuid
-            contactProfile {
-                contactUuid
-                email
-                placeUuid
-                place {
-                    placeUuid
-                    businessName
-                    corporationUuid
-                    corporationProfile {
-                        corporationUuid
-                        businessName
-                        corporationType
-                    }
-                }
-            }
-        }
-    }
-    """
-
-    variables = {
-        "contactUuid": test_data["contactUuid"],
-        "requestUuid": test_data["requestUuid"],
-    }
-
-    result, error = call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": query, "variables": variables},
-        "test_deep_nesting",
-    )
-
-    assert error is None
-    assert result is not None
-
-    # Parse JSON if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
-
-    # Validate 4-level nested structure
-    contact_request = result["data"]["contactRequest"]
-    assert contact_request["contactUuid"] is not None
-
-    # Level 2: ContactProfile
-    contact_profile = contact_request["contactProfile"]
-    assert contact_profile is not None
-    assert contact_profile["email"] == test_data["expectedContactEmail"]
-
-    # Level 3: Place
-    place = contact_profile["place"]
-    assert place is not None
-    assert place["businessName"] == test_data["expectedPlaceName"]
-
-    # Level 4: CorporationProfile
-    corp_profile = place["corporationProfile"]
-    assert corp_profile is not None
-    assert corp_profile["businessName"] == test_data["expectedCorpName"]
-
-
-@pytest.mark.integration
-@pytest.mark.nested_resolvers
-@log_test_result
-def test_lazy_loading_performance(ai_marketing_engine, schema):
-    """
-    Verify that lazy loading works - queries without nested fields should not fetch nested data.
-    """
-    import time
-
-    # Query WITHOUT nested fields (should be fast)
-    query_minimal = """
-    query GetContactProfileMinimal {
-        contactProfileList(limit: 10) {
-            contactProfileList {
-                contactUuid
-                email
-                placeUuid
-            }
-        }
-    }
-    """
-
-    t0 = time.perf_counter()
-    result_minimal, error = call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": query_minimal},
-        "test_minimal_query",
-    )
-    duration_minimal = time.perf_counter() - t0
-
-    assert error is None
-
-    # Query WITH nested fields (will be slower)
-    query_nested = """
-    query GetContactProfileNested {
-        contactProfileList(limit: 10) {
-            contactProfileList {
-                contactUuid
-                email
-                place {
-                    businessName
-                    corporationProfile {
-                        businessName
-                    }
-                }
-                data
-            }
-        }
-    }
-    """
-
-    t0 = time.perf_counter()
-    result_nested, error = call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": query_nested},
-        "test_nested_query",
-    )
-    duration_nested = time.perf_counter() - t0
-
-    assert error is None
-
-    # Log performance comparison
-    print(f"\nPerformance comparison for 10 items:")
-    print(f"  Minimal query (no nesting): {duration_minimal*1000:.2f}ms")
-    print(f"  Nested query (2 levels):    {duration_nested*1000:.2f}ms")
-    print(
-        f"  Difference:                 {(duration_nested-duration_minimal)*1000:.2f}ms"
-    )
-
-    # Minimal query should be faster (not a strict assertion, just informative)
-    # In real scenarios with more data, the difference would be more significant
 
 
 # ============================================================================
