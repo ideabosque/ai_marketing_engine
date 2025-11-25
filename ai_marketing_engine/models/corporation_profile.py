@@ -4,6 +4,7 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
+import functools
 import logging
 import traceback
 from typing import Any, Dict
@@ -26,7 +27,9 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility
+from silvaengine_utility import Utility, method_cache
+
+from ..handlers.config import Config
 
 from ..types.corporation_profile import (
     CorporationProfileListType,
@@ -81,6 +84,38 @@ class CorporationProfileModel(BaseModel):
     corporation_type_index = CorporationTypeIndex()
 
 
+def purge_cache():
+    def actual_decorator(original_function):
+        @functools.wraps(original_function)
+        def wrapper_function(*args, **kwargs):
+            try:
+                from ..models.cache import purge_entity_cascading_cache
+
+                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
+                    "endpoint_id"
+                )
+                entity_keys = {}
+                if kwargs.get("corporation_uuid"):
+                    entity_keys["corporation_uuid"] = kwargs.get("corporation_uuid")
+
+                result = purge_entity_cascading_cache(
+                    args[0].context.get("logger"),
+                    entity_type="corporation_profile",
+                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    entity_keys=entity_keys if entity_keys else None,
+                    cascade_depth=3,
+                )
+
+                result = original_function(*args, **kwargs)
+                return result
+            except Exception as e:
+                log = traceback.format_exc()
+                args[0].context.get("logger").error(log)
+                raise e
+        return wrapper_function
+    return actual_decorator
+
+
 def create_corporation_profile_table(logger: logging.Logger) -> bool:
     """Create the CorporationProfile table if it doesn't exist."""
     if not CorporationProfileModel.exists():
@@ -94,6 +129,10 @@ def create_corporation_profile_table(logger: logging.Logger) -> bool:
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
+)
+@method_cache(
+    ttl=Config.get_cache_ttl(), 
+    cache_name=Config.get_cache_name("models", "corporation_profile")
 )
 def get_corporation_profile(
     endpoint_id: str, corporation_uuid: str
@@ -191,6 +230,7 @@ def resolve_corporation_profile_list(
     return inquiry_funct, count_funct, args
 
 
+@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -259,6 +299,7 @@ def insert_update_corporation_profile(
     return
 
 
+@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "endpoint_id",

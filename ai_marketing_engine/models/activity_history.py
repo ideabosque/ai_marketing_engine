@@ -4,8 +4,10 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
+import functools
 import logging
 import time
+import traceback
 from datetime import datetime
 from typing import Any, Dict
 
@@ -24,7 +26,9 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility
+from silvaengine_utility import Utility, method_cache
+
+from ..handlers.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..types.activity_history import ActivityHistoryListType, ActivityHistoryType
@@ -58,6 +62,40 @@ class ActivityHistoryModel(BaseModel):
     type_id_index = TypeIdIndex()
 
 
+def purge_cache():
+    def actual_decorator(original_function):
+        @functools.wraps(original_function)
+        def wrapper_function(*args, **kwargs):
+            try:
+                from ..models.cache import purge_entity_cascading_cache
+
+                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
+                    "endpoint_id"
+                )
+                entity_keys = {}
+                if kwargs.get("id"):
+                    entity_keys["id"] = kwargs.get("id")
+                if kwargs.get("timestamp"):
+                    entity_keys["timestamp"] = kwargs.get("timestamp")
+
+                result = purge_entity_cascading_cache(
+                    args[0].context.get("logger"),
+                    entity_type="activity_history",
+                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    entity_keys=entity_keys if entity_keys else None,
+                    cascade_depth=3,
+                )
+
+                result = original_function(*args, **kwargs)
+                return result
+            except Exception as e:
+                log = traceback.format_exc()
+                args[0].context.get("logger").error(log)
+                raise e
+        return wrapper_function
+    return actual_decorator
+
+
 def create_activity_history_table(logger: logging.Logger) -> bool:
     """Create the ActivityHistory table if it doesn't exist."""
     if not ActivityHistoryModel.exists():
@@ -71,6 +109,10 @@ def create_activity_history_table(logger: logging.Logger) -> bool:
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
+)
+@method_cache(
+    ttl=Config.get_cache_ttl(), 
+    cache_name=Config.get_cache_name("models", "activity_history")
 )
 def get_activity_history(id: str, timestamp: int) -> ActivityHistoryModel:
     return ActivityHistoryModel.get(id, timestamp)
@@ -160,6 +202,7 @@ def insert_activity_history(
     )
 
 
+@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "id",

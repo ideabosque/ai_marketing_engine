@@ -4,6 +4,7 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
+import functools
 import logging
 import traceback
 from typing import Any, Dict
@@ -21,7 +22,9 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility
+from silvaengine_utility import Utility, method_cache
+
+from ..handlers.config import Config
 
 from ..types.attribute_value import AttributeValueListType, AttributeValueType
 
@@ -73,6 +76,40 @@ class AttributeValueModel(BaseModel):
     )
 
 
+def purge_cache():
+    def actual_decorator(original_function):
+        @functools.wraps(original_function)
+        def wrapper_function(*args, **kwargs):
+            try:
+                from ..models.cache import purge_entity_cascading_cache
+
+                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
+                    "endpoint_id"
+                )
+                entity_keys = {}
+                if kwargs.get("data_type_attribute_name"):
+                    entity_keys["data_type_attribute_name"] = kwargs.get("data_type_attribute_name")
+                if kwargs.get("value_version_uuid"):
+                    entity_keys["value_version_uuid"] = kwargs.get("value_version_uuid")
+
+                result = purge_entity_cascading_cache(
+                    args[0].context.get("logger"),
+                    entity_type="attribute_value",
+                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    entity_keys=entity_keys if entity_keys else None,
+                    cascade_depth=3,
+                )
+
+                result = original_function(*args, **kwargs)
+                return result
+            except Exception as e:
+                log = traceback.format_exc()
+                args[0].context.get("logger").error(log)
+                raise e
+        return wrapper_function
+    return actual_decorator
+
+
 def create_attribute_value_table(logger: logging.Logger) -> bool:
     """Create the AttributeValue table if it doesn't exist."""
     if not AttributeValueModel.exists():
@@ -86,6 +123,10 @@ def create_attribute_value_table(logger: logging.Logger) -> bool:
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
+)
+@method_cache(
+    ttl=Config.get_cache_ttl(), 
+    cache_name=Config.get_cache_name("models", "attribute_value")
 )
 def get_attribute_value(
     data_type_attribute_name: str, value_version_uuid: str
@@ -230,6 +271,7 @@ def _inactivate_attribute_values(
         raise e
 
 
+@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "data_type_attribute_name",
@@ -321,6 +363,7 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     return
 
 
+@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "data_type_attribute_name",

@@ -4,6 +4,7 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
+import functools
 import logging
 import traceback
 from typing import Any, Dict
@@ -19,7 +20,9 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility
+from silvaengine_utility import Utility, method_cache
+
+from ..handlers.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..types.contact_request import ContactRequestListType, ContactRequestType
@@ -71,6 +74,38 @@ class ContactRequestModel(BaseModel):
     contact_uuid_index = ContactUuidIndex()
 
 
+def purge_cache():
+    def actual_decorator(original_function):
+        @functools.wraps(original_function)
+        def wrapper_function(*args, **kwargs):
+            try:
+                from ..models.cache import purge_entity_cascading_cache
+
+                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
+                    "endpoint_id"
+                )
+                entity_keys = {}
+                if kwargs.get("request_uuid"):
+                    entity_keys["request_uuid"] = kwargs.get("request_uuid")
+
+                result = purge_entity_cascading_cache(
+                    args[0].context.get("logger"),
+                    entity_type="contact_request",
+                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    entity_keys=entity_keys if entity_keys else None,
+                    cascade_depth=3,
+                )
+
+                result = original_function(*args, **kwargs)
+                return result
+            except Exception as e:
+                log = traceback.format_exc()
+                args[0].context.get("logger").error(log)
+                raise e
+        return wrapper_function
+    return actual_decorator
+
+
 def create_contact_request_table(logger: logging.Logger) -> bool:
     """Create the ContactRequest table if it doesn't exist."""
     if not ContactRequestModel.exists():
@@ -84,6 +119,10 @@ def create_contact_request_table(logger: logging.Logger) -> bool:
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
+)
+@method_cache(
+    ttl=Config.get_cache_ttl(), 
+    cache_name=Config.get_cache_name("models", "contact_request")
 )
 def get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestModel:
     return ContactRequestModel.get(endpoint_id, request_uuid)
@@ -173,6 +212,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     return inquiry_funct, count_funct, args
 
 
+@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -226,6 +266,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     return
 
 
+@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "endpoint_id",
