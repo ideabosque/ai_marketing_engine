@@ -362,11 +362,20 @@ graph TD
   - Query with/without nesting
   - Batch loader efficiency
   - Large result sets (100+ items)
+- [x] **Cache Management Tests** (COMPLETED):
+  - ✅ 15 comprehensive tests in [`test_cache_management.py`](../ai_marketing_engine/tests/test_cache_management.py)
+  - ✅ Unit tests for cache purger, batch loaders, and decorators
+  - ✅ Integration tests with live DynamoDB data
+  - ✅ Cache hit/miss verification
+  - ✅ Cache invalidation testing
+  - ✅ Batch loader cache testing
+  - ✅ All tests passing
 
 **Success Criteria**:
-- Overall coverage \u003e90%
+- Overall coverage >90%
 - All critical paths covered
 - Performance benchmarks documented
+- ✅ Cache management fully tested (15/15 tests passing)
 
 ---
 
@@ -452,11 +461,12 @@ graph TD
 **Objective**: Implement a comprehensive, multi-layer caching architecture to optimize performance and reduce database load
 
 > [!IMPORTANT]
-> **Current Cache Implementation**: The AI Marketing Engine already implements **two caching layers**:
-> 1. **Application-Level Cache**: GraphQL schema caching in [`config.py`](../ai_marketing_engine/handlers/config.py) (Class-level `schemas` dict)
-> 2. **Request-Scoped Cache**: DataLoader pattern in [`batch_loaders.py`](../ai_marketing_engine/models/batch_loaders.py) (eliminates N+1 queries)
+> **Current Cache Implementation**: The AI Marketing Engine implements **THREE caching layers**:
+> 1. **Application-Level Cache**: GraphQL schema caching in [`config.py`](../ai_marketing_engine/handlers/config.py)
+> 2. **Request-Scoped Cache**: DataLoader pattern in [`batch_loaders.py`](../ai_marketing_engine/models/batch_loaders.py)
+> 3. **Method-Level Cache**: `@method_cache` decorator with `HybridCacheEngine` for cross-request caching
 > 
-> This section outlines **additional caching layers** for further optimization when monitoring indicates necessity.
+> All three layers are **IMPLEMENTED and TESTED** with comprehensive test coverage.
 
 ---
 
@@ -493,47 +503,229 @@ class Config:
 
 **Location**: [`ai_marketing_engine/models/batch_loaders.py`](../ai_marketing_engine/models/batch_loaders.py)
 
-**Pattern**: Promise DataLoader with request-scoped lifecycle
+**Pattern**: Promise DataLoader with request-scoped lifecycle + HybridCacheEngine integration
 
 ```python
-class AttributeDataLoader(_SafeDataLoader):
-    """Deduplicates requests within a single GraphQL execution."""
+class PlaceLoader(_SafeDataLoader):
+    """Batch loader for PlaceModel with HybridCacheEngine support."""
+    
+    def __init__(self, logger=None, cache_enabled=True, **kwargs):
+        super(PlaceLoader, self).__init__(logger=logger, cache_enabled=cache_enabled, **kwargs)
+        if self.cache_enabled:
+            self.cache = HybridCacheEngine(Config.get_cache_name("models", "place"))
     
     def batch_load_fn(self, keys: List[Key]) -> Promise:
-        cache: Dict[Key, Dict[str, Any]] = {}  # Request-scoped cache
-        results: List[Optional[Dict[str, Any]]] = []
+        unique_keys = list(dict.fromkeys(keys))
+        key_map: Dict[Key, Dict[str, Any]] = {}
+        uncached_keys = []
         
-        for endpoint_id, data_identity in keys:
-            key = (endpoint_id, data_identity)
-            if key not in cache:  # Deduplicate within request
-                try:
-                    cache[key] = _get_data(endpoint_id, data_identity, self.data_type)
-                except Exception:
-                    cache[key] = None
-            results.append(cache.get(key))
+        # Check cache first if enabled
+        if self.cache_enabled:
+            for key in unique_keys:
+                cache_key = f"{key[0]}:{key[1]}"  # endpoint_id:place_uuid
+                cached_item = self.cache.get(cache_key)
+                if cached_item:
+                    key_map[key] = cached_item
+                else:
+                    uncached_keys.append(key)
+        else:
+            uncached_keys = unique_keys
         
-        return Promise.resolve(results)
-
-class RequestLoaders:
-    """Container for all DataLoaders scoped to a single GraphQL request."""
-    def __init__(self, context: Dict[str, Any]):
-        logger = context.get("logger")
-        self.place_loader = PlaceLoader(logger=logger)
-        self.corporation_loader = CorporationProfileLoader(logger=logger)
-        self.contact_profile_loader = ContactProfileLoader(logger=logger)
-        self.contact_data_loader = AttributeDataLoader(data_type="contact", logger=logger)
-        self.corporation_data_loader = AttributeDataLoader(data_type="corporation", logger=logger)
+        # Batch fetch uncached items
+        if uncached_keys:
+            for item in PlaceModel.batch_get(uncached_keys):
+                normalized = _normalize_model(item)
+                key = (item.endpoint_id, item.place_uuid)
+                key_map[key] = normalized
+                
+                # Cache the result if enabled
+                if self.cache_enabled:
+                    cache_key = f"{key[0]}:{key[1]}"
+                    self.cache.set(cache_key, normalized, ttl=Config.get_cache_ttl())
+        
+        return Promise.resolve([key_map.get(key) for key in keys])
 ```
 
-**Use Case**: Eliminate N+1 queries within single GraphQL request
+**Use Case**: Eliminate N+1 queries within and across GraphQL requests
 
 **Performance**: 98.5% reduction in DynamoDB read operations
 
-**Lifecycle**: Created per request, destroyed after response
+**Lifecycle**: Created per request, persists across requests via HybridCacheEngine
 
 ---
 
-##### 2.3.2 Layer 3: Redis Cross-Request Cache (Available via `silvaengine_utility`)
+**✅ Layer 3: Method-Level Cache (IMPLEMENTED)**
+
+**Location**: [`ai_marketing_engine/models/corporation_profile.py`](../ai_marketing_engine/models/corporation_profile.py) (and other model files)
+
+**Pattern**: `@method_cache` decorator from `silvaengine_utility` with automatic cache invalidation
+
+```python
+from silvaengine_utility import method_cache
+from ..handlers.config import Config
+
+@method_cache(
+    ttl=Config.get_cache_ttl(), 
+    cache_name=Config.get_cache_name("models", "corporation_profile")
+)
+def get_corporation_profile(
+    endpoint_id: str, corporation_uuid: str
+) -> CorporationProfileModel:
+    """Fetch corporation profile with automatic caching."""
+    return CorporationProfileModel.get(endpoint_id, corporation_uuid)
+```
+
+**Cache Invalidation**: Automatic via `@purge_cache` decorator on mutations
+
+```python
+from .cache import purge_cache
+
+@purge_cache(
+    entity_type="corporation_profile",
+    entity_keys=lambda kwargs: {
+        "endpoint_id": kwargs.get("endpoint_id"),
+        "corporation_uuid": kwargs.get("corporation_uuid")
+    }
+)
+def insert_update_corporation_profile(
+    logger, **kwargs
+) -> CorporationProfileModel:
+    """Insert/update corporation profile with automatic cache purge."""
+    # ... mutation logic ...
+    return corporation_profile_model
+```
+
+**Cascading Cache Purge**: Automatically purges related entities
+
+**Location**: [`ai_marketing_engine/models/cache.py`](../ai_marketing_engine/models/cache.py)
+
+```python
+from silvaengine_dynamodb_base.cache_utils import CascadingCachePurger, CacheConfigResolvers
+
+def _get_cascading_cache_purger() -> CascadingCachePurger:
+    """Get or create singleton CascadingCachePurger instance."""
+    if not hasattr(_get_cascading_cache_purger, "_instance"):
+        _get_cascading_cache_purger._instance = CascadingCachePurger(
+            cache_entity_config=Config.get_cache_entity_config(),
+            cache_relationships=Config.get_cache_relationships(),
+            resolvers=CacheConfigResolvers()
+        )
+    return _get_cascading_cache_purger._instance
+
+def purge_entity_cascading_cache(
+    logger, entity_type: str, context_keys: dict, entity_keys: dict
+) -> dict:
+    """Purge cache for an entity and all related entities."""
+    purger = _get_cascading_cache_purger()
+    return purger.purge_entity_cache(
+        logger=logger,
+        entity_type=entity_type,
+        context_keys=context_keys,
+        entity_keys=entity_keys
+    )
+```
+
+**Cache Configuration**: Centralized in `Config` class
+
+```python
+class Config:
+    CACHE_ENABLED = True
+    CACHE_TTL = 1800  # 30 minutes
+    
+    @classmethod
+    def get_cache_entity_config(cls) -> dict:
+        """Get cache configuration for all entities."""
+        return {
+            "corporation_profile": {
+                "module": "ai_marketing_engine.models.corporation_profile",
+                "getter": "get_corporation_profile",
+                "cache_keys": ["endpoint_id", "corporation_uuid"]
+            },
+            "place": {
+                "module": "ai_marketing_engine.models.place",
+                "getter": "get_place",
+                "cache_keys": ["endpoint_id", "place_uuid"]
+            },
+            "contact_profile": {
+                "module": "ai_marketing_engine.models.contact_profile",
+                "getter": "get_contact_profile",
+                "cache_keys": ["endpoint_id", "contact_uuid"]
+            }
+        }
+    
+    @classmethod
+    def get_cache_relationships(cls) -> dict:
+        """Get cache relationship mappings for cascading purge."""
+        return {
+            "corporation_profile": ["place"],
+            "place": ["contact_profile"],
+            "contact_profile": []
+        }
+```
+
+**Use Case**: Cross-request caching with automatic invalidation
+
+**Performance**: Reduces database calls for frequently accessed entities
+
+**TTL**: Configurable (default 1800 seconds / 30 minutes)
+
+---
+
+##### 2.3.2 Cache Testing Strategy (IMPLEMENTED)
+
+**Test File**: [`ai_marketing_engine/tests/test_cache_management.py`](../ai_marketing_engine/tests/test_cache_management.py)
+
+**Total Tests**: 15 (all passing)
+
+**Test Categories**:
+
+1. **Cache Purger Tests** (Unit)
+   - `test_get_cascading_cache_purger_singleton`: Verify singleton pattern
+   - `test_purge_entity_cascading_cache_basic`: Basic purge functionality
+   - `test_purge_entity_cascading_cache_with_relationships`: Cascading purge
+
+2. **Batch Loader Cache Tests** (Unit)
+   - `test_request_loaders_initialization`: Loader initialization
+   - `test_dataloader_cache_interaction`: Cache hit/miss behavior
+
+3. **Cache Decorator Tests** (Unit)
+   - `test_method_cache_decorator_applied`: Verify decorator application
+   - `test_purge_cache_decorator_applied`: Verify purge decorator
+
+4. **Integration Tests** (Integration)
+   - `test_cache_system_integration`: Infrastructure verification
+   - `test_cache_with_live_data`: Resolve, resolve_list, and invalidation
+   - `test_batch_loader_cache`: Batch loader caching with live data
+
+**Test Execution**:
+
+```powershell
+# Run all cache tests
+c:\Python312\env\Scripts\python.exe ai_marketing_engine/tests/test_cache_management.py --test-function=""
+
+# Run specific test class
+c:\Python312\env\Scripts\python.exe -m pytest ai_marketing_engine/tests/test_cache_management.py::TestCacheLiveData -v --test-function=""
+
+# Run with coverage
+pytest ai_marketing_engine/tests/test_cache_management.py --cov=ai_marketing_engine.models.cache --cov-report=html
+```
+
+**Live Data Tests**: Use actual DynamoDB backend with test data from `test_data.json`
+
+**Test Pattern**: Create → Query (cache miss) → Query (cache hit) → Update (purge) → Query (cache miss) → Delete
+
+---
+
+##### 2.3.3 Layer 4: Redis Cross-Request Cache (Available via `silvaengine_utility`)
+
+> [!NOTE]
+> **Status**: OPTIONAL - The `HybridCacheEngine` already provides in-memory + Redis caching.
+> Additional Redis integration is only needed if monitoring shows:
+> - High read-to-write ratio (>80% reads)
+> - DynamoDB costs >$500/month
+> - P95 query latency >500ms
+
+
 
 > [!IMPORTANT]
 > **Existing Implementation**: A production-ready `HybridCache` class is already available in `silvaengine_utility.cache.hybrid_cache`. This provides multi-layer caching (in-memory + Redis) with automatic fallback and is currently **NOT integrated** into `ai_marketing_engine`.
