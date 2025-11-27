@@ -51,7 +51,18 @@ class PlaceLoader(_SafeDataLoader):
         super(PlaceLoader, self).__init__(logger=logger, cache_enabled=cache_enabled, **kwargs)
         if self.cache_enabled:
             self.cache = HybridCacheEngine(Config.get_cache_name("models", "place"))
+            cache_meta = Config.get_cache_entity_config().get("place")
+            self.cache_func_prefix = ""
+            if cache_meta:
+                self.cache_func_prefix = ".".join([cache_meta.get("module"), cache_meta.get("getter")])
 
+    def generate_cache_key(self, key: Key) -> str:
+        key_data = ":".join([str(key), str({})])
+        return self.cache._generate_key(
+            self.cache_func_prefix,
+            key_data
+        )
+        
     def batch_load_fn(self, keys: List[Key]) -> Promise:
         from .place import PlaceModel  # Import locally to avoid circular dependency
 
@@ -62,10 +73,11 @@ class PlaceLoader(_SafeDataLoader):
         # Check cache first if enabled
         if self.cache_enabled:
             for key in unique_keys:
-                cache_key = f"{key[0]}:{key[1]}"  # endpoint_id:place_uuid
+                cache_key = self.generate_cache_key(key)
                 cached_item = self.cache.get(cache_key)
                 if cached_item:
-                    key_map[key] = cached_item
+                    normalized = _normalize_model(cached_item)
+                    key_map[key] = normalized
                 else:
                     uncached_keys.append(key)
         else:
@@ -75,15 +87,16 @@ class PlaceLoader(_SafeDataLoader):
         if uncached_keys:
             try:
                 for item in PlaceModel.batch_get(uncached_keys):
-                    normalized = _normalize_model(item)
                     key = (item.endpoint_id, item.place_uuid)
-                    key_map[key] = normalized
                     
                     # Cache the result if enabled
                     if self.cache_enabled:
-                        cache_key = f"{key[0]}:{key[1]}"
-                        self.cache.set(cache_key, normalized, ttl=Config.get_cache_ttl())
-                        
+                        cache_key = self.generate_cache_key(key)
+                        self.cache.set(cache_key, item, ttl=Config.get_cache_ttl())
+
+                    normalized = _normalize_model(item)
+                    key_map[key] = normalized
+
             except Exception as exc:  # pragma: no cover - defensive
                 if self.logger:
                     self.logger.exception(exc)
@@ -100,6 +113,17 @@ class CorporationProfileLoader(_SafeDataLoader):
         super(CorporationProfileLoader, self).__init__(logger=logger, cache_enabled=cache_enabled, **kwargs)
         if self.cache_enabled:
             self.cache = HybridCacheEngine(Config.get_cache_name("models", "corporation_profile"))
+            cache_meta = Config.get_cache_entity_config().get("place")
+            self.cache_func_prefix = ""
+            if cache_meta:
+                self.cache_func_prefix = ".".join([cache_meta.get("module"), cache_meta.get("getter")])
+
+    def generate_cache_key(self, key: Key) -> str:
+        key_data = ":".join([str(key), str({})])
+        return self.cache._generate_key(
+            self.cache_func_prefix,
+            key_data
+        )
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
         from .corporation_profile import CorporationProfileModel  # Import locally to avoid circular dependency
@@ -111,10 +135,11 @@ class CorporationProfileLoader(_SafeDataLoader):
         # Check cache first if enabled
         if self.cache_enabled:
             for key in unique_keys:
-                cache_key = f"{key[0]}:{key[1]}"  # endpoint_id:corporation_uuid
+                cache_key = self.generate_cache_key(key)
                 cached_item = self.cache.get(cache_key)
                 if cached_item:
-                    key_map[key] = cached_item
+                    normalized = _normalize_model(cached_item)
+                    key_map[key] = normalized
                 else:
                     uncached_keys.append(key)
         else:
@@ -124,15 +149,15 @@ class CorporationProfileLoader(_SafeDataLoader):
         if uncached_keys:
             try:
                 for item in CorporationProfileModel.batch_get(uncached_keys):
-                    normalized = _normalize_model(item)
                     key = (item.endpoint_id, item.corporation_uuid)
-                    key_map[key] = normalized
                     
                     # Cache the result if enabled
                     if self.cache_enabled:
-                        cache_key = f"{key[0]}:{key[1]}"
-                        self.cache.set(cache_key, normalized, ttl=Config.get_cache_ttl())
-                        
+                        cache_key = self.generate_cache_key(key)
+                        self.cache.set(cache_key, item, ttl=Config.get_cache_ttl())
+                    normalized = _normalize_model(item)
+                    key_map[key] = normalized
+            
             except Exception as exc:  # pragma: no cover - defensive
                 if self.logger:
                     self.logger.exception(exc)
@@ -149,6 +174,17 @@ class ContactProfileLoader(_SafeDataLoader):
         super(ContactProfileLoader, self).__init__(logger=logger, cache_enabled=cache_enabled, **kwargs)
         if self.cache_enabled:
             self.cache = HybridCacheEngine(Config.get_cache_name("models", "contact_profile"))
+            cache_meta = Config.get_cache_entity_config().get("place")
+            self.cache_func_prefix = ""
+            if cache_meta:
+                self.cache_func_prefix = ".".join([cache_meta.get("module"), cache_meta.get("getter")])
+
+    def generate_cache_key(self, key: Key) -> str:
+        key_data = ":".join([str(key), str({})])
+        return self.cache._generate_key(
+            self.cache_func_prefix,
+            key_data
+        )
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
         from .contact_profile import ContactProfileModel  # Import locally to avoid circular dependency
@@ -160,10 +196,11 @@ class ContactProfileLoader(_SafeDataLoader):
         # Check cache first if enabled
         if self.cache_enabled:
             for key in unique_keys:
-                cache_key = f"{key[0]}:{key[1]}"  # endpoint_id:contact_uuid
+                cache_key = self.generate_cache_key(key)
                 cached_item = self.cache.get(cache_key)
                 if cached_item:
-                    key_map[key] = cached_item
+                    normalized = _normalize_model(cached_item)
+                    key_map[key] = normalized
                 else:
                     uncached_keys.append(key)
         else:
@@ -173,14 +210,15 @@ class ContactProfileLoader(_SafeDataLoader):
         if uncached_keys:
             try:
                 for item in ContactProfileModel.batch_get(uncached_keys):
-                    normalized = _normalize_model(item)
                     key = (item.endpoint_id, item.contact_uuid)
-                    key_map[key] = normalized
                     
                     # Cache the result if enabled
                     if self.cache_enabled:
-                        cache_key = f"{key[0]}:{key[1]}"
-                        self.cache.set(cache_key, normalized, ttl=Config.get_cache_ttl())
+                        cache_key = self.generate_cache_key(key)
+                        self.cache.set(cache_key, item, ttl=Config.get_cache_ttl())
+
+                    normalized = _normalize_model(item)
+                    key_map[key] = normalized
                         
             except Exception as exc:  # pragma: no cover - defensive
                 if self.logger:
@@ -202,13 +240,22 @@ class AttributeDataLoader(_SafeDataLoader):
         super(AttributeDataLoader, self).__init__(logger=logger, cache_enabled=cache_enabled, **kwargs)
         self.data_type = data_type
         if self.cache_enabled:
-            self.cache = HybridCacheEngine(Config.get_cache_name("models", f"attribute_{data_type}"))
+            self.cache = HybridCacheEngine(Config.get_cache_name("models", f"attributes_data"))
+            cache_meta = Config.get_cache_entity_config().get("attributes_data")
+            self.cache_func_prefix = ""
+            if cache_meta:
+                self.cache_func_prefix = ".".join([cache_meta.get("module"), cache_meta.get("getter")])
 
-    @lru_cache(maxsize=128)  # In-memory cache for request scope
+    def generate_cache_key(self, key: Key) -> str:
+        key_data = ":".join([str(key), str({})])
+        return self.cache._generate_key(
+            self.cache_func_prefix,
+            key_data
+        )
     def _get_cached_data(self, endpoint_id: str, data_identity: str) -> Optional[Dict[str, Any]]:
         if not self.cache_enabled:
             return None
-        cache_key = f"{endpoint_id}:{data_identity}:{self.data_type}"
+        cache_key = self.generate_cache_key((endpoint_id, data_identity, self.data_type))
         return self.cache.get(cache_key)
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
@@ -231,7 +278,7 @@ class AttributeDataLoader(_SafeDataLoader):
                 
                 # Cache the result if enabled
                 if self.cache_enabled:
-                    cache_key = f"{endpoint_id}:{data_identity}:{self.data_type}"
+                    cache_key = self.generate_cache_key((endpoint_id, data_identity, self.data_type))
                     self.cache.set(cache_key, data, ttl=Config.get_cache_ttl())
                     
             except Exception as exc:  # pragma: no cover - defensive
@@ -267,15 +314,15 @@ class RequestLoaders:
             return
             
         if entity_type == "place" and "place_uuid" in entity_keys:
-            cache_key = f"{entity_keys.get('endpoint_id')}:{entity_keys['place_uuid']}"
+            cache_key = self.place_loader.generate_cache_key((entity_keys.get('endpoint_id'), entity_keys['place_uuid']))
             if hasattr(self.place_loader, 'cache'):
                 self.place_loader.cache.delete(cache_key)
         elif entity_type == "corporation_profile" and "corporation_uuid" in entity_keys:
-            cache_key = f"{entity_keys.get('endpoint_id')}:{entity_keys['corporation_uuid']}"
+            cache_key = self.corporation_loader.generate_cache_key((entity_keys.get('endpoint_id'), entity_keys['corporation_uuid']))
             if hasattr(self.corporation_loader, 'cache'):
                 self.corporation_loader.cache.delete(cache_key)
         elif entity_type == "contact_profile" and "contact_uuid" in entity_keys:
-            cache_key = f"{entity_keys.get('endpoint_id')}:{entity_keys['contact_uuid']}"
+            cache_key = self.contact_profile_loader.generate_cache_key((entity_keys.get('endpoint_id'), entity_keys['contact_uuid']))
             if hasattr(self.contact_profile_loader, 'cache'):
                 self.contact_profile_loader.cache.delete(cache_key)
 

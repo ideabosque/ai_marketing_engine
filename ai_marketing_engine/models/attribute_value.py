@@ -139,9 +139,20 @@ def get_attribute_value(
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
+def _get_attribute_value(
+    data_type_attribute_name: str, value_version_uuid: str
+) -> AttributeValueModel:
+    return AttributeValueModel.get(data_type_attribute_name, value_version_uuid)
+
+
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
 def _get_active_attribute_value(
     data_type_attribute_name: str, data_identity: str
-) -> AttributeValueModel:
+) -> AttributeValueModel | None:
     try:
         results = AttributeValueModel.data_identity_index.query(
             data_type_attribute_name,
@@ -181,7 +192,7 @@ def get_attribute_value_type(
 
 def resolve_attribute_value(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> AttributeValueType:
+) -> AttributeValueType | None:
     if "data_identity" in kwargs:
         return get_attribute_value_type(
             info,
@@ -277,7 +288,7 @@ def _inactivate_attribute_values(
         "hash_key": "data_type_attribute_name",
         "range_key": "value_version_uuid",
     },
-    model_funct=get_attribute_value,
+    model_funct=_get_attribute_value,
     count_funct=get_attribute_value_count,
     type_funct=get_attribute_value_type,
 )
@@ -390,3 +401,106 @@ def delete_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
 
     kwargs["entity"].delete()
     return True
+
+def purge_attributes_data_cache():
+    def actual_decorator(original_function):
+        @functools.wraps(original_function)
+        def wrapper_function(*args, **kwargs):
+            try:
+                from ..models.cache import purge_entity_cascading_cache
+
+                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
+                    "endpoint_id"
+                )
+                entity_keys = {}
+                if kwargs.get("data_identity"):
+                    entity_keys["data_identity"] = kwargs.get("data_identity")
+                if kwargs.get("data_type"):
+                    entity_keys["data_type"] = kwargs.get("data_type")
+
+                result = purge_entity_cascading_cache(
+                    args[0].context.get("logger"),
+                    entity_type="attributes_data",
+                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    entity_keys=entity_keys if entity_keys else None,
+                    cascade_depth=3,
+                )
+
+                result = original_function(*args, **kwargs)
+                return result
+            except Exception as e:
+                log = traceback.format_exc()
+                args[0].context.get("logger").error(log)
+                raise e
+        return wrapper_function
+    return actual_decorator
+
+
+@purge_attributes_data_cache()
+def insert_update_attribute_values(
+    info: ResolveInfo,
+    **kwargs: Dict[str, Any]
+    # data_type: str,
+    # data_identity: str,
+    # updated_by: str,
+    # data: Dict[str, Any] = {},
+) -> Dict[str, Any]:
+    # Insert/update attribute values
+    data_type = kwargs.get("data_type")
+    data_identity = kwargs.get("data_identity")
+    data = kwargs.get("data")
+    updated_by = kwargs.get("updated_by")
+    attribute_values = []
+    for attribute_name, value in data.items():
+        active_attribute_value = _get_active_attribute_value(
+            f"{data_type}-{attribute_name}", data_identity
+        )
+        if active_attribute_value and active_attribute_value.value == value:
+            attribute_values.append(active_attribute_value)
+            continue
+
+        attribute_value = insert_update_attribute_value(
+            info,
+            **{
+                "data_type_attribute_name": f"{data_type}-{attribute_name}",
+                "data_identity": data_identity,
+                "value": value,
+                "updated_by": updated_by,
+            },
+        )
+        attribute_values.append(attribute_value)
+
+    return {
+        attribute_value.data_type_attribute_name.split("-")[1]: attribute_value.value
+        for attribute_value in attribute_values
+    }
+
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+@method_cache(
+    ttl=Config.get_cache_ttl(), 
+    cache_name=Config.get_cache_name("models", "attributes_data")
+)
+def get_attributes_data(
+    endpoint_id: str,
+    data_identity: str,
+    data_type: str,
+) -> Dict[str, Any]:
+    results = AttributeValueModel.data_identity_data_type_attribute_name_index.query(
+        hash_key=data_identity,
+        range_key_condition=AttributeValueModel.data_type_attribute_name.startswith(
+            data_type
+        ),
+        filter_condition=(
+            (AttributeValueModel.status == "active")
+            & (AttributeValueModel.endpoint_id == endpoint_id)
+        ),
+    )
+
+    return {
+        result.data_type_attribute_name.split("-")[1]: result.value
+        for result in results
+    }

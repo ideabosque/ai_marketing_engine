@@ -130,6 +130,15 @@ def get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileMo
     return ContactProfileModel.get(endpoint_id, contact_uuid)
 
 
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+def _get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileModel:
+    return ContactProfileModel.get(endpoint_id, contact_uuid)
+
+
 def get_contact_profile_count(endpoint_id: str, contact_uuid: str) -> int:
     return ContactProfileModel.count(
         endpoint_id, ContactProfileModel.contact_uuid == contact_uuid
@@ -157,7 +166,7 @@ def get_contact_profile_type(
 
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactProfileType:
+) -> ContactProfileType | None:
     endpoint_id = info.context.get("endpoint_id")
     if kwargs.get("email"):
         existing_profiles = list(
@@ -231,7 +240,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
         "hash_key": "endpoint_id",
         "range_key": "contact_uuid",
     },
-    model_funct=get_contact_profile,
+    model_funct=_get_contact_profile,
     count_funct=get_contact_profile_count,
     type_funct=get_contact_profile_type,
 )

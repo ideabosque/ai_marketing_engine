@@ -118,6 +118,15 @@ def get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
     return PlaceModel.get(endpoint_id, place_uuid)
 
 
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+def _get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
+    return PlaceModel.get(endpoint_id, place_uuid)
+
+
 def get_place_count(endpoint_id: str, place_uuid: str) -> int:
     return PlaceModel.count(endpoint_id, PlaceModel.place_uuid == place_uuid)
 
@@ -137,7 +146,7 @@ def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
     return PlaceType(**Utility.json_normalize(place_dict))
 
 
-def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
+def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | None:
     count = get_place_count(info.context["endpoint_id"], kwargs.get("place_uuid"))
     if count == 0:
         return None
@@ -200,7 +209,7 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
         "hash_key": "endpoint_id",
         "range_key": "place_uuid",
     },
-    model_funct=get_place,
+    model_funct=_get_place,
     count_funct=get_place_count,
     type_funct=get_place_type,
 )

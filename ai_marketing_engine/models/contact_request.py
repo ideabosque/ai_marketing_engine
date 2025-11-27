@@ -128,6 +128,15 @@ def get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestMo
     return ContactRequestModel.get(endpoint_id, request_uuid)
 
 
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+def _get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestModel:
+    return ContactRequestModel.get(endpoint_id, request_uuid)
+
+
 def get_contact_request_count(endpoint_id: str, request_uuid: str) -> int:
     return ContactRequestModel.count(
         endpoint_id, ContactRequestModel.request_uuid == request_uuid
@@ -154,7 +163,7 @@ def get_contact_request_type(
 
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactRequestType:
+) -> ContactRequestType | None:
     endpoint_id = info.context["endpoint_id"]
     count = get_contact_request_count(endpoint_id, kwargs.get("request_uuid"))
     if count == 0:
@@ -218,7 +227,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
         "hash_key": "endpoint_id",
         "range_key": "request_uuid",
     },
-    model_funct=get_contact_request,
+    model_funct=_get_contact_request,
     count_funct=get_contact_request_count,
     type_funct=get_contact_request_type,
 )

@@ -140,6 +140,17 @@ def get_corporation_profile(
     return CorporationProfileModel.get(endpoint_id, corporation_uuid)
 
 
+@retry(
+    reraise=True,
+    wait=wait_exponential(multiplier=1, max=60),
+    stop=stop_after_attempt(5),
+)
+def _get_corporation_profile(
+    endpoint_id: str, corporation_uuid: str
+) -> CorporationProfileModel:
+    return CorporationProfileModel.get(endpoint_id, corporation_uuid)
+
+
 def get_corporation_profile_count(endpoint_id: str, corporation_uuid: str) -> int:
     return CorporationProfileModel.count(
         endpoint_id, CorporationProfileModel.corporation_uuid == corporation_uuid
@@ -166,7 +177,7 @@ def get_corporation_profile_type(
 
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CorporationProfileType:
+) -> CorporationProfileType | None:
     count = get_corporation_profile_count(
         info.context["endpoint_id"], kwargs.get("corporation_uuid")
     )
@@ -236,7 +247,7 @@ def resolve_corporation_profile_list(
         "hash_key": "endpoint_id",
         "range_key": "corporation_uuid",
     },
-    model_funct=get_corporation_profile,
+    model_funct=_get_corporation_profile,
     count_funct=get_corporation_profile_count,
     type_funct=get_corporation_profile_type,
 )

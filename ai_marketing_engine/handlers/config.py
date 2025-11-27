@@ -81,6 +81,13 @@ class Config:
             "list_resolver": "ai_marketing_engine.queries.activity_history.resolve_activity_history_list",
             "cache_keys": ["key:id", "key:timestamp"],
         },
+        "attributes_data": {
+            "module": "ai_marketing_engine.models.attribute_value",
+            "model_class": "AttributeValueModel",
+            "getter": "get_attributes_data",
+            # "list_resolver": "ai_marketing_engine.queries.attribute_value.resolve_attribute_value_list",
+            "cache_keys": ["context:endpoint_id", "key:data_identity", "key:data_type"],
+        },
     }
 
     # Entity cache dependency relationships

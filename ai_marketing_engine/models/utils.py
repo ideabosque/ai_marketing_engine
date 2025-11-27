@@ -109,35 +109,18 @@ def _insert_update_attribute_values(
     data: Dict[str, Any] = {},
 ) -> Dict[str, Any]:
     from .attribute_value import (
-        _get_active_attribute_value,
-        insert_update_attribute_value,
+        insert_update_attribute_values
     )
-
-    # Insert/update attribute values
-    attribute_values = []
-    for attribute_name, value in data.items():
-        active_attribute_value = _get_active_attribute_value(
-            f"{data_type}-{attribute_name}", data_identity
-        )
-        if active_attribute_value and active_attribute_value.value == value:
-            attribute_values.append(active_attribute_value)
-            continue
-
-        attribute_value = insert_update_attribute_value(
-            info,
-            **{
-                "data_type_attribute_name": f"{data_type}-{attribute_name}",
-                "data_identity": data_identity,
-                "value": value,
-                "updated_by": updated_by,
-            },
-        )
-        attribute_values.append(attribute_value)
-
-    return {
-        attribute_value.data_type_attribute_name.split("-")[1]: attribute_value.value
-        for attribute_value in attribute_values
+    params = {
+        "data_type": data_type,
+        "data_identity": data_identity,
+        "data": data,
+        "updated_by": updated_by
     }
+    return insert_update_attribute_values(
+        info,
+        **params
+    )
 
 
 def _get_data(
@@ -145,20 +128,6 @@ def _get_data(
     data_identity: str,
     data_type: str,
 ) -> Dict[str, Any]:
-    from .attribute_value import AttributeValueModel
+    from .attribute_value import get_attributes_data
 
-    results = AttributeValueModel.data_identity_data_type_attribute_name_index.query(
-        hash_key=data_identity,
-        range_key_condition=AttributeValueModel.data_type_attribute_name.startswith(
-            data_type
-        ),
-        filter_condition=(
-            (AttributeValueModel.status == "active")
-            & (AttributeValueModel.endpoint_id == endpoint_id)
-        ),
-    )
-
-    return {
-        result.data_type_attribute_name.split("-")[1]: result.value
-        for result in results
-    }
+    return get_attributes_data(endpoint_id, data_identity, data_type)
