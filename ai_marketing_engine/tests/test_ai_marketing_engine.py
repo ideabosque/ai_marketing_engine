@@ -694,10 +694,18 @@ if __name__ == "__main__":
         python test_ai_marketing_engine.py -s           # Show print statements
         python test_ai_marketing_engine.py --pdb        # Drop into debugger on failure
 
+    Environment Variable Filtering (via .env file):
+        Set AI_MARKETING_TEST_FUNCTION in .env to run a specific test:
+        AI_MARKETING_TEST_FUNCTION=test_graphql_contact_profile_list
+        
+        Set AI_MARKETING_TEST_MARKERS in .env to run tests with specific markers:
+        AI_MARKETING_TEST_MARKERS=integration,nested_resolvers
+
     Examples:
         python test_ai_marketing_engine.py -m unit -v
         python test_ai_marketing_engine.py -k "test_initialization" -s
         python test_ai_marketing_engine.py -m nested_resolvers --pdb
+        python test_ai_marketing_engine.py --test-function test_graphql_contact_profile_list
     """
     import sys
 
