@@ -216,7 +216,7 @@ graph TD
 - **Git Commit**: cf0a16a "Implement nested GraphQL field resolvers for lazy loading"
 
 #### 2.2 Batch Loading Optimization (✅ **COMPLETED** - Dec 2024)
-- [x] `batch_loaders.py` module created with DataLoader pattern
+- [x] `models/batch_loaders/` package created with DataLoader pattern (mirrors `ai_agent_core_engine` loader layout)
 - [x] Implemented loaders with HybridCacheEngine integration:
   - `PlaceLoader`: Batch fetches places with cache support
   - `CorporationProfileLoader`: Batch fetches corporations with cache support
@@ -532,7 +532,7 @@ graph TD
 > [!IMPORTANT]
 > **Current Cache Implementation**: The AI Marketing Engine implements **THREE caching layers**:
 > 1. **Application-Level Cache**: GraphQL schema caching in [`config.py`](../ai_marketing_engine/handlers/config.py)
-> 2. **Request-Scoped Cache**: DataLoader pattern in [`batch_loaders.py`](../ai_marketing_engine/models/batch_loaders.py)
+> 2. **Request-Scoped Cache**: DataLoader pattern in [`models/batch_loaders/`](../ai_marketing_engine/models/batch_loaders/)
 > 3. **Method-Level Cache**: `@method_cache` decorator with `HybridCacheEngine` for cross-request caching
 >
 > All three layers are **✅ IMPLEMENTED and TESTED** with comprehensive test coverage.
@@ -572,7 +572,7 @@ class Config:
 
 **✅ Layer 2: Request-Scoped Cache with HybridCacheEngine (✅ IMPLEMENTED & TESTED)**
 
-**Location**: [`ai_marketing_engine/models/batch_loaders.py`](../ai_marketing_engine/models/batch_loaders.py)
+**Location**: [`ai_marketing_engine/models/batch_loaders/`](../ai_marketing_engine/models/batch_loaders/)
 
 **Pattern**: Promise DataLoader with request-scoped lifecycle + HybridCacheEngine integration
 
@@ -865,7 +865,7 @@ class Config:
 
 **2. Integrate with Batch Loaders**
 
-Update `ai_marketing_engine/models/batch_loaders.py` to use `HybridCache`:
+Update `ai_marketing_engine/models/batch_loaders/` to use `HybridCache`:
 
 ```python
 from typing import Any, Dict, List, Optional, Tuple
@@ -2125,7 +2125,7 @@ gantt
 - [contact_request.py](ai_marketing_engine/models/contact_request.py) - Request model and type converter
 - [attribute_value.py](ai_marketing_engine/models/attribute_value.py) - Dynamic attributes model
 - [activity_history.py](ai_marketing_engine/models/activity_history.py) - Audit trail model
-- [batch_loaders.py](ai_marketing_engine/models/batch_loaders.py) - **Batch loading implementation**
+- [models/batch_loaders/](ai_marketing_engine/models/batch_loaders/) - **Batch loading implementation**
 - [utils.py](ai_marketing_engine/models/utils.py) - Helper functions
 
 **GraphQL Types**:

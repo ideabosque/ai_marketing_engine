@@ -255,7 +255,7 @@ The engine implements a **three-layer caching architecture**:
 
 #### Layer 2: Request-Scoped Cache (DataLoader)
 - **Purpose**: Eliminate duplicate requests within a single GraphQL query
-- **Location**: [`batch_loaders.py`](ai_marketing_engine/models/batch_loaders.py)
+- **Location**: [`models/batch_loaders/`](ai_marketing_engine/models/batch_loaders/)
 - **TTL**: Request lifetime
 - **Implementation**: Promise DataLoader with HybridCacheEngine
 
@@ -446,7 +446,7 @@ ai_marketing_engine/
 │   │   ├── contact_request.py     # Request model
 │   │   ├── attribute_value.py     # Dynamic attributes
 │   │   ├── activity_history.py    # Audit trail
-│   │   ├── batch_loaders.py       # DataLoader implementation
+│   │   ├── batch_loaders/         # DataLoader implementations (package)
 │   │   ├── cache.py               # Cache purge system
 │   │   └── utils.py               # Helper functions
 │   ├── types/
@@ -497,6 +497,7 @@ For detailed information about the development roadmap, architecture decisions, 
 
 - ✅ **Nested Resolver Architecture**: Complete implementation with 4-level nesting
 - ✅ **Batch Loading**: DataLoader pattern with 98.5% read reduction
+- ✅ **Batch Loader Package**: Refactored into `models/batch_loaders/` package mirroring `ai_agent_core_engine`
 - ✅ **Multi-Layer Caching**: Three-tier cache with HybridCacheEngine
 - ✅ **Cascading Cache Purge**: Automatic cache invalidation
 - ✅ **Modern Testing**: Pytest framework with 85% coverage
