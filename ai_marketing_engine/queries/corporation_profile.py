@@ -21,7 +21,7 @@ from ..types.corporation_profile import (
 
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> CorporationProfileType:
+) -> CorporationProfileType | None:
     return corporation_profile.resolve_corporation_profile(info, **kwargs)
 
 

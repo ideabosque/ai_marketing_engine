@@ -31,14 +31,28 @@ class AttributeDataLoader(SafeDataLoader):
             self.cache = HybridCacheEngine(
                 Config.get_cache_name("models", "attributes_data")
             )
+            cache_meta = Config.get_cache_entity_config().get("attributes_data")
+            self.cache_func_prefix = ""
+            if cache_meta:
+                self.cache_func_prefix = ".".join([cache_meta.get("module"), cache_meta.get("getter")])
 
-    def _cache_key(self, endpoint_id: str, data_identity: str) -> str:
-        return f"{endpoint_id}:{data_identity}:{self.data_type}"
-
-    def _get_cached_data(self, endpoint_id: str, data_identity: str) -> Optional[Dict[str, Any]]:
-        if not self.cache_enabled:
+    def generate_cache_key(self, key: Key) -> str:
+        key_data = ":".join([str(key), str({})])
+        return self.cache._generate_key(
+            self.cache_func_prefix,
+            key_data
+        )
+    
+    def get_cache_data(self, key: Key) -> Dict[str, Any] | None:
+        cache_key = self.generate_cache_key(key)
+        cached_item = self.cache.get(cache_key)
+        if cached_item is None:  # pragma: no cover - defensive
             return None
-        return self.cache.get(self._cache_key(endpoint_id, data_identity))
+        return cached_item
+
+    def set_cache_data(self, key: Key, data: Any) -> None:
+        cache_key = self.generate_cache_key(key)
+        self.cache.set(cache_key, data, ttl=Config.get_cache_ttl())
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
         from ..utils import _get_data  # Import locally to avoid circular dependency
@@ -48,7 +62,7 @@ class AttributeDataLoader(SafeDataLoader):
         for endpoint_id, data_identity in keys:
             # Check cache first if enabled
             if self.cache_enabled:
-                cached_data = self._get_cached_data(endpoint_id, data_identity)
+                cached_data = self.get_cache_data((endpoint_id, data_identity, self.data_type))
                 if cached_data is not None:
                     results.append(cached_data)
                     continue
@@ -59,11 +73,8 @@ class AttributeDataLoader(SafeDataLoader):
                 results.append(data)
 
                 if self.cache_enabled:
-                    self.cache.set(
-                        self._cache_key(endpoint_id, data_identity),
-                        data,
-                        ttl=Config.get_cache_ttl(),
-                    )
+                    key = (endpoint_id, data_identity, self.data_type)
+                    self.set_cache_data(key, data)
 
             except Exception as exc:  # pragma: no cover - defensive
                 if self.logger:

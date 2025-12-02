@@ -18,7 +18,7 @@ from ..types.contact_profile import ContactProfileListType, ContactProfileType
 
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactProfileType:
+) -> ContactProfileType | None:
     return contact_profile.resolve_contact_profile(info, **kwargs)
 
 

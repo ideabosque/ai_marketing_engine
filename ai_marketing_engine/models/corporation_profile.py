@@ -181,7 +181,7 @@ def resolve_corporation_profile(
     count = get_corporation_profile_count(
         info.context["endpoint_id"], kwargs.get("corporation_uuid")
     )
-    if count:
+    if count == 0:
         return None
 
     return get_corporation_profile_type(

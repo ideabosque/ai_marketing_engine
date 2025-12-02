@@ -440,10 +440,6 @@ def purge_attributes_data_cache():
 def insert_update_attribute_values(
     info: ResolveInfo,
     **kwargs: Dict[str, Any]
-    # data_type: str,
-    # data_identity: str,
-    # updated_by: str,
-    # data: Dict[str, Any] = {},
 ) -> Dict[str, Any]:
     # Insert/update attribute values
     data_type = kwargs.get("data_type")

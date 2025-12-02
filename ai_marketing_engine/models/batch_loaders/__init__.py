@@ -41,20 +41,20 @@ class RequestLoaders:
             return
 
         if entity_type == "place" and "place_uuid" in entity_keys:
-            cache_key = PlaceLoader._cache_key(
-                entity_keys.get("endpoint_id"), entity_keys["place_uuid"]
+            cache_key = self.place_loader.generate_cache_key(
+                (entity_keys.get("endpoint_id"), entity_keys["place_uuid"])
             )
             if hasattr(self.place_loader, "cache"):
                 self.place_loader.cache.delete(cache_key)
         elif entity_type == "corporation_profile" and "corporation_uuid" in entity_keys:
-            cache_key = CorporationProfileLoader._cache_key(
-                entity_keys.get("endpoint_id"), entity_keys["corporation_uuid"]
+            cache_key = self.corporation_loader.generate_cache_key(
+                (entity_keys.get("endpoint_id"), entity_keys["corporation_uuid"])
             )
             if hasattr(self.corporation_loader, "cache"):
                 self.corporation_loader.cache.delete(cache_key)
         elif entity_type == "contact_profile" and "contact_uuid" in entity_keys:
-            cache_key = ContactProfileLoader._cache_key(
-                entity_keys.get("endpoint_id"), entity_keys["contact_uuid"]
+            cache_key = self.contact_profile_loader.generate_cache_key(
+                (entity_keys.get("endpoint_id"), entity_keys["contact_uuid"])
             )
             if hasattr(self.contact_profile_loader, "cache"):
                 self.contact_profile_loader.cache.delete(cache_key)

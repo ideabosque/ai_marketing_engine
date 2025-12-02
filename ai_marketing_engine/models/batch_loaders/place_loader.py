@@ -10,7 +10,6 @@ from promise import Promise
 from silvaengine_utility.cache import HybridCacheEngine
 
 from ...handlers.config import Config
-from ..place import PlaceModel
 from .base import SafeDataLoader, normalize_model
 
 Key = Tuple[str, str]
@@ -25,12 +24,33 @@ class PlaceLoader(SafeDataLoader):
         )
         if self.cache_enabled:
             self.cache = HybridCacheEngine(Config.get_cache_name("models", "place"))
+            cache_meta = Config.get_cache_entity_config().get("place")
+            self.cache_func_prefix = ""
+            if cache_meta:
+                self.cache_func_prefix = ".".join([cache_meta.get("module"), cache_meta.get("getter")])
 
-    @staticmethod
-    def _cache_key(endpoint_id: str, place_uuid: str) -> str:
-        return f"{endpoint_id}:{place_uuid}"
+    def generate_cache_key(self, key: Key) -> str:
+        key_data = ":".join([str(key), str({})])
+        return self.cache._generate_key(
+            self.cache_func_prefix,
+            key_data
+        )
+    
+    def get_cache_data(self, key: Key) -> Dict[str, Any] | None:
+        cache_key = self.generate_cache_key(key)
+        cached_item = self.cache.get(cache_key)
+        if cached_item is None:  # pragma: no cover - defensive
+            return None
+        if isinstance(cached_item, dict):  # pragma: no cover - defensive
+            return cached_item
+        return normalize_model(cached_item)
+
+    def set_cache_data(self, key: Key, data: Any) -> None:
+        cache_key = self.generate_cache_key(key)
+        self.cache.set(cache_key, data, ttl=Config.get_cache_ttl())
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
+        from ..place import PlaceModel # Import locally to avoid circular dependency
         unique_keys = list(dict.fromkeys(keys))
         key_map: Dict[Key, Dict[str, Any]] = {}
         uncached_keys = []
@@ -38,8 +58,7 @@ class PlaceLoader(SafeDataLoader):
         # Check cache first if enabled
         if self.cache_enabled:
             for endpoint_id, place_uuid in unique_keys:
-                cache_key = self._cache_key(endpoint_id, place_uuid)
-                cached_item = self.cache.get(cache_key)
+                cached_item = self.get_cache_data((endpoint_id, place_uuid))
                 if cached_item:
                     key_map[(endpoint_id, place_uuid)] = cached_item
                 else:
@@ -52,13 +71,12 @@ class PlaceLoader(SafeDataLoader):
             try:
                 for item in PlaceModel.batch_get(uncached_keys):
                     key = (item.endpoint_id, item.place_uuid)
-                    normalized = normalize_model(item)
-                    key_map[key] = normalized
 
                     if self.cache_enabled:
-                        cache_key = self._cache_key(*key)
-                        self.cache.set(cache_key, normalized, ttl=Config.get_cache_ttl())
+                        self.set_cache_data(key, item)
 
+                    normalized = normalize_model(item)
+                    key_map[key] = normalized
             except Exception as exc:  # pragma: no cover - defensive
                 if self.logger:
                     self.logger.exception(exc)

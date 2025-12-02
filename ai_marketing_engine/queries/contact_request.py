@@ -18,7 +18,7 @@ from ..types.contact_request import ContactRequestListType, ContactRequestType
 
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
-) -> ContactRequestType:
+) -> ContactRequestType | None:
     return contact_request.resolve_contact_request(info, **kwargs)
 
 

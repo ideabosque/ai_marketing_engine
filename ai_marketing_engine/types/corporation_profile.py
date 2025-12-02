@@ -43,7 +43,6 @@ class CorporationProfileType(ObjectType):
         corporation_uuid = getattr(parent, "corporation_uuid", None)
         if not endpoint_id or not corporation_uuid:
             return None
-
         loaders = get_loaders(info.context)
         return loaders.corporation_data_loader.load((endpoint_id, corporation_uuid))
 
