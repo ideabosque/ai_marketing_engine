@@ -81,6 +81,8 @@ def get_question_group_type(
     info: ResolveInfo, question_group: QuestionGroupModel
 ) -> QuestionGroupType:
     try:
+        if not question_group.wizard_uuids:
+            question_group.wizard_uuids = []
         wizards = _get_wizards(question_group.endpoint_id, question_group.wizard_uuids)
         question_group = question_group.__dict__["attribute_values"]
         question_group["wizards"] = wizards
