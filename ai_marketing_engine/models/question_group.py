@@ -91,7 +91,7 @@ def get_question_group_type(
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
         raise e
-    return QuestionGroupType(**Utility.json_loads(Utility.json_dumps(question_group)))
+    return QuestionGroupType(**Utility.json_normalize(question_group))
 
 
 def resolve_question_group(
