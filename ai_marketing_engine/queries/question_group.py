@@ -15,6 +15,7 @@ from ..types.question_group import QuestionGroupListType, QuestionGroupType
 def resolve_question_group(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> QuestionGroupType:
+    info.context.get("logger").info(f"context: {info.context}")
     return question_group.resolve_question_group(info, **kwargs)
 
 
