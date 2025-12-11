@@ -222,7 +222,7 @@ class AIMarketingEngine(Graphql):
         ## Test the waters 🧪 before diving in!
         ##<--Testing Data-->##
 
-        params["endpoint_id"] = params.get("store_id", self.setting.get("endpoint_id"))
+        # params["endpoint_id"] = params.get("store_id", self.setting.get("endpoint_id"))
 
         ##<--Testing Data-->##
         schema = Schema(
