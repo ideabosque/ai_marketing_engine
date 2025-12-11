@@ -27,6 +27,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..types.contact_request import ContactRequestListType, ContactRequestType
 from .contact_profile import get_contact_profile_count
+from .utils import _get_contact_profile
 
 
 class PlaceUuidIndex(LocalSecondaryIndex):
@@ -152,13 +153,18 @@ def get_contact_request_type(
     That is resolved lazily by ContactRequestType.resolve_contact_profile.
     """
     try:
-        cr_dict = contact_request.__dict__["attribute_values"]
-    except Exception:
+        contact_profile = _get_contact_profile(
+            contact_request.endpoint_id, contact_request.contact_uuid
+        )
+        contact_request = contact_request.__dict__["attribute_values"]
+        contact_request["contact_profile"] = contact_profile
+        contact_request.pop("place_uuid")
+        contact_request.pop("contact_uuid")
+    except Exception as e:
         log = traceback.format_exc()
         info.context.get("logger").exception(log)
-        raise
-
-    return ContactRequestType(**Utility.json_normalize(cr_dict))
+        raise e
+    return ContactRequestType(**Utility.json_normalize(contact_request))
 
 
 def resolve_contact_request(

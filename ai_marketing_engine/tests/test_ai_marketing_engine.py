@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Integration tests for AI Marketing Engine with nested resolvers."""
 from __future__ import annotations
+from __future__ import print_function
 
 __author__ = "bibow"
 
