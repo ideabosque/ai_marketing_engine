@@ -42,7 +42,7 @@ def create_listener_info(
             "setting": setting,
             "endpoint_id": kwargs.get("endpoint_id"),
             "logger": logger,
-            "connectionId": kwargs.get("connection_id"),
+            "connection_id": kwargs.get("connection_id"),
         },
         path=None,
     )
