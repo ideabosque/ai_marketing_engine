@@ -18,8 +18,6 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
 )
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -28,9 +26,9 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility, method_cache
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
-
 from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
@@ -89,16 +87,29 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
+
+                # Get entity keys from entity parameter (for updates)
+                entity_keys = {}
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["corporation_uuid"] = getattr(
+                        entity, "corporation_uuid", None
+                    )
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("corporation_uuid"):
+                    entity_keys["corporation_uuid"] = kwargs.get("corporation_uuid")
 
                 endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
                     "endpoint_id"
                 )
-                entity_keys = {}
-                if kwargs.get("corporation_uuid"):
-                    entity_keys["corporation_uuid"] = kwargs.get("corporation_uuid")
 
-                result = purge_entity_cascading_cache(
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="corporation_profile",
                     context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
@@ -106,7 +117,6 @@ def purge_cache():
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
@@ -131,7 +141,7 @@ def create_corporation_profile_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
+    ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "corporation_profile")
 )
 def get_corporation_profile(
@@ -241,7 +251,6 @@ def resolve_corporation_profile_list(
     return inquiry_funct, count_funct, args
 
 
-@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -251,6 +260,7 @@ def resolve_corporation_profile_list(
     count_funct=get_corporation_profile_count,
     type_funct=get_corporation_profile_type,
 )
+@purge_cache()
 def insert_update_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
@@ -310,7 +320,6 @@ def insert_update_corporation_profile(
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -318,6 +327,7 @@ def insert_update_corporation_profile(
     },
     model_funct=get_corporation_profile,
 )
+@purge_cache()
 def delete_corporation_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True

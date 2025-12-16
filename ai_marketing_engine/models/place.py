@@ -13,8 +13,6 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import ListAttribute, UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -23,9 +21,9 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility, method_cache
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
-
 from ..types.place import PlaceListType, PlaceType
 
 
@@ -69,16 +67,27 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
+
+                # Get entity keys from entity parameter (for updates)
+                entity_keys = {}
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["place_uuid"] = getattr(entity, "place_uuid", None)
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("place_uuid"):
+                    entity_keys["place_uuid"] = kwargs.get("place_uuid")
 
                 endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
                     "endpoint_id"
                 )
-                entity_keys = {}
-                if kwargs.get("place_uuid"):
-                    entity_keys["place_uuid"] = kwargs.get("place_uuid")
 
-                result = purge_entity_cascading_cache(
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="place",
                     context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
@@ -86,7 +95,6 @@ def purge_cache():
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
@@ -111,7 +119,7 @@ def create_place_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
+    ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "place")
 )
 def get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
@@ -203,7 +211,6 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     return inquiry_funct, count_funct, args
 
 
-@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -213,6 +220,7 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     count_funct=get_place_count,
     type_funct=get_place_type,
 )
+@purge_cache()
 def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     endpoint_id = kwargs.get("endpoint_id")
     place_uuid = kwargs.get("place_uuid")
@@ -271,7 +279,6 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -279,6 +286,7 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     },
     model_funct=get_place,
 )
+@purge_cache()
 def delete_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True

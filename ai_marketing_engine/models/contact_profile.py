@@ -13,8 +13,6 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -23,10 +21,10 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility, method_cache
-
-from ..handlers.config import Config
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.ai_marketing_utility import data_sync_decorator
+from ..handlers.config import Config
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
 from .utils import _insert_update_attribute_values
 
@@ -81,16 +79,27 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
+
+                # Get entity keys from entity parameter (for updates)
+                entity_keys = {}
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["contact_uuid"] = getattr(entity, "contact_uuid", None)
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("contact_uuid"):
+                    entity_keys["contact_uuid"] = kwargs.get("contact_uuid")
 
                 endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
                     "endpoint_id"
                 )
-                entity_keys = {}
-                if kwargs.get("contact_uuid"):
-                    entity_keys["contact_uuid"] = kwargs.get("contact_uuid")
 
-                result = purge_entity_cascading_cache(
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="contact_profile",
                     context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
@@ -98,7 +107,6 @@ def purge_cache():
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
@@ -123,7 +131,7 @@ def create_contact_profile_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
+    ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "contact_profile")
 )
 def get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileModel:
@@ -233,7 +241,6 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     return inquiry_funct, count_funct, args
 
 
-@purge_cache()
 @data_sync_decorator
 @insert_update_decorator(
     keys={
@@ -244,6 +251,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     count_funct=get_contact_profile_count,
     type_funct=get_contact_profile_type,
 )
+@purge_cache()
 def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     endpoint_id = kwargs.get("endpoint_id")
     contact_uuid = kwargs.get("contact_uuid")
@@ -317,7 +325,6 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -325,6 +332,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     },
     model_funct=get_contact_profile,
 )
+@purge_cache()
 def delete_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True

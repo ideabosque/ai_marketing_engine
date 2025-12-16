@@ -27,10 +27,9 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility, method_cache
-
-from ..handlers.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from ..handlers.config import Config
 from ..types.activity_history import ActivityHistoryListType, ActivityHistoryType
 
 
@@ -67,18 +66,30 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
+
+                # Get entity keys from entity parameter (for updates)
+                entity_keys = {}
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["id"] = getattr(entity, "id", None)
+                    entity_keys["timestamp"] = getattr(entity, "timestamp", None)
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("id"):
+                    entity_keys["id"] = kwargs.get("id")
+                if not entity_keys.get("timestamp"):
+                    entity_keys["timestamp"] = kwargs.get("timestamp")
 
                 endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
                     "endpoint_id"
                 )
-                entity_keys = {}
-                if kwargs.get("id"):
-                    entity_keys["id"] = kwargs.get("id")
-                if kwargs.get("timestamp"):
-                    entity_keys["timestamp"] = kwargs.get("timestamp")
 
-                result = purge_entity_cascading_cache(
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="activity_history",
                     context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
@@ -86,7 +97,6 @@ def purge_cache():
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
@@ -111,7 +121,7 @@ def create_activity_history_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
+    ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "activity_history")
 )
 def get_activity_history(id: str, timestamp: int) -> ActivityHistoryModel:
@@ -202,7 +212,6 @@ def insert_activity_history(
     )
 
 
-@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "id",
@@ -210,6 +219,7 @@ def insert_activity_history(
     },
     model_funct=get_activity_history,
 )
+@purge_cache()
 def delete_activity_history(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True

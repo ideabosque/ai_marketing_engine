@@ -21,10 +21,9 @@ from silvaengine_dynamodb_base import (
     resolve_list_decorator,
 )
 from silvaengine_utility import Utility, method_cache
-
-from ..handlers.config import Config
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from ..handlers.config import Config
 from ..types.contact_request import ContactRequestListType, ContactRequestType
 from .contact_profile import get_contact_profile_count
 from .utils import _get_contact_profile
@@ -80,16 +79,27 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
+
+                # Get entity keys from entity parameter (for updates)
+                entity_keys = {}
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["request_uuid"] = getattr(entity, "request_uuid", None)
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("request_uuid"):
+                    entity_keys["request_uuid"] = kwargs.get("request_uuid")
 
                 endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
                     "endpoint_id"
                 )
-                entity_keys = {}
-                if kwargs.get("request_uuid"):
-                    entity_keys["request_uuid"] = kwargs.get("request_uuid")
 
-                result = purge_entity_cascading_cache(
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="contact_request",
                     context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
@@ -97,7 +107,6 @@ def purge_cache():
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
@@ -122,7 +131,7 @@ def create_contact_request_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
+    ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "contact_request")
 )
 def get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestModel:
@@ -227,7 +236,6 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     return inquiry_funct, count_funct, args
 
 
-@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -237,6 +245,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     count_funct=get_contact_request_count,
     type_funct=get_contact_request_type,
 )
+@purge_cache()
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     endpoint_id = kwargs.get("endpoint_id")
     request_uuid = kwargs.get("request_uuid")
@@ -281,7 +290,6 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "endpoint_id",
@@ -289,6 +297,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     },
     model_funct=get_contact_request,
 )
+@purge_cache()
 def delete_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True
