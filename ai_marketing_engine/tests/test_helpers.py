@@ -5,6 +5,7 @@ from __future__ import annotations
 
 __author__ = "bibow"
 
+import json
 import logging
 import time
 import uuid
@@ -51,6 +52,19 @@ def call_method(
 
     try:
         result = method(**arguments)
+        if isinstance(result, str):
+            try:
+                result = json.loads(result)
+            except ValueError:
+                pass
+
+        # Handle API Gateway-style response format
+        if isinstance(result, dict) and 'body' in result and isinstance(result['body'], str):
+            try:
+                result = json.loads(result['body'])
+            except (ValueError, TypeError):
+                pass
+
         elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
         logger.info(
             f"Method response: cid={cid} op={op} elapsed_ms={elapsed_ms} "

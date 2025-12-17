@@ -11,12 +11,20 @@ import sys
 from typing import Any
 
 import pytest
+from silvaengine_utility.graphql import Graphql
+from test_helpers import call_method, log_test_result
 
 # Add parent directory to path to allow imports when running directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from silvaengine_utility.graphql import Graphql
-from test_helpers import call_method, log_test_result
+
+def extract_graphql_data(result: dict) -> dict:
+    """Extract data from GraphQL result, handling both formats.
+
+    Handles both standard GraphQL format {"data": {...}} and direct format {...}
+    """
+    return result.get("data", result)
+
 
 # Load test data
 _test_data_file = os.path.join(os.path.dirname(__file__), "test_data.json")
@@ -152,16 +160,10 @@ def test_graphql_insert_update_corporation_profile(
     assert error is None, f"Insert failed: {error}"
     assert result is not None
 
-    # Parse JSON response if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
+    data = extract_graphql_data(result)
+    assert "insertUpdateCorporationProfile" in data
 
-    assert "data" in result
-    assert "insertUpdateCorporationProfile" in result["data"]
-
-    corp_profile = result["data"]["insertUpdateCorporationProfile"][
-        "corporationProfile"
-    ]
+    corp_profile = data["insertUpdateCorporationProfile"]["corporationProfile"]
     assert corp_profile["businessName"] == insert_data["businessName"]
 
     # Extract the generated UUID from INSERT response
@@ -181,16 +183,10 @@ def test_graphql_insert_update_corporation_profile(
     assert error is None, f"Update failed: {error}"
     assert result is not None
 
-    # Parse JSON response if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
+    data = extract_graphql_data(result)
+    assert "insertUpdateCorporationProfile" in data
 
-    assert "data" in result
-    assert "insertUpdateCorporationProfile" in result["data"]
-
-    corp_profile = result["data"]["insertUpdateCorporationProfile"][
-        "corporationProfile"
-    ]
+    corp_profile = data["insertUpdateCorporationProfile"]["corporationProfile"]
     assert (
         corp_profile["businessName"] == update_data["businessName"]
     ), "Business name should be updated"
@@ -305,15 +301,11 @@ def test_graphql_insert_update_place(
     assert error is None, f"Insert failed: {error}"
     assert result is not None
 
-    # Parse JSON if result is a string
-    if isinstance(result, str):
-        result = json.loads(result)
-
-    assert "data" in result
-    assert "insertUpdatePlace" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdatePlace" in data
 
     # Extract the placeUuid from INSERT result (note: response has nested "place" object)
-    place_data = result["data"]["insertUpdatePlace"].get("place", {})
+    place_data = data["insertUpdatePlace"].get("place", {})
     place_uuid = place_data.get("placeUuid")
     assert place_uuid is not None, "Insert should return placeUuid"
 
@@ -338,8 +330,8 @@ def test_graphql_insert_update_place(
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdatePlace" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdatePlace" in data
 
 
 @pytest.mark.integration
@@ -442,13 +434,11 @@ def test_graphql_insert_update_contact_profile(
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactProfile" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactProfile" in data
 
     # Extract the contactUuid from INSERT result (note: response has nested "contactProfile" object)
-    contact_data = result["data"]["insertUpdateContactProfile"].get(
-        "contactProfile", {}
-    )
+    contact_data = data["insertUpdateContactProfile"].get("contactProfile", {})
     contact_uuid = contact_data.get("contactUuid")
     assert contact_uuid is not None, "Insert should return contactUuid"
 
@@ -473,8 +463,8 @@ def test_graphql_insert_update_contact_profile(
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactProfile" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactProfile" in data
 
 
 @pytest.mark.integration
@@ -590,13 +580,10 @@ def test_graphql_insert_update_contact_request(
 
     assert cp_error is None, f"Failed to create prerequisite ContactProfile: {cp_error}"
 
-    if isinstance(cp_result, str):
-        cp_result = json.loads(cp_result)
+    cp_data = extract_graphql_data(cp_result)
 
     # Extract the contactUuid
-    contact_data = cp_result["data"]["insertUpdateContactProfile"].get(
-        "contactProfile", {}
-    )
+    contact_data = cp_data["insertUpdateContactProfile"].get("contactProfile", {})
     contact_uuid = contact_data.get("contactUuid")
     assert contact_uuid is not None, "Failed to get contactUuid from prerequisite"
 
@@ -629,13 +616,11 @@ def test_graphql_insert_update_contact_request(
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactRequest" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactRequest" in data
 
     # Extract the requestUuid from INSERT result (note: response has nested "contactRequest" object)
-    request_data = result["data"]["insertUpdateContactRequest"].get(
-        "contactRequest", {}
-    )
+    request_data = data["insertUpdateContactRequest"].get("contactRequest", {})
     request_uuid = request_data.get("requestUuid")
     assert request_uuid is not None, "Insert should return requestUuid"
 
@@ -660,8 +645,8 @@ def test_graphql_insert_update_contact_request(
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactRequest" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactRequest" in data
 
 
 @pytest.mark.integration

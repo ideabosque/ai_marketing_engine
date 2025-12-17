@@ -29,6 +29,19 @@ logger = logging.getLogger("test_ai_marketing_engine")
 # Use absolute path relative to this conftest file to ensure imports work
 # regardless of where pytest is run from
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+sys.path.insert(
+    0,
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../../silvaengine_dynamodb_base")
+    ),
+)
+sys.path.insert(
+    0,
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../../silvaengine_utility")
+    ),
+)
 
 from silvaengine_utility.graphql import Graphql
 
@@ -46,6 +59,7 @@ SETTING = {
         },
     },
     "endpoint_id": os.getenv("endpoint_id"),
+    "part_id": os.getenv("part_id"),
     "execute_mode": os.getenv("execute_mode", "local"),
     "initialize_tables": int(os.getenv("initialize_tables", "0")),
 }

@@ -98,14 +98,12 @@ def purge_cache():
                 if not entity_keys.get("request_uuid"):
                     entity_keys["request_uuid"] = kwargs.get("request_uuid")
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                partition_key = args[0].context.get("partition_key")
 
                 purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="contact_request",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys={"partition_key": partition_key},
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -175,7 +173,7 @@ def get_contact_request_type(
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestType | None:
-    partition_key = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     count = get_contact_request_count(partition_key, kwargs.get("request_uuid"))
     if count == 0:
         return None
@@ -193,7 +191,7 @@ def resolve_contact_request(
     type_funct=get_contact_request_type,
 )
 def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    partition_key = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     contact_uuid = kwargs.get("contact_uuid")
     request_title = kwargs.get("request_title")
     request_detail = kwargs.get("request_detail")
@@ -243,7 +241,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 )
 @purge_cache()
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key")
     request_uuid = kwargs.get("request_uuid")
 
     assert (
@@ -258,7 +256,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
             "contact_uuid": kwargs["contact_uuid"],
             "place_uuid": kwargs["place_uuid"],
             "endpoint_id": info.context.get("endpoint_id"),
-            "part_id": kwargs.get("part_id", info.context.get("part_id")),
+            "part_id": info.context.get("part_id"),
             "request_title": kwargs["request_title"],
             "request_detail": kwargs["request_detail"],
             "updated_by": kwargs["updated_by"],

@@ -25,7 +25,8 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
@@ -107,14 +108,12 @@ def purge_cache():
                 if not entity_keys.get("corporation_uuid"):
                     entity_keys["corporation_uuid"] = kwargs.get("corporation_uuid")
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                partition_key = args[0].context.get("partition_key")
 
                 purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="corporation_profile",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys={"partition_key": partition_key},
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -186,24 +185,20 @@ def get_corporation_profile_type(
         info.context.get("logger").exception(log)
         raise
 
-    return CorporationProfileType(**Utility.json_normalize(corp_dict))
+    return CorporationProfileType(**Serializer.json_normalize(corp_dict))
 
 
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileType | None:
-    partition_key = info.context["endpoint_id"]
-    count = get_corporation_profile_count(
-        partition_key, kwargs.get("corporation_uuid")
-    )
+    partition_key = info.context["partition_key"]
+    count = get_corporation_profile_count(partition_key, kwargs.get("corporation_uuid"))
     if count == 0:
         return None
 
     return get_corporation_profile_type(
         info,
-        get_corporation_profile(
-            partition_key, kwargs.get("corporation_uuid")
-        ),
+        get_corporation_profile(partition_key, kwargs.get("corporation_uuid")),
     )
 
 
@@ -221,7 +216,7 @@ def resolve_corporation_profile(
 def resolve_corporation_profile_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    partition_key = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     external_id = kwargs.get("external_id")
     corporation_type = kwargs.get("corporation_type")
     business_name = kwargs.get("business_name")
@@ -269,7 +264,7 @@ def resolve_corporation_profile_list(
 def insert_update_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key")
     corporation_uuid = kwargs.get("corporation_uuid")
     if kwargs.get("entity") is None:
         cols = {

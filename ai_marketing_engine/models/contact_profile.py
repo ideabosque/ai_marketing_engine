@@ -98,14 +98,12 @@ def purge_cache():
                 if not entity_keys.get("contact_uuid"):
                     entity_keys["contact_uuid"] = kwargs.get("contact_uuid")
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                partition_key = args[0].context.get("partition_key")
 
                 purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="contact_profile",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys={"partition_key": partition_key},
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -176,7 +174,7 @@ def get_contact_profile_type(
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactProfileType | None:
-    partition_key = info.context.get("endpoint_id")
+    partition_key = info.context["partition_key"]
     if kwargs.get("email"):
         existing_profiles = list(
             ContactProfileModel.email_index.query(
@@ -207,7 +205,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     email = kwargs.get("email")
     first_name = kwargs.get("first_name")
     last_name = kwargs.get("last_name")
-    partition_key = info.context.get("endpoint_id", None)
+    partition_key = info.context.get("partition_key")
 
     args = []
     inquiry_funct = ContactProfileModel.scan
@@ -254,7 +252,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 )
 @purge_cache()
 def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key")
     contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
         # Check if email already exists

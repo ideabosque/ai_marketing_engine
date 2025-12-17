@@ -20,7 +20,8 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
@@ -85,14 +86,12 @@ def purge_cache():
                 if not entity_keys.get("place_uuid"):
                     entity_keys["place_uuid"] = kwargs.get("place_uuid")
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                partition_key = args[0].context.get("partition_key")
 
                 purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="place",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys={"partition_key": partition_key},
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -154,11 +153,11 @@ def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
         info.context.get("logger").exception(log)
         raise
 
-    return PlaceType(**Utility.json_normalize(place_dict))
+    return PlaceType(**Serializer.json_normalize(place_dict))
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | None:
-    partition_key = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     count = get_place_count(partition_key, kwargs.get("place_uuid"))
     if count == 0:
         return None
@@ -176,7 +175,7 @@ def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | No
     type_funct=get_place_type,
 )
 def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    partition_key = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     region = kwargs.get("region")
     latitude = kwargs.get("latitude")
     longitude = kwargs.get("longitude")
@@ -226,7 +225,7 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
 )
 @purge_cache()
 def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key")
     place_uuid = kwargs.get("place_uuid")
     if kwargs.get("entity") is None:
         cols = {
@@ -236,7 +235,7 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
             "business_name": kwargs["business_name"],
             "address": kwargs["address"],
             "endpoint_id": info.context.get("endpoint_id"),
-            "part_id": kwargs.get("part_id", info.context.get("part_id")),
+            "part_id": info.context.get("part_id"),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
