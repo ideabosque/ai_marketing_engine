@@ -286,6 +286,13 @@ def insert_update_corporation_profile(
             corporation_uuid,
             **cols,
         ).save()
+
+        # Handle dynamic attributes (data field)
+        data = _insert_update_attribute_values(
+            info, "corporation", corporation_uuid, kwargs["updated_by"], kwargs.get("data", {}), partition_key
+        )
+        info.context["logger"].info(f"Corporation profile data: {data} has been updated.")
+
         return
 
     corporation_profile = kwargs.get("entity")
@@ -316,6 +323,7 @@ def insert_update_corporation_profile(
         corporation_uuid,
         kwargs["updated_by"],
         kwargs.get("data", {}),
+        corporation_profile.partition_key,
     )
     info.context["logger"].info(f"Corporation profile data: {data} has been updated.")
 

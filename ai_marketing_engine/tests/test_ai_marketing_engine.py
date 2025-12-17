@@ -196,18 +196,18 @@ def test_graphql_insert_update_corporation_profile(
     assert corp_profile["corporationUuid"] == new_corporation_uuid
 
     # Step 3: Cleanup - Delete the test record
-    delete_query = Graphql.generate_graphql_operation(
-        "deleteCorporationProfile", "Mutation", schema
-    )
+    # delete_query = Graphql.generate_graphql_operation(
+    #     "deleteCorporationProfile", "Mutation", schema
+    # )
 
-    delete_data = {"corporationUuid": new_corporation_uuid}
+    # delete_data = {"corporationUuid": new_corporation_uuid}
 
-    call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": delete_query, "variables": delete_data},
-        "delete_corporation_profile",
-    )
+    # call_method(
+    #     ai_marketing_engine,
+    #     "ai_marketing_graphql",
+    #     {"query": delete_query, "variables": delete_data},
+    #     "delete_corporation_profile",
+    # )
 
 
 @pytest.mark.integration

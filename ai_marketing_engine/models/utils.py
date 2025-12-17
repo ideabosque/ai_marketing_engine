@@ -116,6 +116,7 @@ def _insert_update_attribute_values(
     data_identity: str,
     updated_by: str,
     data: Dict[str, Any] = {},
+    partition_key: str = None,
 ) -> Dict[str, Any]:
     from .attribute_value import insert_update_attribute_values
 
@@ -125,6 +126,8 @@ def _insert_update_attribute_values(
         "data": data,
         "updated_by": updated_by,
     }
+    if partition_key:
+        params["partition_key"] = partition_key
     return insert_update_attribute_values(info, **params)
 
 

@@ -241,7 +241,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 )
 @purge_cache()
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    partition_key = kwargs.get("partition_key")
+    partition_key = kwargs.get("partition_key") or info.context.get("partition_key")
     request_uuid = kwargs.get("request_uuid")
 
     assert (

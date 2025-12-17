@@ -8,7 +8,6 @@ import time
 from typing import Any, Dict
 
 from graphene import Field, Int, List, ObjectType, ResolveInfo, String
-from silvaengine_utility import JSON
 
 from .mutations.activity_history import DeleteActivityHistory, InsertActivityHistory
 from .mutations.attribute_value import DeleteAttributeValue, InsertUpdateAttributeValue
@@ -23,7 +22,8 @@ from .queries.activity_history import (
     resolve_activity_history,
     resolve_activity_history_list,
 )
-from .queries.ai_marketing import resolve_crm_user_list, resolve_presigned_upload_url
+
+# from .queries.ai_marketing import resolve_crm_user_list, resolve_presigned_upload_url
 from .queries.attribute_value import (
     resolve_attribute_value,
     resolve_attribute_value_list,
@@ -42,7 +42,6 @@ from .queries.corporation_profile import (
 )
 from .queries.place import resolve_place, resolve_place_list
 from .types.activity_history import ActivityHistoryListType, ActivityHistoryType
-from .types.ai_marketing import CrmUserListType, PresignedUploadUrlType
 from .types.attribute_value import AttributeValueListType, AttributeValueType
 from .types.contact_profile import ContactProfileListType, ContactProfileType
 from .types.contact_request import ContactRequestListType, ContactRequestType
@@ -69,19 +68,11 @@ def type_class():
         PlaceType,
         ContactRequestType,
         ContactRequestListType,
-        PresignedUploadUrlType,
-        CrmUserListType,
     ]
 
 
 class Query(ObjectType):
     ping = String()
-
-    presigned_upload_url = Field(
-        PresignedUploadUrlType,
-        required=True,
-        object_key=String(required=True),
-    )
 
     activity_history = Field(
         ActivityHistoryType,
@@ -187,20 +178,8 @@ class Query(ObjectType):
         statuses=List(String),
     )
 
-    crm_user_list = Field(
-        CrmUserListType,
-        page_number=Int(),
-        limit=Int(),
-        address=String(),
-    )
-
     def resolve_ping(self, info: ResolveInfo) -> str:
         return f"Hello at {time.strftime('%X')}!!"
-
-    def resolve_presigned_upload_url(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> PresignedUploadUrlType:
-        return resolve_presigned_upload_url(info, **kwargs)
 
     def resolve_activity_history(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
@@ -260,10 +239,10 @@ class Query(ObjectType):
     ) -> AttributeValueListType:
         return resolve_attribute_value_list(info, **kwargs)
 
-    def resolve_crm_user_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CrmUserListType:
-        return resolve_crm_user_list(info, **kwargs)
+    # def resolve_crm_user_list(
+    #     self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    # ) -> CrmUserListType:
+    #     return resolve_crm_user_list(info, **kwargs)
 
 
 class Mutations(ObjectType):

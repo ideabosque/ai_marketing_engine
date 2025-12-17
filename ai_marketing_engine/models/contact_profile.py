@@ -24,7 +24,6 @@ from silvaengine_utility import method_cache
 from silvaengine_utility.serializer import Serializer
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from ..handlers.ai_marketing_utility import data_sync_decorator
 from ..handlers.config import Config
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
 from .utils import _insert_update_attribute_values
@@ -240,7 +239,6 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     return inquiry_funct, count_funct, args
 
 
-@data_sync_decorator
 @insert_update_decorator(
     keys={
         "hash_key": "partition_key",

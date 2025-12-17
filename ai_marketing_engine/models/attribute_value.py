@@ -244,7 +244,7 @@ def resolve_attribute_value(
 def resolve_attribute_value_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     data_type_attribute_name = kwargs["data_type_attribute_name"]
     data_identity = kwargs.get("data_identity")
-    partition_key = info.context.get("partition_key")
+    partition_key = info.context.get("partition_key") or info.context.get("endpoint_id")
     value = kwargs.get("value")
     statuses = kwargs.get("statuses")
 
@@ -314,7 +314,7 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     if kwargs.get("entity") is None:
         cols = {
             "data_identity": kwargs["data_identity"],
-            "partition_key": info.context.get("partition_key"),
+            "partition_key": kwargs.get("partition_key") or info.context.get("partition_key") or info.context.get("endpoint_id"),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -426,7 +426,7 @@ def purge_attributes_data_cache():
             try:
                 from ..models.cache import purge_entity_cascading_cache
 
-                partition_key = args[0].context.get("partition_key")
+                partition_key = args[0].context.get("partition_key") or args[0].context.get("endpoint_id")
                 entity_keys = {}
                 if kwargs.get("data_identity"):
                     entity_keys["data_identity"] = kwargs.get("data_identity")
@@ -436,7 +436,7 @@ def purge_attributes_data_cache():
                 result = purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="attributes_data",
-                    context_keys=({"partition_key": partition_key}),
+                    context_keys=({"endpoint_id": partition_key} if partition_key else None),
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -462,6 +462,7 @@ def insert_update_attribute_values(
     data_identity = kwargs.get("data_identity")
     data = kwargs.get("data")
     updated_by = kwargs.get("updated_by")
+    partition_key = kwargs.get("partition_key")
     attribute_values = []
     for attribute_name, value in data.items():
         active_attribute_value = _get_active_attribute_value(
@@ -471,14 +472,18 @@ def insert_update_attribute_values(
             attribute_values.append(active_attribute_value)
             continue
 
+        insert_params = {
+            "data_type_attribute_name": f"{data_type}-{attribute_name}",
+            "data_identity": data_identity,
+            "value": value,
+            "updated_by": updated_by,
+        }
+        if partition_key:
+            insert_params["partition_key"] = partition_key
+
         attribute_value = insert_update_attribute_value(
             info,
-            **{
-                "data_type_attribute_name": f"{data_type}-{attribute_name}",
-                "data_identity": data_identity,
-                "value": value,
-                "updated_by": updated_by,
-            },
+            **insert_params,
         )
         attribute_values.append(attribute_value)
 

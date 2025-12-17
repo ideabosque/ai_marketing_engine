@@ -5,7 +5,6 @@ from __future__ import print_function
 __author__ = "bibow"
 
 from graphene import DateTime, Field, List, ObjectType, String
-
 from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSON
 
@@ -27,7 +26,7 @@ class ContactProfileType(ObjectType):
     place = Field(lambda: PlaceType)
 
     # Dynamic attributes for contact – keep as JSON, resolved lazily
-    data = JSON()
+    data = Field(JSON)
 
     updated_by = String()
     created_at = DateTime()
@@ -46,7 +45,9 @@ class ContactProfileType(ObjectType):
         if isinstance(existing_place, PlaceType):
             return existing_place
 
-        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
+        partition_key = getattr(parent, "partition_key", None) or getattr(
+            parent, "endpoint_id", None
+        )
         place_uuid = getattr(parent, "place_uuid", None)
         if not partition_key or not place_uuid:
             return None
@@ -65,7 +66,9 @@ class ContactProfileType(ObjectType):
         if isinstance(existing_data, dict):
             return existing_data
 
-        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
+        partition_key = getattr(parent, "partition_key", None) or getattr(
+            parent, "endpoint_id", None
+        )
         contact_uuid = getattr(parent, "contact_uuid", None)
         if not partition_key or not contact_uuid:
             return None
