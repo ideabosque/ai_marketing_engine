@@ -13,8 +13,10 @@ from .corporation_profile import CorporationProfileType
 
 
 class PlaceType(ObjectType):
-    endpoint_id = String()
+    partition_key = String()
     place_uuid = String()
+    endpoint_id = String()
+    part_id = String()
     region = String()
     latitude = String()
     longitude = String()
@@ -49,14 +51,14 @@ class PlaceType(ObjectType):
         if isinstance(existing, CorporationProfileType):
             return existing
 
-        # Case 1: need to fetch by endpoint_id + corporation_uuid
-        endpoint_id = getattr(parent, "endpoint_id", None)
+        # Case 1: need to fetch by partition_key + corporation_uuid
+        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
         corporation_uuid = getattr(parent, "corporation_uuid", None)
-        if not endpoint_id or not corporation_uuid:
+        if not partition_key or not corporation_uuid:
             return None
 
         loaders = get_loaders(info.context)
-        return loaders.corporation_loader.load((endpoint_id, corporation_uuid)).then(
+        return loaders.corporation_loader.load((partition_key, corporation_uuid)).then(
             lambda corp_dict: CorporationProfileType(**corp_dict)
             if corp_dict
             else None

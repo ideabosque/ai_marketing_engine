@@ -14,9 +14,11 @@ from .place import PlaceType
 
 
 class ContactProfileType(ObjectType):
-    endpoint_id = String()
+    partition_key = String()
     contact_uuid = String()
     email = String()
+    endpoint_id = String()
+    part_id = String()
     first_name = String()
     last_name = String()
 
@@ -44,13 +46,13 @@ class ContactProfileType(ObjectType):
         if isinstance(existing_place, PlaceType):
             return existing_place
 
-        endpoint_id = getattr(parent, "endpoint_id", None)
+        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
         place_uuid = getattr(parent, "place_uuid", None)
-        if not endpoint_id or not place_uuid:
+        if not partition_key or not place_uuid:
             return None
 
         loaders = get_loaders(info.context)
-        return loaders.place_loader.load((endpoint_id, place_uuid)).then(
+        return loaders.place_loader.load((partition_key, place_uuid)).then(
             lambda place_dict: PlaceType(**place_dict) if place_dict else None
         )
 
@@ -63,13 +65,13 @@ class ContactProfileType(ObjectType):
         if isinstance(existing_data, dict):
             return existing_data
 
-        endpoint_id = getattr(parent, "endpoint_id", None)
+        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
         contact_uuid = getattr(parent, "contact_uuid", None)
-        if not endpoint_id or not contact_uuid:
+        if not partition_key or not contact_uuid:
             return None
 
         loaders = get_loaders(info.context)
-        return loaders.contact_data_loader.load((endpoint_id, contact_uuid))
+        return loaders.contact_data_loader.load((partition_key, contact_uuid))
 
 
 class ContactProfileListType(ListObjectType):

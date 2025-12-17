@@ -16,7 +16,7 @@ Key = Tuple[str, str]
 
 
 class CorporationProfileLoader(SafeDataLoader):
-    """Batch loader for CorporationProfileModel keyed by (endpoint_id, corporation_uuid)."""
+    """Batch loader for CorporationProfileModel keyed by (partition_key, corporation_uuid)."""
 
     def __init__(self, logger=None, cache_enabled=True, **kwargs):
         super(CorporationProfileLoader, self).__init__(
@@ -59,20 +59,24 @@ class CorporationProfileLoader(SafeDataLoader):
 
         # Check cache first if enabled
         if self.cache_enabled:
-            for endpoint_id, corporation_uuid in unique_keys:
-                cached_item = self.get_cache_data((endpoint_id, corporation_uuid))
+            for partition_key, corporation_uuid in unique_keys:
+                cached_item = self.get_cache_data((partition_key, corporation_uuid))
                 if cached_item:
-                    key_map[(endpoint_id, corporation_uuid)] = cached_item
+                    key_map[(partition_key, corporation_uuid)] = cached_item
                 else:
-                    uncached_keys.append((endpoint_id, corporation_uuid))
+                    uncached_keys.append((partition_key, corporation_uuid))
         else:
             uncached_keys = unique_keys
 
         # Batch fetch uncached items
+        # Note: keys are (partition_key, corporation_uuid) tuples
         if uncached_keys:
             try:
+                # batch_get expects (hash_key, range_key) tuples
+                # CorporationProfileModel uses partition_key as hash_key
                 for item in CorporationProfileModel.batch_get(uncached_keys):
-                    key = (item.endpoint_id, item.corporation_uuid)
+                    # Map by partition_key
+                    key = (item.partition_key, item.corporation_uuid)
 
                     if self.cache_enabled:
                         self.set_cache_data(key, item)

@@ -20,7 +20,8 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
@@ -39,7 +40,7 @@ class PlaceUuidIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     place_uuid = UnicodeAttribute(range_key=True)
 
 
@@ -53,7 +54,7 @@ class ContactUuidIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     contact_uuid = UnicodeAttribute(range_key=True)
 
 
@@ -61,10 +62,12 @@ class ContactRequestModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-contact_requests"
 
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     request_uuid = UnicodeAttribute(range_key=True)
     contact_uuid = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
+    endpoint_id = UnicodeAttribute()
+    part_id = UnicodeAttribute()
     request_title = UnicodeAttribute()
     request_detail = UnicodeAttribute()
     updated_by = UnicodeAttribute()
@@ -112,7 +115,9 @@ def purge_cache():
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -132,10 +137,10 @@ def create_contact_request_table(logger: logging.Logger) -> bool:
 )
 @method_cache(
     ttl=Config.get_cache_ttl(),
-    cache_name=Config.get_cache_name("models", "contact_request")
+    cache_name=Config.get_cache_name("models", "contact_request"),
 )
-def get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestModel:
-    return ContactRequestModel.get(endpoint_id, request_uuid)
+def get_contact_request(partition_key: str, request_uuid: str) -> ContactRequestModel:
+    return ContactRequestModel.get(partition_key, request_uuid)
 
 
 @retry(
@@ -143,13 +148,13 @@ def get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestMo
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def _get_contact_request(endpoint_id: str, request_uuid: str) -> ContactRequestModel:
-    return ContactRequestModel.get(endpoint_id, request_uuid)
+def _get_contact_request(partition_key: str, request_uuid: str) -> ContactRequestModel:
+    return ContactRequestModel.get(partition_key, request_uuid)
 
 
-def get_contact_request_count(endpoint_id: str, request_uuid: str) -> int:
+def get_contact_request_count(partition_key: str, request_uuid: str) -> int:
     return ContactRequestModel.count(
-        endpoint_id, ContactRequestModel.request_uuid == request_uuid
+        partition_key, ContactRequestModel.request_uuid == request_uuid
     )
 
 
@@ -161,43 +166,34 @@ def get_contact_request_type(
     - Do NOT embed 'contact_profile'
     That is resolved lazily by ContactRequestType.resolve_contact_profile.
     """
-    try:
-        contact_profile = _get_contact_profile(
-            contact_request.endpoint_id, contact_request.contact_uuid
-        )
-        contact_request = contact_request.__dict__["attribute_values"]
-        contact_request["contact_profile"] = contact_profile
-        contact_request.pop("place_uuid")
-        contact_request.pop("contact_uuid")
-    except Exception as e:
-        log = traceback.format_exc()
-        info.context.get("logger").exception(log)
-        raise e
-    return ContactRequestType(**Utility.json_normalize(contact_request))
+    _ = info  # Keep for signature compatibility with decorators
+    contact_request_dict = contact_request.__dict__["attribute_values"].copy()
+    # Keep all fields including FKs - nested resolvers will handle lazy loading
+    return ContactRequestType(**Serializer.json_normalize(contact_request_dict))
 
 
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestType | None:
-    endpoint_id = info.context["endpoint_id"]
-    count = get_contact_request_count(endpoint_id, kwargs.get("request_uuid"))
+    partition_key = info.context["endpoint_id"]
+    count = get_contact_request_count(partition_key, kwargs.get("request_uuid"))
     if count == 0:
         return None
 
     return get_contact_request_type(
         info,
-        get_contact_request(endpoint_id, kwargs.get("request_uuid")),
+        get_contact_request(partition_key, kwargs.get("request_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "contact_uuid", "request_uuid", "place_uuid"],
+    attributes_to_get=["partition_key", "contact_uuid", "request_uuid", "place_uuid"],
     list_type_class=ContactRequestListType,
     type_funct=get_contact_request_type,
 )
 def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    endpoint_id = info.context["endpoint_id"]
+    partition_key = info.context["endpoint_id"]
     contact_uuid = kwargs.get("contact_uuid")
     request_title = kwargs.get("request_title")
     request_detail = kwargs.get("request_detail")
@@ -207,9 +203,9 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     inquiry_funct = ContactRequestModel.scan
     count_funct = ContactRequestModel.count
 
-    # Use place_uuid_index if both endpoint_id and place_uuid are provided
-    if endpoint_id:
-        args = [endpoint_id, None]
+    # Use place_uuid_index if both partition_key and place_uuid are provided
+    if partition_key:
+        args = [partition_key, None]
         inquiry_funct = ContactRequestModel.query
         if place_uuid:
             inquiry_funct = ContactRequestModel.place_uuid_index.query
@@ -238,7 +234,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 
 @insert_update_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "request_uuid",
     },
     model_funct=_get_contact_request,
@@ -247,12 +243,12 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 )
 @purge_cache()
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
     request_uuid = kwargs.get("request_uuid")
 
     assert (
         get_contact_profile_count(
-            endpoint_id=endpoint_id, contact_uuid=kwargs["contact_uuid"]
+            partition_key=partition_key, contact_uuid=kwargs["contact_uuid"]
         )
         == 1
     ), "Contact profile not found."
@@ -261,6 +257,8 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
         cols = {
             "contact_uuid": kwargs["contact_uuid"],
             "place_uuid": kwargs["place_uuid"],
+            "endpoint_id": info.context.get("endpoint_id"),
+            "part_id": kwargs.get("part_id", info.context.get("part_id")),
             "request_title": kwargs["request_title"],
             "request_detail": kwargs["request_detail"],
             "updated_by": kwargs["updated_by"],
@@ -268,7 +266,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
             "updated_at": pendulum.now("UTC"),
         }
         ContactRequestModel(
-            endpoint_id,
+            partition_key,
             request_uuid,
             **cols,
         ).save()
@@ -292,7 +290,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
 
 @delete_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "request_uuid",
     },
     model_funct=get_contact_request,

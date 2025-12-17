@@ -16,10 +16,7 @@ def _initialize_tables(logger: logging.Logger) -> None:
     from .contact_request import create_contact_request_table
     from .corporation_profile import create_corporation_profile_table
     from .place import create_place_table
-    from .question_group import create_question_group_table
-    from .utm_tag_data_collection import create_utm_tag_data_collection_table
 
-    create_question_group_table(logger)
     create_place_table(logger)
     create_contact_profile_table(logger)
     create_contact_request_table(logger)
@@ -30,18 +27,18 @@ def _initialize_tables(logger: logging.Logger) -> None:
     return
 
 
-def _get_place(endpoint_id: str, place_uuid: str) -> Dict[str, Any]:
+def _get_place(partition_key: str, place_uuid: str) -> Dict[str, Any]:
     from .place import get_place, get_place_count
 
     try:
         assert (
             place_uuid is not None
-            and get_place_count(endpoint_id=endpoint_id, place_uuid=place_uuid) == 1
+            and get_place_count(partition_key=partition_key, place_uuid=place_uuid) == 1
         ), "Place not found."
     except AssertionError as e:
         return {}
 
-    place = get_place(endpoint_id, place_uuid)
+    place = get_place(partition_key, place_uuid)
     return {
         "region": place.region,
         "place_uuid": place.place_uuid,
@@ -53,14 +50,16 @@ def _get_place(endpoint_id: str, place_uuid: str) -> Dict[str, Any]:
         "types": place.types,
         "phone_number": place.phone_number,
         "corporation_profile": (
-            _get_corporation_profile(place.endpoint_id, place.corporation_uuid)
+            _get_corporation_profile(place.partition_key, place.corporation_uuid)
             if place.corporation_uuid is not None
             else None
         ),
     }
 
 
-def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[str, Any]:
+def _get_corporation_profile(
+    partition_key: str, corporation_uuid: str
+) -> Dict[str, Any]:
     from .corporation_profile import (
         get_corporation_profile,
         get_corporation_profile_count,
@@ -70,14 +69,14 @@ def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[st
         assert (
             corporation_uuid is not None
             and get_corporation_profile_count(
-                endpoint_id=endpoint_id, corporation_uuid=corporation_uuid
+                partition_key=partition_key, corporation_uuid=corporation_uuid
             )
             == 1
         ), "Corporation profile not found."
     except AssertionError as e:
         return {}
 
-    corporation_profile = get_corporation_profile(endpoint_id, corporation_uuid)
+    corporation_profile = get_corporation_profile(partition_key, corporation_uuid)
     return {
         "corporation_uuid": corporation_profile.corporation_uuid,
         "external_id": corporation_profile.external_id,
@@ -88,23 +87,23 @@ def _get_corporation_profile(endpoint_id: str, corporation_uuid: str) -> Dict[st
     }
 
 
-def _get_contact_profile(endpoint_id: str, contact_uuid: str) -> Dict[str, Any]:
+def _get_contact_profile(partition_key: str, contact_uuid: str) -> Dict[str, Any]:
     from .contact_profile import get_contact_profile, get_contact_profile_count
 
     try:
         assert (
             contact_uuid is not None
             and get_contact_profile_count(
-                endpoint_id=endpoint_id, contact_uuid=contact_uuid
+                partition_key=partition_key, contact_uuid=contact_uuid
             )
             == 1
         ), "Contact profile not found."
     except AssertionError as e:
         return {}
 
-    contact_profile = get_contact_profile(endpoint_id, contact_uuid)
+    contact_profile = get_contact_profile(partition_key, contact_uuid)
     return {
-        "place": _get_place(contact_profile.endpoint_id, contact_profile.place_uuid),
+        "place": _get_place(contact_profile.partition_key, contact_profile.place_uuid),
         "email": contact_profile.email,
         "first_name": contact_profile.first_name,
         "last_name": contact_profile.last_name,
@@ -130,10 +129,10 @@ def _insert_update_attribute_values(
 
 
 def _get_data(
-    endpoint_id: str,
+    partition_key: str,
     data_identity: str,
     data_type: str,
 ) -> Dict[str, Any]:
     from .attribute_value import get_attributes_data
 
-    return get_attributes_data(endpoint_id, data_identity, data_type)
+    return get_attributes_data(partition_key, data_identity, data_type)

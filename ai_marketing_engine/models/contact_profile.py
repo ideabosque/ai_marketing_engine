@@ -20,7 +20,8 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.ai_marketing_utility import data_sync_decorator
@@ -39,7 +40,7 @@ class EmailIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     email = UnicodeAttribute(range_key=True)
 
 
@@ -53,7 +54,7 @@ class PlaceUuidIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     place_uuid = UnicodeAttribute(range_key=True)
 
 
@@ -61,10 +62,12 @@ class ContactProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-contact_profiles"
 
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     contact_uuid = UnicodeAttribute(range_key=True)
     email = UnicodeAttribute()
     place_uuid = UnicodeAttribute()
+    endpoint_id = UnicodeAttribute()
+    part_id = UnicodeAttribute()
     first_name = UnicodeAttribute(null=True)
     last_name = UnicodeAttribute(null=True)
     updated_by = UnicodeAttribute()
@@ -112,7 +115,9 @@ def purge_cache():
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -132,10 +137,10 @@ def create_contact_profile_table(logger: logging.Logger) -> bool:
 )
 @method_cache(
     ttl=Config.get_cache_ttl(),
-    cache_name=Config.get_cache_name("models", "contact_profile")
+    cache_name=Config.get_cache_name("models", "contact_profile"),
 )
-def get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileModel:
-    return ContactProfileModel.get(endpoint_id, contact_uuid)
+def get_contact_profile(partition_key: str, contact_uuid: str) -> ContactProfileModel:
+    return ContactProfileModel.get(partition_key, contact_uuid)
 
 
 @retry(
@@ -143,13 +148,13 @@ def get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileMo
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def _get_contact_profile(endpoint_id: str, contact_uuid: str) -> ContactProfileModel:
-    return ContactProfileModel.get(endpoint_id, contact_uuid)
+def _get_contact_profile(partition_key: str, contact_uuid: str) -> ContactProfileModel:
+    return ContactProfileModel.get(partition_key, contact_uuid)
 
 
-def get_contact_profile_count(endpoint_id: str, contact_uuid: str) -> int:
+def get_contact_profile_count(partition_key: str, contact_uuid: str) -> int:
     return ContactProfileModel.count(
-        endpoint_id, ContactProfileModel.contact_uuid == contact_uuid
+        partition_key, ContactProfileModel.contact_uuid == contact_uuid
     )
 
 
@@ -162,42 +167,38 @@ def get_contact_profile_type(
     - Do NOT embed 'data'
     Those are resolved lazily by ContactProfileType resolvers.
     """
-    try:
-        cp_dict = contact_profile.__dict__["attribute_values"]
-    except Exception:
-        log = traceback.format_exc()
-        info.context.get("logger").exception(log)
-        raise
-
-    return ContactProfileType(**Utility.json_normalize(cp_dict))
+    _ = info  # Keep for signature compatibility with decorators
+    contact_request_dict = contact_profile.__dict__["attribute_values"].copy()
+    # Keep all fields including FKs - nested resolvers will handle lazy loading
+    return ContactProfileType(**Serializer.json_normalize(contact_request_dict))
 
 
 def resolve_contact_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactProfileType | None:
-    endpoint_id = info.context.get("endpoint_id")
+    partition_key = info.context.get("endpoint_id")
     if kwargs.get("email"):
         existing_profiles = list(
             ContactProfileModel.email_index.query(
-                endpoint_id, ContactProfileModel.email == kwargs["email"], limit=1
+                partition_key, ContactProfileModel.email == kwargs["email"], limit=1
             )
         )
         if existing_profiles:
             return get_contact_profile_type(info, existing_profiles[0])
 
-    count = get_contact_profile_count(endpoint_id, kwargs.get("contact_uuid"))
+    count = get_contact_profile_count(partition_key, kwargs.get("contact_uuid"))
     if count == 0:
         return None
 
     return get_contact_profile_type(
         info,
-        get_contact_profile(endpoint_id, kwargs.get("contact_uuid")),
+        get_contact_profile(partition_key, kwargs.get("contact_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "contact_uuid", "email", "place_uuid"],
+    attributes_to_get=["partition_key", "contact_uuid", "email", "place_uuid"],
     list_type_class=ContactProfileListType,
     type_funct=get_contact_profile_type,
 )
@@ -206,14 +207,14 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     email = kwargs.get("email")
     first_name = kwargs.get("first_name")
     last_name = kwargs.get("last_name")
-    endpoint_id = info.context.get("endpoint_id", None)
+    partition_key = info.context.get("endpoint_id", None)
 
     args = []
     inquiry_funct = ContactProfileModel.scan
     count_funct = ContactProfileModel.count
 
-    if endpoint_id:
-        args = [endpoint_id, None]
+    if partition_key:
+        args = [partition_key, None]
         inquiry_funct = ContactProfileModel.query
 
         if place_uuid:
@@ -244,7 +245,7 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 @data_sync_decorator
 @insert_update_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "contact_uuid",
     },
     model_funct=_get_contact_profile,
@@ -253,14 +254,14 @@ def resolve_contact_profile_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
 )
 @purge_cache()
 def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
     contact_uuid = kwargs.get("contact_uuid")
     if kwargs.get("entity") is None:
         # Check if email already exists
         email = kwargs["email"]
         existing_profiles = list(
             ContactProfileModel.email_index.query(
-                endpoint_id, ContactProfileModel.email == email, limit=1
+                partition_key, ContactProfileModel.email == email, limit=1
             )
         )
         if existing_profiles:
@@ -272,6 +273,8 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
         cols = {
             "email": email,
             "place_uuid": kwargs["place_uuid"],
+            "endpoint_id": info.context.get("endpoint_id"),
+            "part_id": kwargs.get("part_id", info.context.get("part_id")),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -283,7 +286,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
             if key in kwargs:
                 cols[key] = kwargs[key]
         ContactProfileModel(
-            endpoint_id,
+            partition_key,
             contact_uuid,
             **cols,
         ).save()
@@ -327,7 +330,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
 
 @delete_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "contact_uuid",
     },
     model_funct=get_contact_profile,

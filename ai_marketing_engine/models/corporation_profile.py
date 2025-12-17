@@ -46,7 +46,7 @@ class CorporationTypeIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     corporation_type = UnicodeAttribute(range_key=True)
 
 
@@ -60,7 +60,7 @@ class ExternalIdIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     external_id = UnicodeAttribute(range_key=True)
 
 
@@ -68,9 +68,11 @@ class CorporationProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-corporation_profiles"
 
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     corporation_uuid = UnicodeAttribute(range_key=True)
     external_id = UnicodeAttribute()
+    endpoint_id = UnicodeAttribute()
+    part_id = UnicodeAttribute()
     corporation_type = UnicodeAttribute()
     business_name = UnicodeAttribute()
     categories = ListAttribute(of=UnicodeAttribute, null=True)
@@ -122,7 +124,9 @@ def purge_cache():
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -142,12 +146,12 @@ def create_corporation_profile_table(logger: logging.Logger) -> bool:
 )
 @method_cache(
     ttl=Config.get_cache_ttl(),
-    cache_name=Config.get_cache_name("models", "corporation_profile")
+    cache_name=Config.get_cache_name("models", "corporation_profile"),
 )
 def get_corporation_profile(
-    endpoint_id: str, corporation_uuid: str
+    partition_key: str, corporation_uuid: str
 ) -> CorporationProfileModel:
-    return CorporationProfileModel.get(endpoint_id, corporation_uuid)
+    return CorporationProfileModel.get(partition_key, corporation_uuid)
 
 
 @retry(
@@ -156,14 +160,14 @@ def get_corporation_profile(
     stop=stop_after_attempt(5),
 )
 def _get_corporation_profile(
-    endpoint_id: str, corporation_uuid: str
+    partition_key: str, corporation_uuid: str
 ) -> CorporationProfileModel:
-    return CorporationProfileModel.get(endpoint_id, corporation_uuid)
+    return CorporationProfileModel.get(partition_key, corporation_uuid)
 
 
-def get_corporation_profile_count(endpoint_id: str, corporation_uuid: str) -> int:
+def get_corporation_profile_count(partition_key: str, corporation_uuid: str) -> int:
     return CorporationProfileModel.count(
-        endpoint_id, CorporationProfileModel.corporation_uuid == corporation_uuid
+        partition_key, CorporationProfileModel.corporation_uuid == corporation_uuid
     )
 
 
@@ -188,8 +192,9 @@ def get_corporation_profile_type(
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileType | None:
+    partition_key = info.context["endpoint_id"]
     count = get_corporation_profile_count(
-        info.context["endpoint_id"], kwargs.get("corporation_uuid")
+        partition_key, kwargs.get("corporation_uuid")
     )
     if count == 0:
         return None
@@ -197,7 +202,7 @@ def resolve_corporation_profile(
     return get_corporation_profile_type(
         info,
         get_corporation_profile(
-            info.context["endpoint_id"], kwargs.get("corporation_uuid")
+            partition_key, kwargs.get("corporation_uuid")
         ),
     )
 
@@ -205,7 +210,7 @@ def resolve_corporation_profile(
 @monitor_decorator
 @resolve_list_decorator(
     attributes_to_get=[
-        "endpoint_id",
+        "partition_key",
         "corporation_uuid",
         "external_id",
         "corporation_type",
@@ -216,7 +221,7 @@ def resolve_corporation_profile(
 def resolve_corporation_profile_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    endpoint_id = info.context["endpoint_id"]
+    partition_key = info.context["endpoint_id"]
     external_id = kwargs.get("external_id")
     corporation_type = kwargs.get("corporation_type")
     business_name = kwargs.get("business_name")
@@ -226,8 +231,8 @@ def resolve_corporation_profile_list(
     args = []
     inquiry_funct = CorporationProfileModel.scan
     count_funct = CorporationProfileModel.count
-    if endpoint_id:
-        args = [endpoint_id, None]
+    if partition_key:
+        args = [partition_key, None]
         inquiry_funct = CorporationProfileModel.query
         if external_id:
             inquiry_funct = CorporationProfileModel.external_id_index.query
@@ -253,7 +258,7 @@ def resolve_corporation_profile_list(
 
 @insert_update_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "corporation_uuid",
     },
     model_funct=_get_corporation_profile,
@@ -264,11 +269,13 @@ def resolve_corporation_profile_list(
 def insert_update_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
     corporation_uuid = kwargs.get("corporation_uuid")
     if kwargs.get("entity") is None:
         cols = {
             "external_id": kwargs["external_id"],
+            "endpoint_id": info.context.get("endpoint_id"),
+            "part_id": kwargs.get("part_id", info.context.get("part_id")),
             "corporation_type": kwargs["corporation_type"],
             "business_name": kwargs["business_name"],
             "address": kwargs["address"],
@@ -280,7 +287,7 @@ def insert_update_corporation_profile(
             if key in kwargs:
                 cols[key] = kwargs[key]
         CorporationProfileModel(
-            endpoint_id,
+            partition_key,
             corporation_uuid,
             **cols,
         ).save()
@@ -322,7 +329,7 @@ def insert_update_corporation_profile(
 
 @delete_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "corporation_uuid",
     },
     model_funct=get_corporation_profile,

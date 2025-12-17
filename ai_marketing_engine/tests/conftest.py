@@ -30,8 +30,9 @@ logger = logging.getLogger("test_ai_marketing_engine")
 # regardless of where pytest is run from
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
+from silvaengine_utility.graphql import Graphql
+
 from ai_marketing_engine import AIMarketingEngine
-from silvaengine_utility import Utility
 
 # Test settings
 SETTING = {
@@ -46,6 +47,7 @@ SETTING = {
     },
     "endpoint_id": os.getenv("endpoint_id"),
     "execute_mode": os.getenv("execute_mode", "local"),
+    "initialize_tables": int(os.getenv("initialize_tables", "0")),
 }
 
 
@@ -74,15 +76,17 @@ def schema(ai_marketing_engine):
     Depends on ai_marketing_engine fixture.
     """
     endpoint_id = SETTING.get("endpoint_id")
-    execute_mode = SETTING.get("execute_mode")
 
     try:
-        schema = Utility.fetch_graphql_schema(
-            logger,
-            endpoint_id,
+        context = {
+            "endpoint_id": endpoint_id,
+            "setting": SETTING,
+            "logger": logger,
+        }
+
+        schema = Graphql.fetch_graphql_schema(
+            context,
             "ai_marketing_graphql",
-            setting=SETTING,
-            test_mode=execute_mode,
         )
         logger.info("GraphQL schema fetched successfully")
         return schema
@@ -163,9 +167,7 @@ def _raise_no_matches(filters_desc: str, items: Sequence[pytest.Item]) -> None:
     """Raise informative error when no tests matched filter."""
     sample = ", ".join(sorted(item.name for item in items)[:5])
     hint = f" Available sample: {sample}" if sample else ""
-    raise pytest.UsageError(
-        f"{filters_desc} did not match any collected tests.{hint}"
-    )
+    raise pytest.UsageError(f"{filters_desc} did not match any collected tests.{hint}")
 
 
 def pytest_collection_modifyitems(
@@ -198,9 +200,7 @@ def pytest_collection_modifyitems(
         name_match = not target_lower or test_func_name == target_lower
 
         # Check if any requested marker is present
-        marker_match = not markers or any(
-            item.get_closest_marker(m) for m in markers
-        )
+        marker_match = not markers or any(item.get_closest_marker(m) for m in markers)
 
         if name_match and marker_match:
             selected.append(item)
@@ -208,9 +208,7 @@ def pytest_collection_modifyitems(
             deselected.append(item)
 
     if not selected:
-        _raise_no_matches(
-            _format_filter_description(target, marker_filter_raw), items
-        )
+        _raise_no_matches(_format_filter_description(target, marker_filter_raw), items)
 
     items[:] = selected
     config.hook.pytest_deselected(items=deselected)

@@ -13,9 +13,11 @@ from ..models.batch_loaders import get_loaders
 
 
 class CorporationProfileType(ObjectType):
-    endpoint_id = String()
+    partition_key = String()
     corporation_uuid = String()
     external_id = String()
+    endpoint_id = String()
+    part_id = String()
     corporation_type = String()
     business_name = String()
     categories = List(String)
@@ -39,12 +41,12 @@ class CorporationProfileType(ObjectType):
         if isinstance(existing_data, dict):
             return existing_data
 
-        endpoint_id = getattr(parent, "endpoint_id", None)
+        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
         corporation_uuid = getattr(parent, "corporation_uuid", None)
-        if not endpoint_id or not corporation_uuid:
+        if not partition_key or not corporation_uuid:
             return None
         loaders = get_loaders(info.context)
-        return loaders.corporation_data_loader.load((endpoint_id, corporation_uuid))
+        return loaders.corporation_data_loader.load((partition_key, corporation_uuid))
 
 
 class CorporationProfileListType(ListObjectType):

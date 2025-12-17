@@ -37,7 +37,7 @@ class RegionIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     region = UnicodeAttribute(range_key=True)
 
 
@@ -45,8 +45,10 @@ class PlaceModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-places"
 
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     place_uuid = UnicodeAttribute(range_key=True)
+    endpoint_id = UnicodeAttribute()
+    part_id = UnicodeAttribute()
     region = UnicodeAttribute()
     latitude = UnicodeAttribute()
     longitude = UnicodeAttribute()
@@ -100,7 +102,9 @@ def purge_cache():
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -119,11 +123,10 @@ def create_place_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(),
-    cache_name=Config.get_cache_name("models", "place")
+    ttl=Config.get_cache_ttl(), cache_name=Config.get_cache_name("models", "place")
 )
-def get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
-    return PlaceModel.get(endpoint_id, place_uuid)
+def get_place(partition_key: str, place_uuid: str) -> PlaceModel:
+    return PlaceModel.get(partition_key, place_uuid)
 
 
 @retry(
@@ -131,12 +134,12 @@ def get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def _get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
-    return PlaceModel.get(endpoint_id, place_uuid)
+def _get_place(partition_key: str, place_uuid: str) -> PlaceModel:
+    return PlaceModel.get(partition_key, place_uuid)
 
 
-def get_place_count(endpoint_id: str, place_uuid: str) -> int:
-    return PlaceModel.count(endpoint_id, PlaceModel.place_uuid == place_uuid)
+def get_place_count(partition_key: str, place_uuid: str) -> int:
+    return PlaceModel.count(partition_key, PlaceModel.place_uuid == place_uuid)
 
 
 def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
@@ -155,24 +158,25 @@ def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | None:
-    count = get_place_count(info.context["endpoint_id"], kwargs.get("place_uuid"))
+    partition_key = info.context["endpoint_id"]
+    count = get_place_count(partition_key, kwargs.get("place_uuid"))
     if count == 0:
         return None
 
     return get_place_type(
         info,
-        get_place(info.context["endpoint_id"], kwargs.get("place_uuid")),
+        get_place(partition_key, kwargs.get("place_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "place_uuid", "region"],
+    attributes_to_get=["partition_key", "place_uuid", "region"],
     list_type_class=PlaceListType,
     type_funct=get_place_type,
 )
 def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    endpoint_id = info.context["endpoint_id"]
+    partition_key = info.context["endpoint_id"]
     region = kwargs.get("region")
     latitude = kwargs.get("latitude")
     longitude = kwargs.get("longitude")
@@ -184,8 +188,8 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     args = []
     inquiry_funct = PlaceModel.scan
     count_funct = PlaceModel.count
-    if endpoint_id:
-        args = [endpoint_id, None]
+    if partition_key:
+        args = [partition_key, None]
         inquiry_funct = PlaceModel.query
         if region:
             inquiry_funct = PlaceModel.region_index.query
@@ -213,7 +217,7 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
 
 @insert_update_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "place_uuid",
     },
     model_funct=_get_place,
@@ -222,7 +226,7 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
 )
 @purge_cache()
 def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key") or kwargs.get("endpoint_id")
     place_uuid = kwargs.get("place_uuid")
     if kwargs.get("entity") is None:
         cols = {
@@ -231,6 +235,8 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
             "longitude": kwargs["longitude"],
             "business_name": kwargs["business_name"],
             "address": kwargs["address"],
+            "endpoint_id": info.context.get("endpoint_id"),
+            "part_id": kwargs.get("part_id", info.context.get("part_id")),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -239,7 +245,7 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
             if key in kwargs:
                 cols[key] = kwargs[key]
         PlaceModel(
-            endpoint_id,
+            partition_key,
             place_uuid,
             **cols,
         ).save()
@@ -281,7 +287,7 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
 
 @delete_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "place_uuid",
     },
     model_funct=get_place,
