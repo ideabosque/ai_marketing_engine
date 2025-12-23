@@ -6,9 +6,11 @@ __author__ = "bibow"
 
 import logging
 from typing import Any, Dict, List
+
 from graphene import Schema
-from silvaengine_utility import Graphql
 from silvaengine_dynamodb_base import BaseModel
+from silvaengine_utility import Graphql
+
 from .handlers.config import Config
 from .schema import Mutations, Query, type_class
 
@@ -218,13 +220,26 @@ class AIMarketingEngine(Graphql):
         self.logger = logger
         self.setting = setting
 
-    def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
+    def _apply_partition_defaults(self, params: Dict[str, Any]) -> None:
+        """
+        Ensure endpoint_id/part_id defaults and assemble partition_key.
+        """
         ## Test the waters 🧪 before diving in!
         ##<--Testing Data-->##
-
-        params["endpoint_id"] = params.get("custom_headers",{}).get("store_id", params.get("endpoint_id"))
-
+        if params.get("endpoint_id") is None:
+            params["endpoint_id"] = self.setting.get("endpoint_id")
+        if params.get("part_id") is None:
+            params["part_id"] = self.setting.get("part_id")
         ##<--Testing Data-->##
+
+        endpoint_id = params.get("endpoint_id")
+        part_id = params.get("part_id")
+        params["partition_key"] = f"{endpoint_id}#{part_id}"
+
+    def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
+
+        self._apply_partition_defaults(params)
+
         schema = Schema(
             query=Query,
             mutation=Mutations,

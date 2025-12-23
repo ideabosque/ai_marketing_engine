@@ -59,21 +59,21 @@ class AttributeDataLoader(SafeDataLoader):
 
         results: List[Optional[Dict[str, Any]]] = []
 
-        for endpoint_id, data_identity in keys:
+        for partition_key, data_identity in keys:
             # Check cache first if enabled
             if self.cache_enabled:
-                cached_data = self.get_cache_data((endpoint_id, data_identity, self.data_type))
+                cached_data = self.get_cache_data((partition_key, data_identity, self.data_type))
                 if cached_data is not None:
                     results.append(cached_data)
                     continue
 
             # Fetch from database
             try:
-                data = _get_data(endpoint_id, data_identity, self.data_type)
+                data = _get_data(partition_key, data_identity, self.data_type)
                 results.append(data)
 
                 if self.cache_enabled:
-                    key = (endpoint_id, data_identity, self.data_type)
+                    key = (partition_key, data_identity, self.data_type)
                     self.set_cache_data(key, data)
 
             except Exception as exc:  # pragma: no cover - defensive

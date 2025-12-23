@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Integration tests for AI Marketing Engine with nested resolvers."""
-from __future__ import annotations
-from __future__ import print_function
+from __future__ import annotations, print_function
 
 __author__ = "bibow"
 
@@ -12,12 +11,20 @@ import sys
 from typing import Any
 
 import pytest
+from silvaengine_utility.graphql import Graphql
+from test_helpers import call_method, log_test_result
 
 # Add parent directory to path to allow imports when running directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from silvaengine_utility import Utility
-from test_helpers import call_method, log_test_result
+
+def extract_graphql_data(result: dict) -> dict:
+    """Extract data from GraphQL result, handling both formats.
+
+    Handles both standard GraphQL format {"data": {...}} and direct format {...}
+    """
+    return result.get("data", result)
+
 
 # Load test data
 _test_data_file = os.path.join(os.path.dirname(__file__), "test_data.json")
@@ -110,13 +117,32 @@ def test_schema_fetched_successfully(schema: Any) -> None:
 
 
 @pytest.mark.integration
+@log_test_result
+def test_graphql_ping(ai_marketing_engine: Any, schema: Any) -> None:
+    """Test GraphQL ping operation."""
+    query = Graphql.generate_graphql_operation("ping", "Query", schema)
+    payload = {
+        "query": query,
+        "variables": {},
+    }
+    result, error = call_method(
+        ai_marketing_engine,
+        "ai_marketing_graphql",
+        payload,
+        "graphql_ping",
+    )
+    assert error is None, f"GraphQL ping failed: {error}"
+    assert result is not None
+
+
+@pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_INSERT_UPDATE_FLOW_TEST_DATA)
 @log_test_result
 def test_graphql_insert_update_corporation_profile(
     ai_marketing_engine: Any, schema: Any, test_data: Any
 ) -> None:
     """Test corporation profile INSERT then UPDATE operation."""
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "insertUpdateCorporationProfile", "Mutation", schema
     )
 
@@ -134,16 +160,10 @@ def test_graphql_insert_update_corporation_profile(
     assert error is None, f"Insert failed: {error}"
     assert result is not None
 
-    # Parse JSON response if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
+    data = extract_graphql_data(result)
+    assert "insertUpdateCorporationProfile" in data
 
-    assert "data" in result
-    assert "insertUpdateCorporationProfile" in result["data"]
-
-    corp_profile = result["data"]["insertUpdateCorporationProfile"][
-        "corporationProfile"
-    ]
+    corp_profile = data["insertUpdateCorporationProfile"]["corporationProfile"]
     assert corp_profile["businessName"] == insert_data["businessName"]
 
     # Extract the generated UUID from INSERT response
@@ -163,16 +183,10 @@ def test_graphql_insert_update_corporation_profile(
     assert error is None, f"Update failed: {error}"
     assert result is not None
 
-    # Parse JSON response if it's a string
-    if isinstance(result, str):
-        result = json.loads(result)
+    data = extract_graphql_data(result)
+    assert "insertUpdateCorporationProfile" in data
 
-    assert "data" in result
-    assert "insertUpdateCorporationProfile" in result["data"]
-
-    corp_profile = result["data"]["insertUpdateCorporationProfile"][
-        "corporationProfile"
-    ]
+    corp_profile = data["insertUpdateCorporationProfile"]["corporationProfile"]
     assert (
         corp_profile["businessName"] == update_data["businessName"]
     ), "Business name should be updated"
@@ -182,26 +196,28 @@ def test_graphql_insert_update_corporation_profile(
     assert corp_profile["corporationUuid"] == new_corporation_uuid
 
     # Step 3: Cleanup - Delete the test record
-    delete_query = Utility.generate_graphql_operation(
-        "deleteCorporationProfile", "Mutation", schema
-    )
+    # delete_query = Graphql.generate_graphql_operation(
+    #     "deleteCorporationProfile", "Mutation", schema
+    # )
 
-    delete_data = {"corporationUuid": new_corporation_uuid}
+    # delete_data = {"corporationUuid": new_corporation_uuid}
 
-    call_method(
-        ai_marketing_engine,
-        "ai_marketing_graphql",
-        {"query": delete_query, "variables": delete_data},
-        "delete_corporation_profile",
-    )
+    # call_method(
+    #     ai_marketing_engine,
+    #     "ai_marketing_graphql",
+    #     {"query": delete_query, "variables": delete_data},
+    #     "delete_corporation_profile",
+    # )
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_corporation_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_get_corporation_profile(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test get corporation profile operation."""
-    query = Utility.generate_graphql_operation("corporationProfile", "Query", schema)
+    query = Graphql.generate_graphql_operation("corporationProfile", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -217,9 +233,11 @@ def test_graphql_get_corporation_profile(ai_marketing_engine: Any, schema: Any, 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_corporation_profile_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_corporation_profile_list(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test list corporation profiles operation."""
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "corporationProfileList", "Query", schema
     )
 
@@ -237,9 +255,11 @@ def test_graphql_corporation_profile_list(ai_marketing_engine: Any, schema: Any,
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CORPORATION_PROFILE_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_corporation_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_delete_corporation_profile(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test delete corporation profile operation."""
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "deleteCorporationProfile", "Mutation", schema
     )
 
@@ -262,9 +282,11 @@ def test_graphql_delete_corporation_profile(ai_marketing_engine: Any, schema: An
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_TEST_DATA)
 @log_test_result
-def test_graphql_insert_update_place(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_insert_update_place(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test place INSERT then UPDATE operation."""
-    query = Utility.generate_graphql_operation("insertUpdatePlace", "Mutation", schema)
+    query = Graphql.generate_graphql_operation("insertUpdatePlace", "Mutation", schema)
 
     # Step 1: INSERT - Create new place without placeUuid
     insert_data = {k: v for k, v in test_data.items() if k != "placeUuid"}
@@ -279,15 +301,11 @@ def test_graphql_insert_update_place(ai_marketing_engine: Any, schema: Any, test
     assert error is None, f"Insert failed: {error}"
     assert result is not None
 
-    # Parse JSON if result is a string
-    if isinstance(result, str):
-        result = json.loads(result)
-
-    assert "data" in result
-    assert "insertUpdatePlace" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdatePlace" in data
 
     # Extract the placeUuid from INSERT result (note: response has nested "place" object)
-    place_data = result["data"]["insertUpdatePlace"].get("place", {})
+    place_data = data["insertUpdatePlace"].get("place", {})
     place_uuid = place_data.get("placeUuid")
     assert place_uuid is not None, "Insert should return placeUuid"
 
@@ -312,16 +330,18 @@ def test_graphql_insert_update_place(ai_marketing_engine: Any, schema: Any, test
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdatePlace" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdatePlace" in data
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_place(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_get_place(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test get place operation."""
-    query = Utility.generate_graphql_operation("place", "Query", schema)
+    query = Graphql.generate_graphql_operation("place", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -337,9 +357,11 @@ def test_graphql_get_place(ai_marketing_engine: Any, schema: Any, test_data: Any
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_place_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_place_list(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test list places operation."""
-    query = Utility.generate_graphql_operation("placeList", "Query", schema)
+    query = Graphql.generate_graphql_operation("placeList", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -355,9 +377,11 @@ def test_graphql_place_list(ai_marketing_engine: Any, schema: Any, test_data: An
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", PLACE_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_place(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_delete_place(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test delete place operation."""
-    query = Utility.generate_graphql_operation("deletePlace", "Mutation", schema)
+    query = Graphql.generate_graphql_operation("deletePlace", "Mutation", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -378,11 +402,13 @@ def test_graphql_delete_place(ai_marketing_engine: Any, schema: Any, test_data: 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_TEST_DATA)
 @log_test_result
-def test_graphql_insert_update_contact_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_insert_update_contact_profile(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test contact profile INSERT then UPDATE operation."""
     import uuid
 
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "insertUpdateContactProfile", "Mutation", schema
     )
 
@@ -408,13 +434,11 @@ def test_graphql_insert_update_contact_profile(ai_marketing_engine: Any, schema:
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactProfile" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactProfile" in data
 
     # Extract the contactUuid from INSERT result (note: response has nested "contactProfile" object)
-    contact_data = result["data"]["insertUpdateContactProfile"].get(
-        "contactProfile", {}
-    )
+    contact_data = data["insertUpdateContactProfile"].get("contactProfile", {})
     contact_uuid = contact_data.get("contactUuid")
     assert contact_uuid is not None, "Insert should return contactUuid"
 
@@ -439,16 +463,18 @@ def test_graphql_insert_update_contact_profile(ai_marketing_engine: Any, schema:
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactProfile" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactProfile" in data
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_contact_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_get_contact_profile(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test get contact profile operation."""
-    query = Utility.generate_graphql_operation("contactProfile", "Query", schema)
+    query = Graphql.generate_graphql_operation("contactProfile", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -464,9 +490,11 @@ def test_graphql_get_contact_profile(ai_marketing_engine: Any, schema: Any, test
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_contact_profile_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_contact_profile_list(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test list contact profiles operation."""
-    query = Utility.generate_graphql_operation("contactProfileList", "Query", schema)
+    query = Graphql.generate_graphql_operation("contactProfileList", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -482,9 +510,11 @@ def test_graphql_contact_profile_list(ai_marketing_engine: Any, schema: Any, tes
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_PROFILE_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_contact_profile(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_delete_contact_profile(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test delete contact profile operation."""
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "deleteContactProfile", "Mutation", schema
     )
 
@@ -511,7 +541,9 @@ def test_graphql_delete_contact_profile(ai_marketing_engine: Any, schema: Any, t
     reason="ContactRequest INSERT requires endpoint_id context that's not available in test environment"
 )
 @log_test_result
-def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_insert_update_contact_request(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test contact request INSERT then UPDATE operation.
 
     NOTE: This test currently fails because the contact_request validation
@@ -522,7 +554,7 @@ def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema:
     import uuid
 
     # PREREQUISITE: Create a ContactProfile first since ContactRequest depends on it
-    contact_profile_query = Utility.generate_graphql_operation(
+    contact_profile_query = Graphql.generate_graphql_operation(
         "insertUpdateContactProfile", "Mutation", schema
     )
 
@@ -548,13 +580,10 @@ def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema:
 
     assert cp_error is None, f"Failed to create prerequisite ContactProfile: {cp_error}"
 
-    if isinstance(cp_result, str):
-        cp_result = json.loads(cp_result)
+    cp_data = extract_graphql_data(cp_result)
 
     # Extract the contactUuid
-    contact_data = cp_result["data"]["insertUpdateContactProfile"].get(
-        "contactProfile", {}
-    )
+    contact_data = cp_data["insertUpdateContactProfile"].get("contactProfile", {})
     contact_uuid = contact_data.get("contactUuid")
     assert contact_uuid is not None, "Failed to get contactUuid from prerequisite"
 
@@ -564,7 +593,7 @@ def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema:
     time.sleep(0.5)  # 500ms delay for eventual consistency
 
     # NOW run the actual ContactRequest INSERT/UPDATE test
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "insertUpdateContactRequest", "Mutation", schema
     )
 
@@ -587,13 +616,11 @@ def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema:
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactRequest" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactRequest" in data
 
     # Extract the requestUuid from INSERT result (note: response has nested "contactRequest" object)
-    request_data = result["data"]["insertUpdateContactRequest"].get(
-        "contactRequest", {}
-    )
+    request_data = data["insertUpdateContactRequest"].get("contactRequest", {})
     request_uuid = request_data.get("requestUuid")
     assert request_uuid is not None, "Insert should return requestUuid"
 
@@ -618,16 +645,18 @@ def test_graphql_insert_update_contact_request(ai_marketing_engine: Any, schema:
     if isinstance(result, str):
         result = json.loads(result)
 
-    assert "data" in result
-    assert "insertUpdateContactRequest" in result["data"]
+    data = extract_graphql_data(result)
+    assert "insertUpdateContactRequest" in data
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_REQUEST_GET_TEST_DATA)
 @log_test_result
-def test_graphql_get_contact_request(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_get_contact_request(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test get contact request operation."""
-    query = Utility.generate_graphql_operation("contactRequest", "Query", schema)
+    query = Graphql.generate_graphql_operation("contactRequest", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -643,9 +672,11 @@ def test_graphql_get_contact_request(ai_marketing_engine: Any, schema: Any, test
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_REQUEST_LIST_TEST_DATA)
 @log_test_result
-def test_graphql_contact_request_list(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_contact_request_list(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test list contact requests operation."""
-    query = Utility.generate_graphql_operation("contactRequestList", "Query", schema)
+    query = Graphql.generate_graphql_operation("contactRequestList", "Query", schema)
 
     result, error = call_method(
         ai_marketing_engine,
@@ -661,9 +692,11 @@ def test_graphql_contact_request_list(ai_marketing_engine: Any, schema: Any, tes
 @pytest.mark.integration
 @pytest.mark.parametrize("test_data", CONTACT_REQUEST_DELETE_TEST_DATA)
 @log_test_result
-def test_graphql_delete_contact_request(ai_marketing_engine: Any, schema: Any, test_data: Any) -> None:
+def test_graphql_delete_contact_request(
+    ai_marketing_engine: Any, schema: Any, test_data: Any
+) -> None:
     """Test delete contact request operation."""
-    query = Utility.generate_graphql_operation(
+    query = Graphql.generate_graphql_operation(
         "deleteContactRequest", "Mutation", schema
     )
 
@@ -698,7 +731,7 @@ if __name__ == "__main__":
     Environment Variable Filtering (via .env file):
         Set AI_MARKETING_TEST_FUNCTION in .env to run a specific test:
         AI_MARKETING_TEST_FUNCTION=test_graphql_contact_profile_list
-        
+
         Set AI_MARKETING_TEST_MARKERS in .env to run tests with specific markers:
         AI_MARKETING_TEST_MARKERS=integration,nested_resolvers
 

@@ -16,7 +16,7 @@ Key = Tuple[str, str]
 
 
 class ContactProfileLoader(SafeDataLoader):
-    """Batch loader for ContactProfileModel keyed by (endpoint_id, contact_uuid)."""
+    """Batch loader for ContactProfileModel keyed by (partition_key, contact_uuid)."""
 
     def __init__(self, logger=None, cache_enabled=True, **kwargs):
         super(ContactProfileLoader, self).__init__(
@@ -48,7 +48,7 @@ class ContactProfileLoader(SafeDataLoader):
         return normalize_model(cached_item)
 
     def set_cache_data(self, key: Key, data: Any) -> None:
-        cache_key = self.generate_cache_key(*key)
+        cache_key = self.generate_cache_key(key)
         self.cache.set(cache_key, data, ttl=Config.get_cache_ttl())
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
@@ -59,20 +59,24 @@ class ContactProfileLoader(SafeDataLoader):
 
         # Check cache first if enabled
         if self.cache_enabled:
-            for endpoint_id, contact_uuid in unique_keys:
-                cached_item = self.get_cache_data((endpoint_id, contact_uuid))
+            for partition_key, contact_uuid in unique_keys:
+                cached_item = self.get_cache_data((partition_key, contact_uuid))
                 if cached_item:
-                    key_map[(endpoint_id, contact_uuid)] = cached_item
+                    key_map[(partition_key, contact_uuid)] = cached_item
                 else:
-                    uncached_keys.append((endpoint_id, contact_uuid))
+                    uncached_keys.append((partition_key, contact_uuid))
         else:
             uncached_keys = unique_keys
 
         # Batch fetch uncached items
+        # Note: keys are (partition_key, contact_uuid) tuples
         if uncached_keys:
             try:
+                # batch_get expects (hash_key, range_key) tuples
+                # ContactProfileModel uses partition_key as hash_key
                 for item in ContactProfileModel.batch_get(uncached_keys):
-                    key = (item.endpoint_id, item.contact_uuid)
+                    # Map by partition_key
+                    key = (item.partition_key, item.contact_uuid)
 
                     if self.cache_enabled:
                         self.set_cache_data(key, item)

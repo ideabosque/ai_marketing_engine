@@ -9,8 +9,6 @@ from typing import Any, Dict
 
 from graphene import Field, Int, List, ObjectType, ResolveInfo, String
 
-from silvaengine_utility import JSON
-
 from .mutations.activity_history import DeleteActivityHistory, InsertActivityHistory
 from .mutations.attribute_value import DeleteAttributeValue, InsertUpdateAttributeValue
 from .mutations.contact_profile import DeleteContactProfile, InsertUpdateContactProfile
@@ -20,16 +18,12 @@ from .mutations.corporation_profile import (
     InsertUpdateCorporationProfile,
 )
 from .mutations.place import DeletePlace, InsertUpdatePlace
-from .mutations.question_group import DeleteQuestionGroup, InsertUpdateQuestionGroup
-from .mutations.utm_tag_data_collection import (
-    DeleteUtmTagDataCollection,
-    InsertUtmTagDataCollection,
-)
 from .queries.activity_history import (
     resolve_activity_history,
     resolve_activity_history_list,
 )
-from .queries.ai_marketing import resolve_crm_user_list, resolve_presigned_upload_url
+
+# from .queries.ai_marketing import resolve_crm_user_list, resolve_presigned_upload_url
 from .queries.attribute_value import (
     resolve_attribute_value,
     resolve_attribute_value_list,
@@ -47,13 +41,7 @@ from .queries.corporation_profile import (
     resolve_corporation_profile_list,
 )
 from .queries.place import resolve_place, resolve_place_list
-from .queries.question_group import resolve_question_group, resolve_question_group_list
-from .queries.utm_tag_data_collection import (
-    resolve_utm_tag_data_collection,
-    resolve_utm_tag_data_collection_list,
-)
 from .types.activity_history import ActivityHistoryListType, ActivityHistoryType
-from .types.ai_marketing import CrmUserListType, PresignedUploadUrlType
 from .types.attribute_value import AttributeValueListType, AttributeValueType
 from .types.contact_profile import ContactProfileListType, ContactProfileType
 from .types.contact_request import ContactRequestListType, ContactRequestType
@@ -62,11 +50,6 @@ from .types.corporation_profile import (
     CorporationProfileType,
 )
 from .types.place import PlaceListType, PlaceType
-from .types.question_group import QuestionGroupListType, QuestionGroupType
-from .types.utm_tag_data_collection import (
-    UtmTagDataCollectionListType,
-    UtmTagDataCollectionType,
-)
 
 
 def type_class():
@@ -83,25 +66,13 @@ def type_class():
         ContactProfileType,
         PlaceListType,
         PlaceType,
-        QuestionGroupListType,
-        QuestionGroupType,
-        UtmTagDataCollectionListType,
-        UtmTagDataCollectionType,
         ContactRequestType,
         ContactRequestListType,
-        PresignedUploadUrlType,
-        CrmUserListType,
     ]
 
 
 class Query(ObjectType):
     ping = String()
-
-    presigned_upload_url = Field(
-        PresignedUploadUrlType,
-        required=True,
-        object_key=String(required=True),
-    )
 
     activity_history = Field(
         ActivityHistoryType,
@@ -118,22 +89,6 @@ class Query(ObjectType):
         activity_type=String(),
         activity_types=List(String),
         log=String(),
-    )
-
-    question_group = Field(
-        QuestionGroupType,
-        required=True,
-        question_group_uuid=String(required=True),
-    )
-
-    question_group_list = Field(
-        QuestionGroupListType,
-        page_number=Int(),
-        limit=Int(),
-        place_uuid=String(),
-        utm_tag_name=String(),
-        region=String(),
-        question_criteria=JSON(),
     )
 
     place = Field(
@@ -223,20 +178,8 @@ class Query(ObjectType):
         statuses=List(String),
     )
 
-    crm_user_list = Field(
-        CrmUserListType,
-        page_number=Int(),
-        limit=Int(),
-        address=String(),
-    )
-
     def resolve_ping(self, info: ResolveInfo) -> str:
         return f"Hello at {time.strftime('%X')}!!"
-
-    def resolve_presigned_upload_url(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> PresignedUploadUrlType:
-        return resolve_presigned_upload_url(info, **kwargs)
 
     def resolve_activity_history(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
@@ -247,16 +190,6 @@ class Query(ObjectType):
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> ActivityHistoryListType:
         return resolve_activity_history_list(info, **kwargs)
-
-    def resolve_question_group(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> QuestionGroupType:
-        return resolve_question_group(info, **kwargs)
-
-    def resolve_question_group_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> QuestionGroupListType:
-        return resolve_question_group_list(info, **kwargs)
 
     def resolve_place(self, info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
         return resolve_place(info, **kwargs)
@@ -306,17 +239,15 @@ class Query(ObjectType):
     ) -> AttributeValueListType:
         return resolve_attribute_value_list(info, **kwargs)
 
-    def resolve_crm_user_list(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CrmUserListType:
-        return resolve_crm_user_list(info, **kwargs)
+    # def resolve_crm_user_list(
+    #     self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    # ) -> CrmUserListType:
+    #     return resolve_crm_user_list(info, **kwargs)
 
 
 class Mutations(ObjectType):
     insert_activity_history = InsertActivityHistory.Field()
     delete_activity_history = DeleteActivityHistory.Field()
-    insert_update_question_group = InsertUpdateQuestionGroup.Field()
-    delete_question_group = DeleteQuestionGroup.Field()
     insert_update_place = InsertUpdatePlace.Field()
     delete_place = DeletePlace.Field()
     insert_update_corporation_profile = InsertUpdateCorporationProfile.Field()

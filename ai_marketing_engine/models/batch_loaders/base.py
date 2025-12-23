@@ -7,10 +7,9 @@ __author__ = "bibow"
 from typing import Any, Dict
 
 from promise.dataloader import DataLoader
-from silvaengine_utility import Utility
+from silvaengine_utility.serializer import Serializer
 
 from ...handlers.config import Config
-
 
 KeyMap = Dict[Any, Any]
 
@@ -23,10 +22,10 @@ def normalize_model(model: Any) -> Dict[str, Any]:
         return {}
 
     if isinstance(model, dict):
-        return Utility.json_normalize(model)
+        return Serializer.json_normalize(model)
 
     attribute_values = getattr(model, "__dict__", {}).get("attribute_values")
-    return Utility.json_normalize(attribute_values or model)
+    return Serializer.json_normalize(attribute_values or model)
 
 
 class SafeDataLoader(DataLoader):
