@@ -95,6 +95,7 @@ SETTING = {
         },
     },
     "endpoint_id": ENDPOINT_ID,
+    "part_id": os.getenv("part_id"),
     "execute_mode": os.getenv("execute_mode", "local"),
 }
 
@@ -129,6 +130,15 @@ def run_graphql_mutation(
             if isinstance(response, (str, bytes))
             else response
         )
+
+        # Handle API Gateway-style response format
+        if isinstance(parsed, dict) and 'body' in parsed and isinstance(parsed['body'], str):
+            try:
+                import json
+                parsed = json.loads(parsed['body'])
+            except (ValueError, TypeError):
+                pass
+
     except Exception as exc:
         logger.error(f"[{op}] GraphQL execution failed: {exc}", exc_info=True)
         return None
@@ -138,7 +148,15 @@ def run_graphql_mutation(
         logger.error("[%s] GraphQL Error: %s", op, str(parsed["errors"]))
         return None
 
-    data = parsed.get("data")
+    # Handle both response formats:
+    # 1. Standard GraphQL: {'data': {...}}
+    # 2. Direct result: {...}
+    if "data" in parsed:
+        data = parsed["data"]
+    else:
+        # Direct result format - return as is
+        data = parsed
+
     if not data:
         logger.error("[%s] GraphQL Error: No data returned.", op)
         return None

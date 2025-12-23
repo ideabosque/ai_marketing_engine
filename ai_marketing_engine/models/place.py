@@ -13,8 +13,6 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import ListAttribute, UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -22,10 +20,11 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
-
 from ..types.place import PlaceListType, PlaceType
 
 
@@ -39,7 +38,7 @@ class RegionIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     region = UnicodeAttribute(range_key=True)
 
 
@@ -47,8 +46,10 @@ class PlaceModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-places"
 
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     place_uuid = UnicodeAttribute(range_key=True)
+    endpoint_id = UnicodeAttribute()
+    part_id = UnicodeAttribute()
     region = UnicodeAttribute()
     latitude = UnicodeAttribute()
     longitude = UnicodeAttribute()
@@ -69,30 +70,40 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                # Get entity keys from entity parameter (for updates)
                 entity_keys = {}
-                if kwargs.get("place_uuid"):
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["place_uuid"] = getattr(entity, "place_uuid", None)
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("place_uuid"):
                     entity_keys["place_uuid"] = kwargs.get("place_uuid")
 
-                result = purge_entity_cascading_cache(
+                partition_key = args[0].context.get("partition_key")
+
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="place",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys={"partition_key": partition_key},
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -111,11 +122,10 @@ def create_place_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
-    cache_name=Config.get_cache_name("models", "place")
+    ttl=Config.get_cache_ttl(), cache_name=Config.get_cache_name("models", "place")
 )
-def get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
-    return PlaceModel.get(endpoint_id, place_uuid)
+def get_place(partition_key: str, place_uuid: str) -> PlaceModel:
+    return PlaceModel.get(partition_key, place_uuid)
 
 
 @retry(
@@ -123,12 +133,12 @@ def get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
-def _get_place(endpoint_id: str, place_uuid: str) -> PlaceModel:
-    return PlaceModel.get(endpoint_id, place_uuid)
+def _get_place(partition_key: str, place_uuid: str) -> PlaceModel:
+    return PlaceModel.get(partition_key, place_uuid)
 
 
-def get_place_count(endpoint_id: str, place_uuid: str) -> int:
-    return PlaceModel.count(endpoint_id, PlaceModel.place_uuid == place_uuid)
+def get_place_count(partition_key: str, place_uuid: str) -> int:
+    return PlaceModel.count(partition_key, PlaceModel.place_uuid == place_uuid)
 
 
 def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
@@ -143,28 +153,29 @@ def get_place_type(info: ResolveInfo, place: PlaceModel) -> PlaceType:
         info.context.get("logger").exception(log)
         raise
 
-    return PlaceType(**Utility.json_normalize(place_dict))
+    return PlaceType(**Serializer.json_normalize(place_dict))
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | None:
-    count = get_place_count(info.context["endpoint_id"], kwargs.get("place_uuid"))
+    partition_key = info.context["partition_key"]
+    count = get_place_count(partition_key, kwargs.get("place_uuid"))
     if count == 0:
         return None
 
     return get_place_type(
         info,
-        get_place(info.context["endpoint_id"], kwargs.get("place_uuid")),
+        get_place(partition_key, kwargs.get("place_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
-    attributes_to_get=["endpoint_id", "place_uuid", "region"],
+    attributes_to_get=["partition_key", "place_uuid", "region"],
     list_type_class=PlaceListType,
     type_funct=get_place_type,
 )
 def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
-    endpoint_id = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     region = kwargs.get("region")
     latitude = kwargs.get("latitude")
     longitude = kwargs.get("longitude")
@@ -176,8 +187,8 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     args = []
     inquiry_funct = PlaceModel.scan
     count_funct = PlaceModel.count
-    if endpoint_id:
-        args = [endpoint_id, None]
+    if partition_key:
+        args = [partition_key, None]
         inquiry_funct = PlaceModel.query
         if region:
             inquiry_funct = PlaceModel.region_index.query
@@ -203,18 +214,18 @@ def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     return inquiry_funct, count_funct, args
 
 
-@purge_cache()
 @insert_update_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "place_uuid",
     },
     model_funct=_get_place,
     count_funct=get_place_count,
     type_funct=get_place_type,
 )
+@purge_cache()
 def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key")
     place_uuid = kwargs.get("place_uuid")
     if kwargs.get("entity") is None:
         cols = {
@@ -223,6 +234,8 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
             "longitude": kwargs["longitude"],
             "business_name": kwargs["business_name"],
             "address": kwargs["address"],
+            "endpoint_id": info.context.get("endpoint_id"),
+            "part_id": info.context.get("part_id"),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -231,7 +244,7 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
             if key in kwargs:
                 cols[key] = kwargs[key]
         PlaceModel(
-            endpoint_id,
+            partition_key,
             place_uuid,
             **cols,
         ).save()
@@ -271,14 +284,14 @@ def insert_update_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "place_uuid",
     },
     model_funct=get_place,
 )
+@purge_cache()
 def delete_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True

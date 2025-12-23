@@ -13,14 +13,16 @@ from .contact_profile import ContactProfileType
 
 
 class ContactRequestType(ObjectType):
-    endpoint_id = String()
+    partition_key = String()
     request_uuid = String()
+    contact_uuid = String()
+    place_uuid = String()
+    endpoint_id = String()
+    part_id = String()
     request_title = String()
     request_detail = String()
 
     # Nested resolver: strongly-typed nested relationship
-    contact_uuid = String()  # keep raw id
-    place_uuid = String()     # keep raw id
     contact_profile = Field(lambda: ContactProfileType)
 
     updated_by = String()
@@ -44,14 +46,14 @@ class ContactRequestType(ObjectType):
         if isinstance(existing, ContactProfileType):
             return existing
 
-        # Case 1: need to fetch by endpoint_id + contact_uuid
-        endpoint_id = getattr(parent, "endpoint_id", None)
+        # Case 1: need to fetch by partition_key + contact_uuid
+        partition_key = getattr(parent, "partition_key", None) or getattr(parent, "endpoint_id", None)
         contact_uuid = getattr(parent, "contact_uuid", None)
-        if not endpoint_id or not contact_uuid:
+        if not partition_key or not contact_uuid:
             return None
 
         loaders = get_loaders(info.context)
-        return loaders.contact_profile_loader.load((endpoint_id, contact_uuid)).then(
+        return loaders.contact_profile_loader.load((partition_key, contact_uuid)).then(
             lambda contact_dict: ContactProfileType(**contact_dict)
             if contact_dict
             else None

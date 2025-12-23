@@ -14,7 +14,7 @@ class AttributeValueType(ObjectType):
     data_type_attribute_name = String()
     value_version_uuid = String()
     data_identity = String()
-    endpoint_id = String()
+    partition_key = String()
     value = String()
     status = String()
     updated_by = String()

@@ -18,8 +18,6 @@ from pynamodb.attributes import (
     UTCDateTimeAttribute,
 )
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -27,10 +25,11 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
-
 from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
@@ -48,7 +47,7 @@ class CorporationTypeIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     corporation_type = UnicodeAttribute(range_key=True)
 
 
@@ -62,7 +61,7 @@ class ExternalIdIndex(LocalSecondaryIndex):
     # This attribute is the hash key for the index
     # Note that this attribute must also exist
     # in the model
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     external_id = UnicodeAttribute(range_key=True)
 
 
@@ -70,9 +69,11 @@ class CorporationProfileModel(BaseModel):
     class Meta(BaseModel.Meta):
         table_name = "ame-corporation_profiles"
 
-    endpoint_id = UnicodeAttribute(hash_key=True)
+    partition_key = UnicodeAttribute(hash_key=True)
     corporation_uuid = UnicodeAttribute(range_key=True)
     external_id = UnicodeAttribute()
+    endpoint_id = UnicodeAttribute()
+    part_id = UnicodeAttribute()
     corporation_type = UnicodeAttribute()
     business_name = UnicodeAttribute()
     categories = ListAttribute(of=UnicodeAttribute, null=True)
@@ -89,30 +90,42 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                # Get entity keys from entity parameter (for updates)
                 entity_keys = {}
-                if kwargs.get("corporation_uuid"):
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["corporation_uuid"] = getattr(
+                        entity, "corporation_uuid", None
+                    )
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("corporation_uuid"):
                     entity_keys["corporation_uuid"] = kwargs.get("corporation_uuid")
 
-                result = purge_entity_cascading_cache(
+                partition_key = args[0].context.get("partition_key")
+
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="corporation_profile",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys={"partition_key": partition_key},
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -131,13 +144,13 @@ def create_corporation_profile_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
-    cache_name=Config.get_cache_name("models", "corporation_profile")
+    ttl=Config.get_cache_ttl(),
+    cache_name=Config.get_cache_name("models", "corporation_profile"),
 )
 def get_corporation_profile(
-    endpoint_id: str, corporation_uuid: str
+    partition_key: str, corporation_uuid: str
 ) -> CorporationProfileModel:
-    return CorporationProfileModel.get(endpoint_id, corporation_uuid)
+    return CorporationProfileModel.get(partition_key, corporation_uuid)
 
 
 @retry(
@@ -146,14 +159,14 @@ def get_corporation_profile(
     stop=stop_after_attempt(5),
 )
 def _get_corporation_profile(
-    endpoint_id: str, corporation_uuid: str
+    partition_key: str, corporation_uuid: str
 ) -> CorporationProfileModel:
-    return CorporationProfileModel.get(endpoint_id, corporation_uuid)
+    return CorporationProfileModel.get(partition_key, corporation_uuid)
 
 
-def get_corporation_profile_count(endpoint_id: str, corporation_uuid: str) -> int:
+def get_corporation_profile_count(partition_key: str, corporation_uuid: str) -> int:
     return CorporationProfileModel.count(
-        endpoint_id, CorporationProfileModel.corporation_uuid == corporation_uuid
+        partition_key, CorporationProfileModel.corporation_uuid == corporation_uuid
     )
 
 
@@ -172,30 +185,27 @@ def get_corporation_profile_type(
         info.context.get("logger").exception(log)
         raise
 
-    return CorporationProfileType(**Utility.json_normalize(corp_dict))
+    return CorporationProfileType(**Serializer.json_normalize(corp_dict))
 
 
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileType | None:
-    count = get_corporation_profile_count(
-        info.context["endpoint_id"], kwargs.get("corporation_uuid")
-    )
+    partition_key = info.context["partition_key"]
+    count = get_corporation_profile_count(partition_key, kwargs.get("corporation_uuid"))
     if count == 0:
         return None
 
     return get_corporation_profile_type(
         info,
-        get_corporation_profile(
-            info.context["endpoint_id"], kwargs.get("corporation_uuid")
-        ),
+        get_corporation_profile(partition_key, kwargs.get("corporation_uuid")),
     )
 
 
 @monitor_decorator
 @resolve_list_decorator(
     attributes_to_get=[
-        "endpoint_id",
+        "partition_key",
         "corporation_uuid",
         "external_id",
         "corporation_type",
@@ -206,7 +216,7 @@ def resolve_corporation_profile(
 def resolve_corporation_profile_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Any:
-    endpoint_id = info.context["endpoint_id"]
+    partition_key = info.context["partition_key"]
     external_id = kwargs.get("external_id")
     corporation_type = kwargs.get("corporation_type")
     business_name = kwargs.get("business_name")
@@ -216,8 +226,8 @@ def resolve_corporation_profile_list(
     args = []
     inquiry_funct = CorporationProfileModel.scan
     count_funct = CorporationProfileModel.count
-    if endpoint_id:
-        args = [endpoint_id, None]
+    if partition_key:
+        args = [partition_key, None]
         inquiry_funct = CorporationProfileModel.query
         if external_id:
             inquiry_funct = CorporationProfileModel.external_id_index.query
@@ -241,24 +251,26 @@ def resolve_corporation_profile_list(
     return inquiry_funct, count_funct, args
 
 
-@purge_cache()
 @insert_update_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "corporation_uuid",
     },
     model_funct=_get_corporation_profile,
     count_funct=get_corporation_profile_count,
     type_funct=get_corporation_profile_type,
 )
+@purge_cache()
 def insert_update_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> None:
-    endpoint_id = kwargs.get("endpoint_id")
+    partition_key = kwargs.get("partition_key")
     corporation_uuid = kwargs.get("corporation_uuid")
     if kwargs.get("entity") is None:
         cols = {
             "external_id": kwargs["external_id"],
+            "endpoint_id": info.context.get("endpoint_id"),
+            "part_id": kwargs.get("part_id", info.context.get("part_id")),
             "corporation_type": kwargs["corporation_type"],
             "business_name": kwargs["business_name"],
             "address": kwargs["address"],
@@ -270,10 +282,17 @@ def insert_update_corporation_profile(
             if key in kwargs:
                 cols[key] = kwargs[key]
         CorporationProfileModel(
-            endpoint_id,
+            partition_key,
             corporation_uuid,
             **cols,
         ).save()
+
+        # Handle dynamic attributes (data field)
+        data = _insert_update_attribute_values(
+            info, "corporation", corporation_uuid, kwargs["updated_by"], kwargs.get("data", {}), partition_key
+        )
+        info.context["logger"].info(f"Corporation profile data: {data} has been updated.")
+
         return
 
     corporation_profile = kwargs.get("entity")
@@ -304,20 +323,21 @@ def insert_update_corporation_profile(
         corporation_uuid,
         kwargs["updated_by"],
         kwargs.get("data", {}),
+        corporation_profile.partition_key,
     )
     info.context["logger"].info(f"Corporation profile data: {data} has been updated.")
 
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
-        "hash_key": "endpoint_id",
+        "hash_key": "partition_key",
         "range_key": "corporation_uuid",
     },
     model_funct=get_corporation_profile,
 )
+@purge_cache()
 def delete_corporation_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs.get("entity").delete()
     return True

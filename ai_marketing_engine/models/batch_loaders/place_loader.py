@@ -16,7 +16,7 @@ Key = Tuple[str, str]
 
 
 class PlaceLoader(SafeDataLoader):
-    """Batch loader for PlaceModel records keyed by (endpoint_id, place_uuid)."""
+    """Batch loader for PlaceModel records keyed by (partition_key, place_uuid)."""
 
     def __init__(self, logger=None, cache_enabled=True, **kwargs):
         super(PlaceLoader, self).__init__(
@@ -57,20 +57,24 @@ class PlaceLoader(SafeDataLoader):
 
         # Check cache first if enabled
         if self.cache_enabled:
-            for endpoint_id, place_uuid in unique_keys:
-                cached_item = self.get_cache_data((endpoint_id, place_uuid))
+            for partition_key, place_uuid in unique_keys:
+                cached_item = self.get_cache_data((partition_key, place_uuid))
                 if cached_item:
-                    key_map[(endpoint_id, place_uuid)] = cached_item
+                    key_map[(partition_key, place_uuid)] = cached_item
                 else:
-                    uncached_keys.append((endpoint_id, place_uuid))
+                    uncached_keys.append((partition_key, place_uuid))
         else:
             uncached_keys = unique_keys
 
         # Batch fetch uncached items
+        # Note: keys are (partition_key, place_uuid) tuples
         if uncached_keys:
             try:
+                # batch_get expects (hash_key, range_key) tuples
+                # PlaceModel uses partition_key as hash_key
                 for item in PlaceModel.batch_get(uncached_keys):
-                    key = (item.endpoint_id, item.place_uuid)
+                    # Map by partition_key
+                    key = (item.partition_key, item.place_uuid)
 
                     if self.cache_enabled:
                         self.set_cache_data(key, item)

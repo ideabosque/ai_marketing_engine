@@ -13,8 +13,6 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, LocalSecondaryIndex
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -22,10 +20,11 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import method_cache
+from silvaengine_utility.serializer import Serializer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
-
 from ..types.attribute_value import AttributeValueListType, AttributeValueType
 
 
@@ -64,7 +63,7 @@ class AttributeValueModel(BaseModel):
     data_type_attribute_name = UnicodeAttribute(hash_key=True)
     value_version_uuid = UnicodeAttribute(range_key=True)
     data_identity = UnicodeAttribute()
-    endpoint_id = UnicodeAttribute()
+    partition_key = UnicodeAttribute()
     value = UnicodeAttribute()
     status = UnicodeAttribute(default="active")
     updated_by = UnicodeAttribute()
@@ -81,32 +80,53 @@ def purge_cache():
         @functools.wraps(original_function)
         def wrapper_function(*args, **kwargs):
             try:
+                # Execute original function first
+                result = original_function(*args, **kwargs)
+
+                # Then purge cache after successful operation
                 from ..models.cache import purge_entity_cascading_cache
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                # Get entity keys from entity parameter (for updates)
                 entity_keys = {}
-                if kwargs.get("data_type_attribute_name"):
-                    entity_keys["data_type_attribute_name"] = kwargs.get("data_type_attribute_name")
-                if kwargs.get("value_version_uuid"):
+                entity = kwargs.get("entity")
+                if entity:
+                    entity_keys["data_type_attribute_name"] = getattr(
+                        entity, "data_type_attribute_name", None
+                    )
+                    entity_keys["value_version_uuid"] = getattr(
+                        entity, "value_version_uuid", None
+                    )
+
+                # Fallback to kwargs (for creates/deletes)
+                if not entity_keys.get("data_type_attribute_name"):
+                    entity_keys["data_type_attribute_name"] = kwargs.get(
+                        "data_type_attribute_name"
+                    )
+                if not entity_keys.get("value_version_uuid"):
                     entity_keys["value_version_uuid"] = kwargs.get("value_version_uuid")
 
-                result = purge_entity_cascading_cache(
+                partition_key = args[0].context.get("endpoint_id") or kwargs.get(
+                    "partition_key"
+                )
+
+                purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="attribute_value",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys=(
+                        {"endpoint_id": partition_key} if partition_key else None
+                    ),
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
 
-                result = original_function(*args, **kwargs)
                 return result
             except Exception as e:
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
@@ -125,8 +145,8 @@ def create_attribute_value_table(logger: logging.Logger) -> bool:
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
-    cache_name=Config.get_cache_name("models", "attribute_value")
+    ttl=Config.get_cache_ttl(),
+    cache_name=Config.get_cache_name("models", "attribute_value"),
 )
 def get_attribute_value(
     data_type_attribute_name: str, value_version_uuid: str
@@ -180,14 +200,10 @@ def get_attribute_value_count(
 def get_attribute_value_type(
     info: ResolveInfo, attribute_value: AttributeValueModel
 ) -> AttributeValueType:
-    try:
-        attribute_value = attribute_value.__dict__["attribute_values"]
-    except Exception as e:
-        log = traceback.format_exc()
-        info.context.get("logger").exception(log)
-        raise e
-
-    return AttributeValueType(**Utility.json_normalize(attribute_value))
+    _ = info  # Keep for signature compatibility with decorators
+    attribute_value_dict = attribute_value.__dict__["attribute_values"].copy()
+    # Keep all fields including FKs - nested resolvers will handle lazy loading
+    return AttributeValueType(**Serializer.json_normalize(attribute_value_dict))
 
 
 def resolve_attribute_value(
@@ -228,7 +244,7 @@ def resolve_attribute_value(
 def resolve_attribute_value_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> Any:
     data_type_attribute_name = kwargs["data_type_attribute_name"]
     data_identity = kwargs.get("data_identity")
-    endpoint_id = info.context["endpoint_id"]
+    partition_key = info.context.get("partition_key") or info.context.get("endpoint_id")
     value = kwargs.get("value")
     statuses = kwargs.get("statuses")
 
@@ -244,8 +260,8 @@ def resolve_attribute_value_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
             count_funct = AttributeValueModel.data_identity_index.count
 
     the_filters = None
-    if endpoint_id:
-        the_filters = AttributeValueModel.endpoint_id == endpoint_id
+    if partition_key:
+        the_filters = AttributeValueModel.partition_key == partition_key
     if value:
         value_filter = AttributeValueModel.value == value
         the_filters = (
@@ -282,7 +298,6 @@ def _inactivate_attribute_values(
         raise e
 
 
-@purge_cache()
 @insert_update_decorator(
     keys={
         "hash_key": "data_type_attribute_name",
@@ -292,13 +307,14 @@ def _inactivate_attribute_values(
     count_funct=get_attribute_value_count,
     type_funct=get_attribute_value_type,
 )
+@purge_cache()
 def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     data_type_attribute_name = kwargs.get("data_type_attribute_name")
     value_version_uuid = kwargs.get("value_version_uuid")
     if kwargs.get("entity") is None:
         cols = {
             "data_identity": kwargs["data_identity"],
-            "endpoint_id": info.context["endpoint_id"],
+            "partition_key": kwargs.get("partition_key") or info.context.get("partition_key") or info.context.get("endpoint_id"),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -316,7 +332,7 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
                 "data_type_attribute_name",
                 "value_version_uuid",
                 "data_identity",
-                "endpoint_id",
+                "partition_key",
                 "status",
                 "updated_by",
                 "created_at",
@@ -374,7 +390,6 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     return
 
 
-@purge_cache()
 @delete_decorator(
     keys={
         "hash_key": "data_type_attribute_name",
@@ -382,6 +397,7 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     },
     model_funct=get_attribute_value,
 )
+@purge_cache()
 def delete_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
 
     if kwargs["entity"].status == "active":
@@ -402,6 +418,7 @@ def delete_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -> bool:
     kwargs["entity"].delete()
     return True
 
+
 def purge_attributes_data_cache():
     def actual_decorator(original_function):
         @functools.wraps(original_function)
@@ -409,9 +426,7 @@ def purge_attributes_data_cache():
             try:
                 from ..models.cache import purge_entity_cascading_cache
 
-                endpoint_id = args[0].context.get("endpoint_id") or kwargs.get(
-                    "endpoint_id"
-                )
+                partition_key = args[0].context.get("partition_key") or args[0].context.get("endpoint_id")
                 entity_keys = {}
                 if kwargs.get("data_identity"):
                     entity_keys["data_identity"] = kwargs.get("data_identity")
@@ -421,7 +436,7 @@ def purge_attributes_data_cache():
                 result = purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="attributes_data",
-                    context_keys={"endpoint_id": endpoint_id} if endpoint_id else None,
+                    context_keys=({"endpoint_id": partition_key} if partition_key else None),
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -432,20 +447,22 @@ def purge_attributes_data_cache():
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
 
 
 @purge_attributes_data_cache()
 def insert_update_attribute_values(
-    info: ResolveInfo,
-    **kwargs: Dict[str, Any]
+    info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> Dict[str, Any]:
     # Insert/update attribute values
     data_type = kwargs.get("data_type")
     data_identity = kwargs.get("data_identity")
     data = kwargs.get("data")
     updated_by = kwargs.get("updated_by")
+    partition_key = kwargs.get("partition_key")
     attribute_values = []
     for attribute_name, value in data.items():
         active_attribute_value = _get_active_attribute_value(
@@ -455,14 +472,18 @@ def insert_update_attribute_values(
             attribute_values.append(active_attribute_value)
             continue
 
+        insert_params = {
+            "data_type_attribute_name": f"{data_type}-{attribute_name}",
+            "data_identity": data_identity,
+            "value": value,
+            "updated_by": updated_by,
+        }
+        if partition_key:
+            insert_params["partition_key"] = partition_key
+
         attribute_value = insert_update_attribute_value(
             info,
-            **{
-                "data_type_attribute_name": f"{data_type}-{attribute_name}",
-                "data_identity": data_identity,
-                "value": value,
-                "updated_by": updated_by,
-            },
+            **insert_params,
         )
         attribute_values.append(attribute_value)
 
@@ -471,17 +492,18 @@ def insert_update_attribute_values(
         for attribute_value in attribute_values
     }
 
+
 @retry(
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), 
-    cache_name=Config.get_cache_name("models", "attributes_data")
+    ttl=Config.get_cache_ttl(),
+    cache_name=Config.get_cache_name("models", "attributes_data"),
 )
 def get_attributes_data(
-    endpoint_id: str,
+    partition_key: str,
     data_identity: str,
     data_type: str,
 ) -> Dict[str, Any]:
@@ -492,7 +514,7 @@ def get_attributes_data(
         ),
         filter_condition=(
             (AttributeValueModel.status == "active")
-            & (AttributeValueModel.endpoint_id == endpoint_id)
+            & (AttributeValueModel.partition_key == partition_key)
         ),
     )
 
