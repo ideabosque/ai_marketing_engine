@@ -224,20 +224,17 @@ class AIMarketingEngine(Graphql):
         """
         Ensure endpoint_id/part_id defaults and assemble partition_key.
         """
-        ## Test the waters 🧪 before diving in!
-        ##<--Testing Data-->##
-        if params.get("endpoint_id") is None:
-            params["endpoint_id"] = self.setting.get("endpoint_id")
-        if params.get("part_id") is None:
-            params["part_id"] = self.setting.get("part_id")
-        ##<--Testing Data-->##
+        endpoint_id = params.get("endpoint_id", self.setting.get("endpoint_id"))
+        part_id = params.get("custom_headers", {}).get(
+            "part_id", self.setting.get("part_id")
+        )
 
-        endpoint_id = params.get("endpoint_id")
-        part_id = params.get("part_id")
-        params["partition_key"] = f"{endpoint_id}#{part_id}"
+        if params.get("context") is None:
+            params["context"] = {}
+
+        params["context"]["partition_key"] = f"{endpoint_id}#{part_id}"
 
     def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
-
         self._apply_partition_defaults(params)
 
         schema = Schema(
@@ -245,4 +242,5 @@ class AIMarketingEngine(Graphql):
             mutation=Mutations,
             types=type_class(),
         )
+
         return self.execute(schema, **params)
