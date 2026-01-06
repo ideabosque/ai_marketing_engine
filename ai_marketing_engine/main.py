@@ -262,8 +262,12 @@ class AIMarketingEngine(Graphql):
         if "setting" in params:
             params.pop("setting")
 
-    def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
+        if params.get("context") is None:
+            params["context"] = {}
 
+        params["context"]["partition_key"] = f"{endpoint_id}#{part_id}"
+
+    def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
         self._apply_partition_defaults(params)
 
         schema = Schema(
@@ -271,4 +275,5 @@ class AIMarketingEngine(Graphql):
             mutation=Mutations,
             types=type_class(),
         )
+
         return self.execute(schema, **params)
