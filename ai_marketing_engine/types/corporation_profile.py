@@ -5,6 +5,7 @@ from __future__ import print_function
 __author__ = "bibow"
 
 from graphene import DateTime, Field, List, ObjectType, String
+
 from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSON
 
@@ -20,7 +21,7 @@ class CorporationProfileType(ObjectType):
     corporation_type = String()
     business_name = String()
     categories = List(String)
-    address = String()
+    address = JSON()
 
     # Dynamic attributes bag – still JSON, but lazily resolved
     data = Field(JSON)
