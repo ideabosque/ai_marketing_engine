@@ -22,6 +22,7 @@ from .queries.activity_history import (
     resolve_activity_history,
     resolve_activity_history_list,
 )
+from .queries.ai_marketing import resolve_presigned_upload_url
 
 # from .queries.ai_marketing import resolve_crm_user_list, resolve_presigned_upload_url
 from .queries.attribute_value import (
@@ -42,6 +43,7 @@ from .queries.corporation_profile import (
 )
 from .queries.place import resolve_place, resolve_place_list
 from .types.activity_history import ActivityHistoryListType, ActivityHistoryType
+from .types.ai_marketing import PresignedUploadUrlType
 from .types.attribute_value import AttributeValueListType, AttributeValueType
 from .types.contact_profile import ContactProfileListType, ContactProfileType
 from .types.contact_request import ContactRequestListType, ContactRequestType
@@ -68,11 +70,17 @@ def type_class():
         PlaceType,
         ContactRequestType,
         ContactRequestListType,
+        PresignedUploadUrlType,
     ]
 
 
 class Query(ObjectType):
     ping = String()
+
+    def resolve_presigned_upload_url(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> PresignedUploadUrlType:
+        return resolve_presigned_upload_url(info, **kwargs)
 
     activity_history = Field(
         ActivityHistoryType,
