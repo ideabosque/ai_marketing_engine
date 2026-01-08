@@ -77,10 +77,11 @@ def type_class():
 class Query(ObjectType):
     ping = String()
 
-    def resolve_presigned_upload_url(
-        self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> PresignedUploadUrlType:
-        return resolve_presigned_upload_url(info, **kwargs)
+    presigned_upload_url = Field(
+        PresignedUploadUrlType,
+        required=True,
+        object_key=String(required=True),
+    )
 
     activity_history = Field(
         ActivityHistoryType,
@@ -185,6 +186,11 @@ class Query(ObjectType):
         value=String(),
         statuses=List(String),
     )
+
+    def resolve_presigned_upload_url(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> PresignedUploadUrlType:
+        return resolve_presigned_upload_url(info, **kwargs)
 
     def resolve_ping(self, info: ResolveInfo) -> str:
         return f"Hello at {time.strftime('%X')}!!"
