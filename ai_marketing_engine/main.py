@@ -8,7 +8,6 @@ import logging
 from typing import Any, Dict, List
 
 from graphene import Schema
-
 from silvaengine_dynamodb_base import BaseModel
 from silvaengine_utility import Graphql
 
@@ -229,7 +228,7 @@ class AIMarketingEngine(Graphql):
             params (Dict[str, Any]): A dictionary of parameters required to build the GraphQL query.
         """
         endpoint_id = params.get("endpoint_id", self.setting.get("endpoint_id"))
-        part_id = params.get("custom_headers", {}).get(
+        part_id = params.get("metadata", {}).get(
             "part_id",
             params.get("part_id", self.setting.get("part_id")),
         )
