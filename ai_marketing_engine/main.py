@@ -268,11 +268,12 @@ class AIMarketingEngine(Graphql):
 
     def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
         self._apply_partition_defaults(params)
+        return self.execute(self.__class__.build_graphql_schema(), **params)
 
-        schema = Schema(
+    @staticmethod
+    def build_graphql_schema() -> Schema:
+        return Schema(
             query=Query,
             mutation=Mutations,
             types=type_class(),
         )
-
-        return self.execute(schema, **params)
