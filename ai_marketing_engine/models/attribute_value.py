@@ -130,15 +130,6 @@ def purge_cache():
     return actual_decorator
 
 
-def create_attribute_value_table(logger: logging.Logger) -> bool:
-    """Create the AttributeValue table if it doesn't exist."""
-    if not AttributeValueModel.exists():
-        # Create with on-demand billing (PAY_PER_REQUEST)
-        AttributeValueModel.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
-        logger.info("The AttributeValue table has been created.")
-    return True
-
-
 @retry(
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
@@ -147,6 +138,7 @@ def create_attribute_value_table(logger: logging.Logger) -> bool:
 @method_cache(
     ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "attribute_value"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_attribute_value(
     data_type_attribute_name: str, value_version_uuid: str
@@ -314,7 +306,9 @@ def insert_update_attribute_value(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     if kwargs.get("entity") is None:
         cols = {
             "data_identity": kwargs["data_identity"],
-            "partition_key": kwargs.get("partition_key") or info.context.get("partition_key") or info.context.get("endpoint_id"),
+            "partition_key": kwargs.get("partition_key")
+            or info.context.get("partition_key")
+            or info.context.get("endpoint_id"),
             "updated_by": kwargs["updated_by"],
             "created_at": pendulum.now("UTC"),
             "updated_at": pendulum.now("UTC"),
@@ -426,7 +420,9 @@ def purge_attributes_data_cache():
             try:
                 from ..models.cache import purge_entity_cascading_cache
 
-                partition_key = args[0].context.get("partition_key") or args[0].context.get("endpoint_id")
+                partition_key = args[0].context.get("partition_key") or args[
+                    0
+                ].context.get("endpoint_id")
                 entity_keys = {}
                 if kwargs.get("data_identity"):
                     entity_keys["data_identity"] = kwargs.get("data_identity")
@@ -436,7 +432,9 @@ def purge_attributes_data_cache():
                 result = purge_entity_cascading_cache(
                     args[0].context.get("logger"),
                     entity_type="attributes_data",
-                    context_keys=({"endpoint_id": partition_key} if partition_key else None),
+                    context_keys=(
+                        {"endpoint_id": partition_key} if partition_key else None
+                    ),
                     entity_keys=entity_keys if entity_keys else None,
                     cascade_depth=3,
                 )
@@ -501,6 +499,7 @@ def insert_update_attribute_values(
 @method_cache(
     ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "attributes_data"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_attributes_data(
     partition_key: str,

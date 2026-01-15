@@ -23,6 +23,7 @@ def resolve_activity_history(
 @method_cache(
     ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("queries", "activity_history"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def resolve_activity_history_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]

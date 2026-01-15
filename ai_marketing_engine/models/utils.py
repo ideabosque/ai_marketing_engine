@@ -4,113 +4,43 @@ from __future__ import print_function
 __author__ = "bibow"
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from graphene import ResolveInfo
 
 
-def _initialize_tables(logger: logging.Logger) -> None:
-    from .activity_history import create_activity_history_table
-    from .attribute_value import create_attribute_value_table
-    from .contact_profile import create_contact_profile_table
-    from .contact_request import create_contact_request_table
-    from .corporation_profile import create_corporation_profile_table
-    from .place import create_place_table
+def initialize_tables(logger: logging.Logger) -> None:
+    """
+    Initialize all database tables if they don't exist.
+    Called during Config.initialize() when initialize_tables=True.
+    """
+    from .activity_history import ActivityHistoryModel
+    from .attribute_value import AttributeValueModel
+    from .contact_profile import ContactProfileModel
+    from .contact_request import ContactRequestModel
+    from .corporation_profile import CorporationProfileModel
+    from .place import PlaceModel
 
-    create_place_table(logger)
-    create_contact_profile_table(logger)
-    create_contact_request_table(logger)
-    create_corporation_profile_table(logger)
-    create_attribute_value_table(logger)
-    create_activity_history_table(logger)
+    models: List = [
+        PlaceModel,
+        ContactProfileModel,
+        ContactRequestModel,
+        CorporationProfileModel,
+        AttributeValueModel,
+        ActivityHistoryModel,
+    ]
 
-    return
+    for model in models:
+        if model.exists():
+            continue
 
-
-def _get_place(partition_key: str, place_uuid: str) -> Dict[str, Any]:
-    from .place import get_place, get_place_count
-
-    try:
-        assert (
-            place_uuid is not None
-            and get_place_count(partition_key=partition_key, place_uuid=place_uuid) == 1
-        ), "Place not found."
-    except AssertionError as e:
-        return {}
-
-    place = get_place(partition_key, place_uuid)
-    return {
-        "region": place.region,
-        "place_uuid": place.place_uuid,
-        "business_name": place.business_name,
-        "latitude": place.latitude,
-        "longitude": place.longitude,
-        "address": place.address,
-        "website": place.website,
-        "types": place.types,
-        "phone_number": place.phone_number,
-        "corporation_profile": (
-            _get_corporation_profile(place.partition_key, place.corporation_uuid)
-            if place.corporation_uuid is not None
-            else None
-        ),
-    }
+        table_name = model.Meta.table_name
+        # Create with on-demand billing (PAY_PER_REQUEST)
+        model.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
+        logger.info(f"The {table_name} table has been created.")
 
 
-def _get_corporation_profile(
-    partition_key: str, corporation_uuid: str
-) -> Dict[str, Any]:
-    from .corporation_profile import (
-        get_corporation_profile,
-        get_corporation_profile_count,
-    )
-
-    try:
-        assert (
-            corporation_uuid is not None
-            and get_corporation_profile_count(
-                partition_key=partition_key, corporation_uuid=corporation_uuid
-            )
-            == 1
-        ), "Corporation profile not found."
-    except AssertionError as e:
-        return {}
-
-    corporation_profile = get_corporation_profile(partition_key, corporation_uuid)
-    return {
-        "corporation_uuid": corporation_profile.corporation_uuid,
-        "external_id": corporation_profile.external_id,
-        "corporation_type": corporation_profile.corporation_type,
-        "business_name": corporation_profile.business_name,
-        "categories": corporation_profile.categories,
-        "address": corporation_profile.address,
-    }
-
-
-def _get_contact_profile(partition_key: str, contact_uuid: str) -> Dict[str, Any]:
-    from .contact_profile import get_contact_profile, get_contact_profile_count
-
-    try:
-        assert (
-            contact_uuid is not None
-            and get_contact_profile_count(
-                partition_key=partition_key, contact_uuid=contact_uuid
-            )
-            == 1
-        ), "Contact profile not found."
-    except AssertionError as e:
-        return {}
-
-    contact_profile = get_contact_profile(partition_key, contact_uuid)
-    return {
-        "place": _get_place(contact_profile.partition_key, contact_profile.place_uuid),
-        "email": contact_profile.email,
-        "first_name": contact_profile.first_name,
-        "last_name": contact_profile.last_name,
-    }
-
-
-def _insert_update_attribute_values(
+def insert_update_attribute_values(
     info: ResolveInfo,
     data_type: str,
     data_identity: str,
@@ -118,7 +48,11 @@ def _insert_update_attribute_values(
     data: Dict[str, Any] = {},
     partition_key: str = None,
 ) -> Dict[str, Any]:
-    from .attribute_value import insert_update_attribute_values
+    """
+    Insert or update attribute values for an entity.
+    Used by model insert/update functions.
+    """
+    from .attribute_value import insert_update_attribute_values as _insert_update_attrs
 
     params = {
         "data_type": data_type,
@@ -128,14 +62,18 @@ def _insert_update_attribute_values(
     }
     if partition_key:
         params["partition_key"] = partition_key
-    return insert_update_attribute_values(info, **params)
+    return _insert_update_attrs(info, **params)
 
 
-def _get_data(
+def get_data(
     partition_key: str,
     data_identity: str,
     data_type: str,
 ) -> Dict[str, Any]:
+    """
+    Get attribute data for an entity.
+    Used by attribute data loaders.
+    """
     from .attribute_value import get_attributes_data
 
     return get_attributes_data(partition_key, data_identity, data_type)

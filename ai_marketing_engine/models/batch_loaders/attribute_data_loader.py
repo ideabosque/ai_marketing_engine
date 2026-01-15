@@ -55,7 +55,7 @@ class AttributeDataLoader(SafeDataLoader):
         self.cache.set(cache_key, data, ttl=Config.get_cache_ttl())
 
     def batch_load_fn(self, keys: List[Key]) -> Promise:
-        from ..utils import _get_data  # Import locally to avoid circular dependency
+        from ..utils import get_data  # Import locally to avoid circular dependency
 
         results: List[Optional[Dict[str, Any]]] = []
 
@@ -69,7 +69,7 @@ class AttributeDataLoader(SafeDataLoader):
 
             # Fetch from database
             try:
-                data = _get_data(partition_key, data_identity, self.data_type)
+                data = get_data(partition_key, data_identity, self.data_type)
                 results.append(data)
 
                 if self.cache_enabled:

@@ -22,7 +22,11 @@ def resolve_contact_request(
     return contact_request.resolve_contact_request(info, **kwargs)
 
 
-@method_cache(ttl=Config.get_cache_ttl(), cache_name=Config.get_cache_name('queries', 'contact_request'))
+@method_cache(
+    ttl=Config.get_cache_ttl(),
+    cache_name=Config.get_cache_name("queries", "contact_request"),
+    cache_enabled=Config.is_cache_enabled,
+)
 def resolve_contact_request_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestListType:

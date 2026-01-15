@@ -34,7 +34,7 @@ from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
 )
-from .utils import _insert_update_attribute_values
+from .utils import insert_update_attribute_values
 
 
 class CorporationTypeIndex(LocalSecondaryIndex):
@@ -129,15 +129,6 @@ def purge_cache():
     return actual_decorator
 
 
-def create_corporation_profile_table(logger: logging.Logger) -> bool:
-    """Create the CorporationProfile table if it doesn't exist."""
-    if not CorporationProfileModel.exists():
-        # Create with on-demand billing (PAY_PER_REQUEST)
-        CorporationProfileModel.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
-        logger.info("The CorporationProfile table has been created.")
-    return True
-
-
 @retry(
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
@@ -146,6 +137,7 @@ def create_corporation_profile_table(logger: logging.Logger) -> bool:
 @method_cache(
     ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "corporation_profile"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_corporation_profile(
     partition_key: str, corporation_uuid: str
@@ -288,10 +280,17 @@ def insert_update_corporation_profile(
         ).save()
 
         # Handle dynamic attributes (data field)
-        data = _insert_update_attribute_values(
-            info, "corporation", corporation_uuid, kwargs["updated_by"], kwargs.get("data", {}), partition_key
+        data = insert_update_attribute_values(
+            info,
+            "corporation",
+            corporation_uuid,
+            kwargs["updated_by"],
+            kwargs.get("data", {}),
+            partition_key,
         )
-        info.context["logger"].info(f"Corporation profile data: {data} has been updated.")
+        info.context["logger"].info(
+            f"Corporation profile data: {data} has been updated."
+        )
 
         return
 
@@ -317,7 +316,7 @@ def insert_update_corporation_profile(
 
     corporation_profile.update(actions=actions)
 
-    data = _insert_update_attribute_values(
+    data = insert_update_attribute_values(
         info,
         "corporation",
         corporation_uuid,

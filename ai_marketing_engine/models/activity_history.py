@@ -102,17 +102,10 @@ def purge_cache():
                 log = traceback.format_exc()
                 args[0].context.get("logger").error(log)
                 raise e
+
         return wrapper_function
+
     return actual_decorator
-
-
-def create_activity_history_table(logger: logging.Logger) -> bool:
-    """Create the ActivityHistory table if it doesn't exist."""
-    if not ActivityHistoryModel.exists():
-        # Create with on-demand billing (PAY_PER_REQUEST)
-        ActivityHistoryModel.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
-        logger.info("The ActivityHistory table has been created.")
-    return True
 
 
 @retry(
@@ -122,7 +115,8 @@ def create_activity_history_table(logger: logging.Logger) -> bool:
 )
 @method_cache(
     ttl=Config.get_cache_ttl(),
-    cache_name=Config.get_cache_name("models", "activity_history")
+    cache_name=Config.get_cache_name("models", "activity_history"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_activity_history(id: str, timestamp: int) -> ActivityHistoryModel:
     return ActivityHistoryModel.get(id, timestamp)

@@ -27,7 +27,6 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from ..handlers.config import Config
 from ..types.contact_request import ContactRequestListType, ContactRequestType
 from .contact_profile import get_contact_profile_count
-from .utils import _get_contact_profile
 
 
 class PlaceUuidIndex(LocalSecondaryIndex):
@@ -119,15 +118,6 @@ def purge_cache():
     return actual_decorator
 
 
-def create_contact_request_table(logger: logging.Logger) -> bool:
-    """Create the ContactRequest table if it doesn't exist."""
-    if not ContactRequestModel.exists():
-        # Create with on-demand billing (PAY_PER_REQUEST)
-        ContactRequestModel.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
-        logger.info("The ContactRequest table has been created.")
-    return True
-
-
 @retry(
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
@@ -136,6 +126,7 @@ def create_contact_request_table(logger: logging.Logger) -> bool:
 @method_cache(
     ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "contact_request"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_contact_request(partition_key: str, request_uuid: str) -> ContactRequestModel:
     return ContactRequestModel.get(partition_key, request_uuid)

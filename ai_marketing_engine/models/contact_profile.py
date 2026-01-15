@@ -26,7 +26,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
 from ..types.contact_profile import ContactProfileListType, ContactProfileType
-from .utils import _insert_update_attribute_values
+from .utils import insert_update_attribute_values
 
 
 class EmailIndex(LocalSecondaryIndex):
@@ -118,15 +118,6 @@ def purge_cache():
     return actual_decorator
 
 
-def create_contact_profile_table(logger: logging.Logger) -> bool:
-    """Create the ContactProfile table if it doesn't exist."""
-    if not ContactProfileModel.exists():
-        # Create with on-demand billing (PAY_PER_REQUEST)
-        ContactProfileModel.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
-        logger.info("The ContactProfile table has been created.")
-    return True
-
-
 @retry(
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
@@ -135,6 +126,7 @@ def create_contact_profile_table(logger: logging.Logger) -> bool:
 @method_cache(
     ttl=Config.get_cache_ttl(),
     cache_name=Config.get_cache_name("models", "contact_profile"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_contact_profile(partition_key: str, contact_uuid: str) -> ContactProfileModel:
     return ContactProfileModel.get(partition_key, contact_uuid)
@@ -287,7 +279,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
             **cols,
         ).save()
 
-        data = _insert_update_attribute_values(
+        data = insert_update_attribute_values(
             info, "contact", contact_uuid, kwargs["updated_by"], kwargs.get("data", {})
         )
         info.context["logger"].info(f"Contact profile data: {data} has been updated.")
@@ -316,7 +308,7 @@ def insert_update_contact_profile(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     # Update the contact profile
     contact_profile.update(actions=actions)
 
-    data = _insert_update_attribute_values(
+    data = insert_update_attribute_values(
         info, "contact", contact_uuid, kwargs["updated_by"], kwargs.get("data", {})
     )
     info.context["logger"].info(f"Contact profile data: {data} has been updated.")

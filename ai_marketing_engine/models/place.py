@@ -107,22 +107,15 @@ def purge_cache():
     return actual_decorator
 
 
-def create_place_table(logger: logging.Logger) -> bool:
-    """Create the Place table if it doesn't exist."""
-    if not PlaceModel.exists():
-        # Create with on-demand billing (PAY_PER_REQUEST)
-        PlaceModel.create_table(billing_mode="PAY_PER_REQUEST", wait=True)
-        logger.info("The Place table has been created.")
-    return True
-
-
 @retry(
     reraise=True,
     wait=wait_exponential(multiplier=1, max=60),
     stop=stop_after_attempt(5),
 )
 @method_cache(
-    ttl=Config.get_cache_ttl(), cache_name=Config.get_cache_name("models", "place")
+    ttl=Config.get_cache_ttl(),
+    cache_name=Config.get_cache_name("models", "place"),
+    cache_enabled=Config.is_cache_enabled,
 )
 def get_place(partition_key: str, place_uuid: str) -> PlaceModel:
     return PlaceModel.get(partition_key, place_uuid)

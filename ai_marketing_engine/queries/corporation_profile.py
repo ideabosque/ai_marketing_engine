@@ -25,7 +25,11 @@ def resolve_corporation_profile(
     return corporation_profile.resolve_corporation_profile(info, **kwargs)
 
 
-@method_cache(ttl=Config.get_cache_ttl(), cache_name=Config.get_cache_name('queries', 'corporation_profile'))
+@method_cache(
+    ttl=Config.get_cache_ttl(),
+    cache_name=Config.get_cache_name("queries", "corporation_profile"),
+    cache_enabled=Config.is_cache_enabled,
+)
 def resolve_corporation_profile_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileListType:

@@ -205,7 +205,9 @@ class Query(ObjectType):
     ) -> ActivityHistoryListType:
         return resolve_activity_history_list(info, **kwargs)
 
-    def resolve_place(self, info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType:
+    def resolve_place(
+        self, info: ResolveInfo, **kwargs: Dict[str, Any]
+    ) -> PlaceType | None:
         return resolve_place(info, **kwargs)
 
     def resolve_place_list(
@@ -215,7 +217,7 @@ class Query(ObjectType):
 
     def resolve_contact_profile(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> ContactProfileType:
+    ) -> ContactProfileType | None:
         return resolve_contact_profile(info, **kwargs)
 
     def resolve_contact_profile_list(
@@ -225,7 +227,7 @@ class Query(ObjectType):
 
     def resolve_contact_request(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> ContactRequestType:
+    ) -> ContactRequestType | None:
         return resolve_contact_request(info, **kwargs)
 
     def resolve_contact_request_list(
@@ -235,7 +237,7 @@ class Query(ObjectType):
 
     def resolve_corporation_profile(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> CorporationProfileType:
+    ) -> CorporationProfileType | None:
         return resolve_corporation_profile(info, **kwargs)
 
     def resolve_corporation_profile_list(
@@ -245,18 +247,13 @@ class Query(ObjectType):
 
     def resolve_attribute_value(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    ) -> AttributeValueType:
+    ) -> AttributeValueType | None:
         return resolve_attribute_value(info, **kwargs)
 
     def resolve_attribute_value_list(
         self, info: ResolveInfo, **kwargs: Dict[str, Any]
     ) -> AttributeValueListType:
         return resolve_attribute_value_list(info, **kwargs)
-
-    # def resolve_crm_user_list(
-    #     self, info: ResolveInfo, **kwargs: Dict[str, Any]
-    # ) -> CrmUserListType:
-    #     return resolve_crm_user_list(info, **kwargs)
 
 
 class Mutations(ObjectType):
