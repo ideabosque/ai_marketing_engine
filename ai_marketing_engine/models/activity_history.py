@@ -26,7 +26,7 @@ from silvaengine_dynamodb_base import (
     monitor_decorator,
     resolve_list_decorator,
 )
-from silvaengine_utility import Utility, method_cache
+from silvaengine_utility import Serializer, Utility, method_cache
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
@@ -126,7 +126,7 @@ def get_activity_history_type(
     info: ResolveInfo, activity_history: ActivityHistoryModel
 ) -> ActivityHistoryType:
     activity_history = activity_history.__dict__["attribute_values"]
-    return ActivityHistoryType(**Utility.json_normalize(activity_history))
+    return ActivityHistoryType(**Serializer.json_normalize(activity_history))
 
 
 def resolve_activity_history(
@@ -200,7 +200,7 @@ def insert_activity_history(
     )
 
     return ActivityHistoryType(
-        **Utility.json_normalize(
+        **Serializer.json_normalize(
             get_activity_history(id, timestamp).__dict__["attribute_values"]
         )
     )
