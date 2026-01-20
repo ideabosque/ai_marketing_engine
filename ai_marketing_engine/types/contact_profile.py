@@ -6,7 +6,7 @@ __author__ = "bibow"
 
 from graphene import DateTime, Field, List, ObjectType, String
 from silvaengine_dynamodb_base import ListObjectType
-from silvaengine_utility import JSON
+from silvaengine_utility import JSONCamelCase
 
 from ..models.batch_loaders import get_loaders
 from .place import PlaceType
@@ -25,8 +25,8 @@ class ContactProfileType(ObjectType):
     place_uuid = String()
     place = Field(lambda: PlaceType)
 
-    # Dynamic attributes for contact – keep as JSON, resolved lazily
-    data = Field(JSON)
+    # Dynamic attributes for contact – keep as JSONCamelCase, resolved lazily
+    data = Field(JSONCamelCase)
 
     updated_by = String()
     created_at = DateTime()

@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from graphene import Boolean, Field, List, Mutation, String
 
-from silvaengine_utility import JSON
+from silvaengine_utility import JSONCamelCase
 
 from ..models.corporation_profile import (
     delete_corporation_profile,
@@ -27,8 +27,8 @@ class InsertUpdateCorporationProfile(Mutation):
         corporation_type = String(required=False)
         business_name = String(required=False)
         categories = List(String, required=False)
-        address = JSON(required=False)
-        data = JSON(required=False)
+        address = JSONCamelCase(required=False)
+        data = JSONCamelCase(required=False)
         updated_by = String(required=True)
 
     @staticmethod

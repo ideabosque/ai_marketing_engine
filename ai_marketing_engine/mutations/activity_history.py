@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from graphene import Boolean, Field, Int, Mutation, String
 
-from silvaengine_utility import JSON
+from silvaengine_utility import JSONCamelCase
 
 from ..models.activity_history import delete_activity_history, insert_activity_history
 from ..types.activity_history import ActivityHistoryType
@@ -20,7 +20,7 @@ class InsertActivityHistory(Mutation):
 
     class Arguments:
         id = String(required=True)
-        data_diff = JSON(required=False)
+        data_diff = JSONCamelCase(required=False)
         log = String(required=False)
         type = String(required=False)
         updated_by = String(required=True)
