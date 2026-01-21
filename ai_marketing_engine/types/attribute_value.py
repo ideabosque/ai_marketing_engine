@@ -7,8 +7,7 @@ __author__ = "bibow"
 from graphene import DateTime, Decimal, List, ObjectType, String
 
 from silvaengine_dynamodb_base import ListObjectType
-from silvaengine_utility import JSON
-
+from silvaengine_utility import JSONCamelCase
 
 class AttributeValueType(ObjectType):
     data_type_attribute_name = String()
