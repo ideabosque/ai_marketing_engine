@@ -43,9 +43,8 @@ sys.path.insert(
     ),
 )
 
-from silvaengine_utility.graphql import Graphql
-
 from ai_marketing_engine import AIMarketingEngine
+from silvaengine_utility.graphql import Graphql
 
 # Test settings
 SETTING = {
@@ -90,10 +89,12 @@ def schema(ai_marketing_engine):
     Depends on ai_marketing_engine fixture.
     """
     endpoint_id = SETTING.get("endpoint_id")
+    part_id = SETTING.get("part_id")
 
     try:
         context = {
             "endpoint_id": endpoint_id,
+            "part_id": part_id,
             "setting": SETTING,
             "logger": logger,
         }

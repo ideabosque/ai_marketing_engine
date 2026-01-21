@@ -11,8 +11,9 @@ import sys
 from typing import Any
 
 import pytest
-from silvaengine_utility.graphql import Graphql
 from test_helpers import call_method, log_test_result
+
+from silvaengine_utility.graphql import Graphql
 
 # Add parent directory to path to allow imports when running directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
