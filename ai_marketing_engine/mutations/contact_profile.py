@@ -22,7 +22,7 @@ class InsertUpdateContactProfile(Mutation):
     contact_profile = Field(ContactProfileType)
 
     class Arguments:
-        place_uuid = String(required=True)
+        place_uuid = String(required=False)
         contact_uuid = String(required=False)
         email = String(required=False)
         endpoint_id = String(required=False)
