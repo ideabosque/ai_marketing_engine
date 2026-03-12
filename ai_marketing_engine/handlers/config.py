@@ -20,6 +20,7 @@ class Config:
 
     aws_lambda = None
     aws_s3 = None
+    aws_ses = None
     # schemas = {}
     module_bucket_name = None
     module_zip_path = None
@@ -207,6 +208,7 @@ class Config:
             **aws_credentials,
             config=boto3.session.Config(signature_version="s3v4"),
         )
+        cls.aws_ses = boto3.client("ses", **aws_credentials)
 
     @classmethod
     def get_cache_entity_config(cls) -> Dict[str, Dict[str, Any]]:

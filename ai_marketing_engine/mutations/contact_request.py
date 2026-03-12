@@ -7,7 +7,7 @@ __author__ = "bibow"
 import traceback
 from typing import Any, Dict
 
-from graphene import Boolean, Field, Mutation, String
+from graphene import Boolean, Field, List, Mutation, String
 
 from ..models.contact_request import (
     delete_contact_request,
@@ -25,6 +25,8 @@ class InsertUpdateContactRequest(Mutation):
         place_uuid = String(required=False)
         request_title = String(required=False)
         request_detail = String(required=False)
+        source_email = String(required=False)
+        notification_emails = List(String, required=False)
         updated_by = String(required=True)
 
     @staticmethod
