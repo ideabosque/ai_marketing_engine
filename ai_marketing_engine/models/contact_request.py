@@ -13,6 +13,8 @@ import pendulum
 from graphene import ResolveInfo
 from pynamodb.attributes import UnicodeAttribute, UTCDateTimeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from silvaengine_dynamodb_base import (
     BaseModel,
     delete_decorator,
@@ -22,11 +24,11 @@ from silvaengine_dynamodb_base import (
 )
 from silvaengine_utility import method_cache
 from silvaengine_utility.serializer import Serializer
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..handlers.config import Config
 from ..types.contact_request import ContactRequestListType, ContactRequestType
-from .contact_profile import get_contact_profile_count
+from .contact_profile import get_contact_profile, get_contact_profile_count
+from .place import get_place
 
 
 class PlaceUuidIndex(LocalSecondaryIndex):
@@ -64,7 +66,7 @@ class ContactRequestModel(BaseModel):
     partition_key = UnicodeAttribute(hash_key=True)
     request_uuid = UnicodeAttribute(range_key=True)
     contact_uuid = UnicodeAttribute()
-    place_uuid = UnicodeAttribute()
+    place_uuid = UnicodeAttribute(null=True)
     endpoint_id = UnicodeAttribute()
     part_id = UnicodeAttribute()
     request_title = UnicodeAttribute()
@@ -74,6 +76,67 @@ class ContactRequestModel(BaseModel):
     updated_at = UTCDateTimeAttribute()
     place_uuid_index = PlaceUuidIndex()
     contact_uuid_index = ContactUuidIndex()
+
+
+def send_notification_emails():
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(info: ResolveInfo, **kwargs):
+            result = func(info, **kwargs)
+            if kwargs.get("notification_emails") and kwargs.get("source_email"):
+                try:
+                    partition_key = kwargs.get("partition_key") or info.context.get(
+                        "partition_key"
+                    )
+                    contact = get_contact_profile(partition_key, kwargs["contact_uuid"])
+                    contact_name = f"{getattr(contact, 'first_name', '') or ''} {getattr(contact, 'last_name', '') or ''}".strip()
+                    contact_email = getattr(contact, "email", "N/A") or "N/A"
+
+                    place_info = "N/A"
+                    place_uuid = kwargs.get("place_uuid")
+                    if place_uuid:
+                        try:
+                            place = get_place(partition_key, place_uuid)
+                            place_info = (
+                                f"{getattr(place, 'business_name', 'N/A')}, "
+                                f"{getattr(place, 'address', 'N/A')}"
+                            )
+                            place_phone = getattr(place, "phone_number", None)
+                            if place_phone:
+                                place_info += f", {place_phone}"
+                        except Exception:
+                            place_info = place_uuid
+
+                    request_title = kwargs.get("request_title", "N/A")
+                    request_detail = kwargs.get("request_detail", "N/A")
+
+                    Config.aws_ses.send_email(
+                        Source=kwargs["source_email"],
+                        Destination={"ToAddresses": kwargs["notification_emails"]},
+                        Message={
+                            "Subject": {
+                                "Data": f"New Contact Request: {request_title}"
+                            },
+                            "Body": {
+                                "Text": {
+                                    "Data": (
+                                        f"You have a new contact request:\n\n"
+                                        f"Title: {request_title}\n"
+                                        f"Detail: {request_detail}\n"
+                                        f"Place: {place_info}\n"
+                                        f"Contact: {contact_name} ({contact_email})"
+                                    )
+                                }
+                            },
+                        },
+                    )
+                except Exception as e:
+                    logging.error(f"Failed to send notification email: {e}")
+            return result
+
+        return wrapper
+
+    return decorator
 
 
 def purge_cache():
@@ -231,6 +294,7 @@ def resolve_contact_request_list(info: ResolveInfo, **kwargs: Dict[str, Any]) ->
     type_funct=get_contact_request_type,
 )
 @purge_cache()
+@send_notification_emails()
 def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -> None:
     partition_key = kwargs.get("partition_key") or info.context.get("partition_key")
     request_uuid = kwargs.get("request_uuid")
@@ -245,7 +309,7 @@ def insert_update_contact_request(info: ResolveInfo, **kwargs: Dict[str, Any]) -
     if kwargs.get("entity") is None:
         cols = {
             "contact_uuid": kwargs["contact_uuid"],
-            "place_uuid": kwargs["place_uuid"],
+            "place_uuid": kwargs.get("place_uuid"),
             "endpoint_id": info.context.get("endpoint_id"),
             "part_id": info.context.get("part_id"),
             "request_title": kwargs["request_title"],
