@@ -8,10 +8,9 @@ import traceback
 from typing import Any, Dict
 
 from graphene import Boolean, Field, Int, Mutation, String
-
 from silvaengine_utility import JSONCamelCase
 
-from ..models.activity_history import delete_activity_history, insert_activity_history
+from ..models.repositories import get_repo
 from ..types.activity_history import ActivityHistoryType
 
 
@@ -30,7 +29,7 @@ class InsertActivityHistory(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertActivityHistory":
         try:
-            activity_history = insert_activity_history(info, **kwargs)
+            activity_history = get_repo("activity_history").insert(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
@@ -51,7 +50,7 @@ class DeleteActivityHistory(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteActivityHistory":
         try:
-            ok = delete_activity_history(info, **kwargs)
+            ok = get_repo("activity_history").delete(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)

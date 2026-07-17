@@ -8,13 +8,9 @@ import traceback
 from typing import Any, Dict
 
 from graphene import Boolean, Field, Mutation, String
-
 from silvaengine_utility import JSONCamelCase
 
-from ..models.contact_profile import (
-    delete_contact_profile,
-    insert_update_contact_profile,
-)
+from ..models.repositories import get_repo
 from ..types.contact_profile import ContactProfileType
 
 
@@ -36,7 +32,7 @@ class InsertUpdateContactProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateContactProfile":
         try:
-            contact_profile = insert_update_contact_profile(info, **kwargs)
+            contact_profile = get_repo("contact_profile").insert_update(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
@@ -56,7 +52,7 @@ class DeleteContactProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteContactProfile":
         try:
-            ok = delete_contact_profile(info, **kwargs)
+            ok = get_repo("contact_profile").delete(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)

@@ -18,7 +18,7 @@ import pytest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from ai_marketing_engine.handlers.config import Config
-from ai_marketing_engine.models.cache import (
+from ai_marketing_engine.models.dynamodb.cache import (
     _get_cascading_cache_purger,
     purge_entity_cascading_cache,
 )
@@ -48,8 +48,8 @@ class TestCacheManagement:
         purger2 = _get_cascading_cache_purger()
         assert purger1 is purger2
 
-    @patch("ai_marketing_engine.models.cache.CascadingCachePurger")
-    @patch("ai_marketing_engine.models.cache.CacheConfigResolvers")
+    @patch("ai_marketing_engine.models.dynamodb.cache.CascadingCachePurger")
+    @patch("ai_marketing_engine.models.dynamodb.cache.CacheConfigResolvers")
     def test_get_cascading_cache_purger_initialization(
         self, mock_resolvers, mock_purger
     ):
@@ -72,7 +72,7 @@ class TestCacheManagement:
         mock_purger.assert_called_once_with(mock_resolvers_instance)
         assert result is mock_purger_instance
 
-    @patch("ai_marketing_engine.models.cache._get_cascading_cache_purger")
+    @patch("ai_marketing_engine.models.dynamodb.cache._get_cascading_cache_purger")
     def test_purge_entity_cascading_cache_basic(
         self, mock_get_purger, mock_logger, sample_context_keys, sample_entity_keys
     ):
@@ -98,7 +98,7 @@ class TestCacheManagement:
         )
         assert result == expected_result
 
-    @patch("ai_marketing_engine.models.cache._get_cascading_cache_purger")
+    @patch("ai_marketing_engine.models.dynamodb.cache._get_cascading_cache_purger")
     def test_purge_entity_cascading_cache_custom_depth(
         self, mock_get_purger, mock_logger
     ):
@@ -138,7 +138,7 @@ class TestCacheManagement:
 
         # Test cache name generation
         cache_name = Config.get_cache_name("models", "corporation_profile")
-        assert cache_name == "ai_marketing_engine.models.corporation_profile"
+        assert cache_name == "ai_marketing_engine.models.dynamodb.corporation_profile"
 
         # Test cache TTL
         ttl = Config.get_cache_ttl()
@@ -166,10 +166,10 @@ class TestBatchLoaderCache:
     def mock_request_loaders(self, mock_cache_engine):
         """Mock RequestLoaders instance."""
         with patch(
-            "ai_marketing_engine.models.batch_loaders.HybridCacheEngine"
+            "ai_marketing_engine.models.dynamodb.batch_loaders.HybridCacheEngine"
         ) as mock_engine_class:
             mock_engine_class.return_value = mock_cache_engine
-            from ai_marketing_engine.models.batch_loaders import RequestLoaders
+            from ai_marketing_engine.models.dynamodb.batch_loaders import RequestLoaders
 
             return RequestLoaders({"logger": Mock(), "endpoint_id": "test-endpoint"})
 
@@ -177,10 +177,10 @@ class TestBatchLoaderCache:
         """Test RequestLoaders initialization with cache engine."""
 
     @patch(
-        "ai_marketing_engine.models.batch_loaders.Config.is_cache_enabled",
+        "ai_marketing_engine.models.dynamodb.batch_loaders.Config.is_cache_enabled",
         return_value=True,
     )
-    @patch("ai_marketing_engine.models.place.PlaceModel")
+    @patch("ai_marketing_engine.models.dynamodb.place.PlaceModel")
     def test_dataloader_cache_interaction(
         self, mock_place_model, mock_is_cache_enabled, mock_request_loaders
     ):
@@ -225,7 +225,7 @@ class TestCacheDecorators:
 
     def test_cache_integration_in_models(self):
         """Test that cache decorators are integrated in model methods."""
-        from ai_marketing_engine.models.corporation_profile import (
+        from ai_marketing_engine.models.dynamodb.corporation_profile import (
             CorporationProfileModel,
         )
 
@@ -277,7 +277,7 @@ class TestCacheConfiguration:
         """Test cache name generation for different modules."""
         # Test models cache name
         models_name = Config.get_cache_name("models", "corporation_profile")
-        assert models_name == "ai_marketing_engine.models.corporation_profile"
+        assert models_name == "ai_marketing_engine.models.dynamodb.corporation_profile"
 
         # Test queries cache name
         queries_name = Config.get_cache_name("queries", "place")
@@ -348,7 +348,7 @@ class TestCacheIntegration:
         # Note: purge_result can be either a dict (real implementation) or Mock (test mode)
 
         # Verify that the get_corporation_profile function has the cache decorator applied
-        from ai_marketing_engine.models.corporation_profile import (
+        from ai_marketing_engine.models.dynamodb.corporation_profile import (
             get_corporation_profile,
         )
 
@@ -439,7 +439,7 @@ class TestCacheLiveData:
 
             # Patch the underlying model method to count calls
             with patch(
-                "ai_marketing_engine.models.corporation_profile.CorporationProfileModel.get"
+                "ai_marketing_engine.models.dynamodb.corporation_profile.CorporationProfileModel.get"
             ) as mock_get:
                 # Mock will be called, we just count the calls
                 # The actual caching happens at a higher level
@@ -472,7 +472,7 @@ class TestCacheLiveData:
 
             # Note: For list queries, we need to patch the query method instead of get
             with patch(
-                "ai_marketing_engine.models.corporation_profile.CorporationProfileModel.query"
+                "ai_marketing_engine.models.dynamodb.corporation_profile.CorporationProfileModel.query"
             ) as mock_query:
                 # Setup mock to return empty iterator (we're just counting calls)
                 mock_query.return_value = iter([])
@@ -659,7 +659,7 @@ class TestCacheLiveData:
             ai_marketing_engine.logger.info("=" * 60)
 
             # Import batch loader
-            from ai_marketing_engine.models.batch_loaders import (
+            from ai_marketing_engine.models.dynamodb.batch_loaders import (
                 CorporationProfileLoader,
             )
 
@@ -670,10 +670,10 @@ class TestCacheLiveData:
 
             # Patch batch_get to count database calls
             with patch(
-                "ai_marketing_engine.models.corporation_profile.CorporationProfileModel.batch_get"
+                "ai_marketing_engine.models.dynamodb.corporation_profile.CorporationProfileModel.batch_get"
             ) as mock_batch_get:
                 # Setup mock to return our test data
-                from ai_marketing_engine.models.corporation_profile import (
+                from ai_marketing_engine.models.dynamodb.corporation_profile import (
                     CorporationProfileModel,
                 )
 

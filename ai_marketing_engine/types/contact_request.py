@@ -8,7 +8,7 @@ from graphene import DateTime, Field, List, ObjectType, String
 
 from silvaengine_dynamodb_base import ListObjectType
 
-from ..models.batch_loaders import get_loaders
+from ..models.repositories import get_loaders
 from .contact_profile import ContactProfileType
 
 

@@ -9,10 +9,7 @@ from typing import Any, Dict
 
 from graphene import Boolean, Field, List, Mutation, String
 
-from ..models.contact_request import (
-    delete_contact_request,
-    insert_update_contact_request,
-)
+from ..models.repositories import get_repo
 from ..types.contact_request import ContactRequestType
 
 
@@ -34,7 +31,7 @@ class InsertUpdateContactRequest(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateContactRequest":
         try:
-            contact_request = insert_update_contact_request(info, **kwargs)
+            contact_request = get_repo("contact_request").insert_update(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
@@ -54,7 +51,7 @@ class DeleteContactRequest(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteContactRequest":
         try:
-            ok = delete_contact_request(info, **kwargs)
+            ok = get_repo("contact_request").delete(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)

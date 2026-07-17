@@ -8,13 +8,9 @@ import traceback
 from typing import Any, Dict
 
 from graphene import Boolean, Field, List, Mutation, String
-
 from silvaengine_utility import JSONCamelCase
 
-from ..models.corporation_profile import (
-    delete_corporation_profile,
-    insert_update_corporation_profile,
-)
+from ..models.repositories import get_repo
 from ..types.corporation_profile import CorporationProfileType
 
 
@@ -36,7 +32,9 @@ class InsertUpdateCorporationProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateCorporationProfile":
         try:
-            corporation_profile = insert_update_corporation_profile(info, **kwargs)
+            corporation_profile = get_repo("corporation_profile").insert_update(
+                info, **kwargs
+            )
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
@@ -56,7 +54,7 @@ class DeleteCorporationProfile(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteCorporationProfile":
         try:
-            ok = delete_corporation_profile(info, **kwargs)
+            ok = get_repo("corporation_profile").delete(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)

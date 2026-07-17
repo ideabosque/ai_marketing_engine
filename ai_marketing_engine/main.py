@@ -228,48 +228,59 @@ class AIMarketingEngine(Graphql):
         Args:
             params (Dict[str, Any]): A dictionary of parameters required to build the GraphQL query.
         """
-        endpoint_id = params.get("endpoint_id", self.setting.get("endpoint_id"))
-        part_id = params.get("metadata", {}).get(
-            "part_id",
-            params.get("part_id", self.setting.get("part_id")),
-        )
-
         if params.get("context") is None:
             params["context"] = {}
 
-        if "endpoint_id" not in params["context"]:
-            params["context"]["endpoint_id"] = endpoint_id
-        if "part_id" not in params["context"]:
-            params["context"]["part_id"] = part_id
+        context = params["context"]
+        endpoint_id = (
+            context["endpoint_id"]
+            if "endpoint_id" in context
+            else params.get("endpoint_id", self.setting.get("endpoint_id"))
+        )
+        part_id = (
+            context["part_id"]
+            if "part_id" in context
+            else params.get("metadata", {}).get(
+                "part_id",
+                params.get("part_id", self.setting.get("part_id")),
+            )
+        )
+
+        if "endpoint_id" not in context:
+            context["endpoint_id"] = endpoint_id
+        if "part_id" not in context:
+            context["part_id"] = part_id
         if "connection_id" not in params:
             params["connection_id"] = self.setting.get("connection_id")
 
-        if "partition_key" not in params["context"]:
-            # Validate endpoint_id and part_id before creating partition_key
-            if not endpoint_id or not part_id:
-                self.logger.error(
-                    f"Missing endpoint_id or part_id: endpoint_id={endpoint_id}, part_id={part_id}"
-                )
-                raise ValueError(
-                    "Both 'endpoint_id' and 'part_id' are required to generate 'partition_key'."
-                )
-            else:
-                params["context"]["partition_key"] = f"{endpoint_id}#{part_id}"
+        if not endpoint_id or not part_id:
+            self.logger.error(
+                f"Missing endpoint_id or part_id: endpoint_id={endpoint_id}, part_id={part_id}"
+            )
+            raise ValueError(
+                "Both 'endpoint_id' and 'part_id' are required to generate 'partition_key'."
+            )
+
+        context["partition_key"] = f"{endpoint_id}#{part_id}"
 
         if "logger" in params:
             params.pop("logger")
-
         if "setting" in params:
             params.pop("setting")
-
-        if params.get("context") is None:
-            params["context"] = {}
-
-        params["context"]["partition_key"] = f"{endpoint_id}#{part_id}"
-
     def ai_marketing_graphql(self, **params: Dict[str, Any]) -> Any:
         self._apply_partition_defaults(params)
-        return self.execute(self.__class__.build_graphql_schema(), **params)
+
+        # In PostgreSQL mode, set the RLS tenant context for this request and
+        # tear down the scoped session afterwards. No-op in DynamoDB mode.
+        partition_key = params.get("context", {}).get("partition_key")
+        if partition_key and Config.DB_BACKEND == "postgresql":
+            Config._set_rls_context(partition_key)
+
+        try:
+            return self.execute(self.__class__.build_graphql_schema(), **params)
+        finally:
+            if Config.DB_BACKEND == "postgresql" and Config.db_session:
+                Config.db_session.remove()
 
     @staticmethod
     def build_graphql_schema() -> Schema:
@@ -278,3 +289,35 @@ class AIMarketingEngine(Graphql):
             mutation=Mutations,
             types=type_class(),
         )
+
+
+# ---------------------------------------------------------------------------
+# Module-level dispatch functions for gateway integration
+# ---------------------------------------------------------------------------
+# Called by silvaengine_gateway via the route manifest's ``dispatch`` field
+# (e.g. "ai_marketing_engine.main:dispatch_graphql"). Builds a short-lived
+# engine from the already-initialized Config singleton.
+# ---------------------------------------------------------------------------
+
+
+def dispatch_graphql(**params: Any) -> Any:
+    """Execute a GraphQL query/mutation against the AI Marketing Engine.
+
+    Requires ``Config.initialize()`` to have been called (done by gateway
+    startup). On the PostgreSQL backend, RLS tenant context is set from
+    ``partition_key`` inside ``ai_marketing_graphql`` and the scoped session
+    is rolled back on error and removed after the request. (No-op on the
+    DynamoDB backend, where ``db_session`` is ``None``.)
+    """
+    logger = Config.get_logger()
+    instance = AIMarketingEngine(logger, **Config.get_setting())
+    db_session = Config.db_session
+    try:
+        return instance.ai_marketing_graphql(**params)
+    except Exception:
+        if db_session is not None:
+            db_session.rollback()
+        raise
+    finally:
+        if db_session is not None:
+            db_session.remove()

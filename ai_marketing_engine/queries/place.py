@@ -10,12 +10,12 @@ from graphene import ResolveInfo
 from silvaengine_utility import method_cache
 
 from ..handlers.config import Config
-from ..models import place
+from ..models.repositories import get_repo
 from ..types.place import PlaceListType, PlaceType
 
 
 def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | None:
-    return place.resolve_place(info, **kwargs)
+    return get_repo("place").resolve_single(info, **kwargs)
 
 
 @method_cache(
@@ -24,4 +24,4 @@ def resolve_place(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceType | No
     cache_enabled=Config.is_cache_enabled,
 )
 def resolve_place_list(info: ResolveInfo, **kwargs: Dict[str, Any]) -> PlaceListType:
-    return place.resolve_place_list(info, **kwargs)
+    return get_repo("place").list(info, **kwargs)

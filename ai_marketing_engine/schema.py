@@ -79,13 +79,11 @@ class Query(ObjectType):
 
     presigned_upload_url = Field(
         PresignedUploadUrlType,
-        required=True,
         object_key=String(required=True),
     )
 
     activity_history = Field(
         ActivityHistoryType,
-        required=True,
         id=String(required=True),
         timestamp=Int(required=True),
     )
@@ -102,7 +100,6 @@ class Query(ObjectType):
 
     place = Field(
         PlaceType,
-        required=True,
         place_uuid=String(required=True),
     )
 
@@ -121,7 +118,6 @@ class Query(ObjectType):
 
     contact_profile = Field(
         ContactProfileType,
-        required=True,
         email=String(required=False),
         contact_uuid=String(required=False),
     )
@@ -138,7 +134,6 @@ class Query(ObjectType):
 
     contact_request = Field(
         ContactRequestType,
-        required=True,
         contact_uuid=String(required=True),
         request_uuid=String(required=True),
     )
@@ -155,7 +150,6 @@ class Query(ObjectType):
 
     corporation_profile = Field(
         CorporationProfileType,
-        required=True,
         corporation_uuid=String(required=True),
     )
 
@@ -172,7 +166,6 @@ class Query(ObjectType):
 
     attribute_value = Field(
         AttributeValueType,
-        required=True,
         data_type_attribute_name=String(required=True),
         value_version_uuid=String(required=True),
     )
@@ -269,3 +262,4 @@ class Mutations(ObjectType):
     delete_contact_request = DeleteContactRequest.Field()
     insert_update_attribute_value = InsertUpdateAttributeValue.Field()
     delete_attribute_value = DeleteAttributeValue.Field()
+

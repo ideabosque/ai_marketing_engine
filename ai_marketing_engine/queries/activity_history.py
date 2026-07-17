@@ -10,14 +10,14 @@ from graphene import ResolveInfo
 from silvaengine_utility import method_cache
 
 from ..handlers.config import Config
-from ..models import activity_history
+from ..models.repositories import get_repo
 from ..types.activity_history import ActivityHistoryListType, ActivityHistoryType
 
 
 def resolve_activity_history(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ActivityHistoryType:
-    return activity_history.resolve_activity_history(info, **kwargs)
+    return get_repo("activity_history").resolve_single(info, **kwargs)
 
 
 @method_cache(
@@ -28,4 +28,4 @@ def resolve_activity_history(
 def resolve_activity_history_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ActivityHistoryListType:
-    return activity_history.resolve_activity_history_list(info, **kwargs)
+    return get_repo("activity_history").list(info, **kwargs)

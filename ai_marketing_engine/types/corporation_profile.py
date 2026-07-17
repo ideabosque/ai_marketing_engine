@@ -9,7 +9,7 @@ from graphene import DateTime, Field, List, ObjectType, String
 from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSONCamelCase
 
-from ..models.batch_loaders import get_loaders
+from ..models.repositories import get_loaders
 
 
 class CorporationProfileType(ObjectType):

@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from graphene import Boolean, Field, List, Mutation, String
 
-from ..models.place import delete_place, insert_update_place
+from ..models.repositories import get_repo
 from ..types.place import PlaceType
 
 
@@ -32,7 +32,7 @@ class InsertUpdatePlace(Mutation):
     @staticmethod
     def mutate(root: Any, info: Any, **kwargs: Dict[str, Any]) -> "InsertUpdatePlace":
         try:
-            place = insert_update_place(info, **kwargs)
+            place = get_repo("place").insert_update(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
@@ -50,7 +50,7 @@ class DeletePlace(Mutation):
     @staticmethod
     def mutate(root: Any, info: Any, **kwargs: Dict[str, Any]) -> "DeletePlace":
         try:
-            ok = delete_place(info, **kwargs)
+            ok = get_repo("place").delete(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)

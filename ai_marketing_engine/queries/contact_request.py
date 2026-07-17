@@ -7,19 +7,17 @@ __author__ = "bibow"
 from typing import Any, Dict
 
 from graphene import ResolveInfo
-
 from silvaengine_utility import method_cache
 
 from ..handlers.config import Config
-
-from ..models import contact_request
+from ..models.repositories import get_repo
 from ..types.contact_request import ContactRequestListType, ContactRequestType
 
 
 def resolve_contact_request(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestType | None:
-    return contact_request.resolve_contact_request(info, **kwargs)
+    return get_repo("contact_request").resolve_single(info, **kwargs)
 
 
 @method_cache(
@@ -30,4 +28,4 @@ def resolve_contact_request(
 def resolve_contact_request_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> ContactRequestListType:
-    return contact_request.resolve_contact_request_list(info, **kwargs)
+    return get_repo("contact_request").list(info, **kwargs)

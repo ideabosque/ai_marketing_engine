@@ -18,11 +18,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from silvaengine_utility import Utility
 
-from ai_marketing_engine.models.batch_loaders import (
-    RequestLoaders,
-    clear_loaders,
-    get_loaders,
-)
+from ai_marketing_engine.models.dynamodb.batch_loaders import RequestLoaders
+from ai_marketing_engine.models.repositories import clear_loaders, get_loaders
 
 
 # ============================================================================
@@ -68,7 +65,7 @@ def test_batch_loaders_cached_per_context() -> None:
 @pytest.mark.unit
 def test_place_loader_batches_requests() -> None:
     """Test that PlaceLoader successfully loads multiple places and deduplicates requests."""
-    from ai_marketing_engine.models.batch_loaders import PlaceLoader
+    from ai_marketing_engine.models.dynamodb.batch_loaders import PlaceLoader
 
     context = {"logger": MagicMock()}
     loader = PlaceLoader(logger=context["logger"])
@@ -84,7 +81,7 @@ def test_place_loader_batches_requests() -> None:
         normalized_p1["place_uuid"] == "place-1"
     ), f"Normalized p1 incorrect: {normalized_p1}"
 
-    with patch("ai_marketing_engine.models.place.PlaceModel.batch_get") as mock_batch:
+    with patch("ai_marketing_engine.models.dynamodb.place.PlaceModel.batch_get") as mock_batch:
         # Mock should return an iterable of models
         mock_batch.return_value = [p1, p2]
 
@@ -116,7 +113,7 @@ def test_place_loader_batches_requests() -> None:
 @pytest.mark.unit
 def test_corporation_loader_batches_requests() -> None:
     """Test that CorporationProfileLoader successfully loads multiple corporations."""
-    from ai_marketing_engine.models.batch_loaders import CorporationProfileLoader
+    from ai_marketing_engine.models.dynamodb.batch_loaders import CorporationProfileLoader
 
     context = {"logger": MagicMock()}
     loader = CorporationProfileLoader(logger=context["logger"])
@@ -125,7 +122,7 @@ def test_corporation_loader_batches_requests() -> None:
     c2 = _mock_model("endpoint-1", "corporation_uuid", "corp-2", business_name="Two")
 
     with patch(
-        "ai_marketing_engine.models.corporation_profile.CorporationProfileModel.batch_get"
+        "ai_marketing_engine.models.dynamodb.corporation_profile.CorporationProfileModel.batch_get"
     ) as mock_batch:
         mock_batch.return_value = [c1, c2]
 
@@ -149,7 +146,7 @@ def test_attribute_loader_deduplicates_keys() -> None:
     context = {"logger": MagicMock()}
     loaders = RequestLoaders(context)
 
-    with patch("ai_marketing_engine.models.utils._get_data") as mock_get_data:
+    with patch("ai_marketing_engine.models.dynamodb.utils._get_data") as mock_get_data:
         mock_get_data.return_value = {"foo": "bar"}
 
         results = Promise.all(

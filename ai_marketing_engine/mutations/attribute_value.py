@@ -9,10 +9,7 @@ from typing import Any, Dict
 
 from graphene import Boolean, Field, Mutation, String
 
-from ..models.attribute_value import (
-    delete_attribute_value,
-    insert_update_attribute_value,
-)
+from ..models.repositories import get_repo
 from ..types.attribute_value import AttributeValueType
 
 
@@ -25,7 +22,6 @@ class InsertUpdateAttributeValue(Mutation):
         data_identity = String(required=True)
         value = String(required=False)
         status = String(required=False)
-        value = String(required=False)
         updated_by = String(required=True)
 
     @staticmethod
@@ -33,7 +29,7 @@ class InsertUpdateAttributeValue(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "InsertUpdateAttributeValue":
         try:
-            attribute_value = insert_update_attribute_value(info, **kwargs)
+            attribute_value = get_repo("attribute_value").insert_update(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)
@@ -54,7 +50,7 @@ class DeleteAttributeValue(Mutation):
         root: Any, info: Any, **kwargs: Dict[str, Any]
     ) -> "DeleteAttributeValue":
         try:
-            ok = delete_attribute_value(info, **kwargs)
+            ok = get_repo("attribute_value").delete(info, **kwargs)
         except Exception as e:
             log = traceback.format_exc()
             info.context.get("logger").error(log)

@@ -7,12 +7,10 @@ __author__ = "bibow"
 from typing import Any, Dict
 
 from graphene import ResolveInfo
-
 from silvaengine_utility import method_cache
 
 from ..handlers.config import Config
-
-from ..models import corporation_profile
+from ..models.repositories import get_repo
 from ..types.corporation_profile import (
     CorporationProfileListType,
     CorporationProfileType,
@@ -22,7 +20,7 @@ from ..types.corporation_profile import (
 def resolve_corporation_profile(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileType | None:
-    return corporation_profile.resolve_corporation_profile(info, **kwargs)
+    return get_repo("corporation_profile").resolve_single(info, **kwargs)
 
 
 @method_cache(
@@ -33,4 +31,4 @@ def resolve_corporation_profile(
 def resolve_corporation_profile_list(
     info: ResolveInfo, **kwargs: Dict[str, Any]
 ) -> CorporationProfileListType:
-    return corporation_profile.resolve_corporation_profile_list(info, **kwargs)
+    return get_repo("corporation_profile").list(info, **kwargs)

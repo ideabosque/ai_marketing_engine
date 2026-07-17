@@ -4,7 +4,7 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
-from graphene import DateTime, Decimal, List, ObjectType, String, Field
+from graphene import DateTime, Int, List, ObjectType, String, Field
 
 from silvaengine_dynamodb_base import ListObjectType
 from silvaengine_utility import JSONCamelCase
@@ -12,7 +12,7 @@ from silvaengine_utility import JSONCamelCase
 
 class ActivityHistoryType(ObjectType):
     id = String()
-    timestamp = Decimal()
+    timestamp = Int()
     log = String()
     data_diff = Field(JSONCamelCase)
     type = String()
@@ -22,3 +22,4 @@ class ActivityHistoryType(ObjectType):
 
 class ActivityHistoryListType(ListObjectType):
     activity_history_list = List(ActivityHistoryType)
+
